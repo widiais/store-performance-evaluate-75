@@ -24,6 +24,16 @@ export default {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        dashboard: {
+          dark: "#141413",
+          light: "#FAFAF8",
+          accent1: "#8989DE",
+          accent2: "#61AAF2",
+          accent3: "#7EBF8E",
+          text: "#C4C3BB",
+          muted: "#828179",
+          card: "#1A1A19",
+        },
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
