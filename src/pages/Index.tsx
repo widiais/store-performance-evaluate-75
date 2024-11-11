@@ -16,19 +16,19 @@ const Index = () => {
           title="Shop"
           value={68}
           color="#7EBF8E"
-          icon={<ShoppingCart className="w-8 h-8" />}
+          icon={<ShoppingCart className="w-6 h-6" />}
         />
         <MetricCard
           title="Mobile"
           value={52}
           color="#8989DE"
-          icon={<Smartphone className="w-8 h-8" />}
+          icon={<Smartphone className="w-6 h-6" />}
         />
         <MetricCard
           title="Other"
           value={85}
           color="#61AAF2"
-          icon={<Box className="w-8 h-8" />}
+          icon={<Box className="w-6 h-6" />}
         />
       </div>
 
