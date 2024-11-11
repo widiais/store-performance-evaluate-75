@@ -16,7 +16,7 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
           className="w-full"
           onValueChange={onTabChange}
         >
-          <TabsList className="flex flex-col h-auto bg-transparent border-r border-white/10">
+          <TabsList className="flex flex-col h-auto bg-transparent text-white">
             <TabsTrigger 
               value="dashboard" 
               className="w-full justify-start gap-2 data-[state=active]:bg-white/10"
