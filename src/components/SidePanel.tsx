@@ -19,21 +19,21 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
           <TabsList className="flex flex-col h-auto bg-transparent text-white">
             <TabsTrigger 
               value="dashboard" 
-              className="w-full justify-start gap-2 data-[state=active]:bg-white/10"
+              className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
             >
               <LayoutDashboard className="w-4 h-4" />
               Dashboard
             </TabsTrigger>
             <TabsTrigger 
               value="users" 
-              className="w-full justify-start gap-2 data-[state=active]:bg-white/10"
+              className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
             >
               <Users className="w-4 h-4" />
               Users
             </TabsTrigger>
             <TabsTrigger 
               value="settings" 
-              className="w-full justify-start gap-2 data-[state=active]:bg-white/10"
+              className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
             >
               <Settings className="w-4 h-4" />
               Settings
