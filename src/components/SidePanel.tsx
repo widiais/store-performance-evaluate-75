@@ -1,13 +1,21 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
 import { LayoutDashboard, Settings, Users } from "lucide-react";
 
-const SidePanel = () => {
+interface SidePanelProps {
+  onTabChange: (value: string) => void;
+}
+
+const SidePanel = ({ onTabChange }: SidePanelProps) => {
   return (
     <div className="h-screen fixed left-0 top-0 w-64 glass-card border-r border-white/10">
       <div className="p-6">
         <h2 className="text-xl font-medium mb-6">Navigation</h2>
-        <Tabs defaultValue="dashboard" orientation="vertical" className="w-full">
+        <Tabs 
+          defaultValue="dashboard" 
+          orientation="vertical" 
+          className="w-full"
+          onValueChange={onTabChange}
+        >
           <TabsList className="flex flex-col h-auto bg-transparent border-r border-white/10">
             <TabsTrigger 
               value="dashboard" 
@@ -31,15 +39,6 @@ const SidePanel = () => {
               Settings
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="dashboard">
-            {/* Dashboard content */}
-          </TabsContent>
-          <TabsContent value="users">
-            {/* Users content */}
-          </TabsContent>
-          <TabsContent value="settings">
-            {/* Settings content */}
-          </TabsContent>
         </Tabs>
       </div>
     </div>
