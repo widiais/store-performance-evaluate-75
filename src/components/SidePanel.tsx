@@ -31,6 +31,15 @@ const SidePanel = () => {
               Settings
             </TabsTrigger>
           </TabsList>
+          <TabsContent value="dashboard">
+            {/* Dashboard content */}
+          </TabsContent>
+          <TabsContent value="users">
+            {/* Users content */}
+          </TabsContent>
+          <TabsContent value="settings">
+            {/* Settings content */}
+          </TabsContent>
         </Tabs>
       </div>
     </div>
