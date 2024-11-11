@@ -23,7 +23,7 @@ const MetricCard = ({ title, value, color, icon }: MetricCardProps) => {
             trailColor: 'rgba(255,255,255,0.1)',
           })}
         />
-        <div className="absolute inset-0 flex items-center justify-center text-dashboard-muted opacity-50">
+        <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none">
           {icon}
         </div>
       </div>

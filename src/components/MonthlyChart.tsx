@@ -19,21 +19,23 @@ const MonthlyChart = () => {
   return (
     <div className="dashboard-card h-[400px]">
       <h2 className="text-xl font-medium mb-6">Monthly Income</h2>
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-          <XAxis dataKey="month" stroke="#828179" />
-          <YAxis stroke="#828179" />
-          <Line
-            type="monotone"
-            dataKey="value"
-            stroke="#8989DE"
-            strokeWidth={2}
-            dot={{ fill: '#8989DE' }}
-          />
-          <Bar dataKey="revenue" fill="#61AAF2" opacity={0.3} />
-        </LineChart>
-      </ResponsiveContainer>
+      <div className="h-[calc(100%-4rem)]">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+            <XAxis dataKey="month" stroke="#828179" />
+            <YAxis stroke="#828179" />
+            <Line
+              type="monotone"
+              dataKey="value"
+              stroke="#8989DE"
+              strokeWidth={2}
+              dot={{ fill: '#8989DE' }}
+            />
+            <Bar dataKey="revenue" fill="#61AAF2" opacity={0.3} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 };
