@@ -1,4 +1,4 @@
-import { ShoppingCart, Smartphone, Cube } from 'lucide-react';
+import { ShoppingCart, Smartphone, Box } from 'lucide-react';
 import MetricCard from '@/components/MetricCard';
 import MonthlyChart from '@/components/MonthlyChart';
 import CustomerRequests from '@/components/CustomerRequests';
@@ -28,7 +28,7 @@ const Index = () => {
           title="Other"
           value={85}
           color="#61AAF2"
-          icon={<Cube className="w-8 h-8" />}
+          icon={<Box className="w-8 h-8" />}
         />
       </div>
 
