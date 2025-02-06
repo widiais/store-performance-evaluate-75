@@ -69,6 +69,12 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
                     Setup CHAMPS
                   </TabsTrigger>
                   <TabsTrigger 
+                    value="champsform" 
+                    className="w-full justify-start gap-2 pl-6 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                  >
+                    CHAMPS Form
+                  </TabsTrigger>
+                  <TabsTrigger 
                     value="setupesp" 
                     className="w-full justify-start gap-2 pl-6 data-[state=active]:bg-white/10 data-[state=active]:text-white"
                   >

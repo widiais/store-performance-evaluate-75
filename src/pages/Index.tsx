@@ -172,6 +172,10 @@ const Index = () => {
         );
       case 'setupstore':
         return <SetupStore />;
+      case 'setupchamps':
+        return <SetupChamps />;
+      case 'champsform':
+        return <ChampsForm />;
       default:
         return null;
     }
