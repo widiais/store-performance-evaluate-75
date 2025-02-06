@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
+import { ArrowUpDown, Search } from "lucide-react";
 
 interface Store {
   id: number;
@@ -22,6 +23,43 @@ const SetupStore = () => {
   const [stores, setStores] = useState<Store[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [currentStore, setCurrentStore] = useState<Store | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof Store | null;
+    direction: "ascending" | "descending";
+  }>({ key: null, direction: "ascending" });
+
+  const handleSort = (key: keyof Store) => {
+    setSortConfig({
+      key,
+      direction:
+        sortConfig.key === key && sortConfig.direction === "ascending"
+          ? "descending"
+          : "ascending",
+    });
+  };
+
+  const filteredAndSortedStores = useMemo(() => {
+    let filtered = stores.filter((store) =>
+      Object.values(store).some((value) =>
+        value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    );
+
+    if (sortConfig.key) {
+      filtered.sort((a, b) => {
+        if (a[sortConfig.key!] < b[sortConfig.key!]) {
+          return sortConfig.direction === "ascending" ? -1 : 1;
+        }
+        if (a[sortConfig.key!] > b[sortConfig.key!]) {
+          return sortConfig.direction === "ascending" ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+
+    return filtered;
+  }, [stores, searchTerm, sortConfig]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -57,118 +95,154 @@ const SetupStore = () => {
     setIsEditing(true);
   };
 
+  const StoreForm = () => (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <DialogHeader>
+        <DialogTitle>{isEditing ? 'Edit Store' : 'Add New Store'}</DialogTitle>
+        <DialogDescription>
+          {isEditing ? 'Update store information below.' : 'Fill in the store details below.'}
+        </DialogDescription>
+      </DialogHeader>
+      <div className="space-y-4 p-4 bg-dashboard-card rounded-lg">
+        <div className="space-y-2">
+          <Label htmlFor="name">Store Name</Label>
+          <Input
+            id="name"
+            name="name"
+            defaultValue={currentStore?.name}
+            className="bg-dashboard-dark border-dashboard-text/20"
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="city">City</Label>
+          <Input
+            id="city"
+            name="city"
+            defaultValue={currentStore?.city}
+            className="bg-dashboard-dark border-dashboard-text/20"
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="cogsTarget">COGS Target (%)</Label>
+          <Input
+            id="cogsTarget"
+            name="cogsTarget"
+            type="number"
+            step="0.01"
+            min="0"
+            max="100"
+            defaultValue={currentStore?.cogsTarget}
+            className="bg-dashboard-dark border-dashboard-text/20"
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="regional">Regional</Label>
+          <Select name="regional" defaultValue={currentStore?.regional?.toString()}>
+            <SelectTrigger className="bg-dashboard-dark border-dashboard-text/20">
+              <SelectValue placeholder="Select Regional" />
+            </SelectTrigger>
+            <SelectContent>
+              {[1, 2, 3, 4].map((num) => (
+                <SelectItem key={num} value={num.toString()}>
+                  {num}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="area">Area</Label>
+          <Select name="area" defaultValue={currentStore?.area?.toString()}>
+            <SelectTrigger className="bg-dashboard-dark border-dashboard-text/20">
+              <SelectValue placeholder="Select Area" />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from({ length: 20 }, (_, i) => i + 1).map((num) => (
+                <SelectItem key={num} value={num.toString()}>
+                  {num}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="totalCrew">Total Crew</Label>
+          <Input
+            id="totalCrew"
+            name="totalCrew"
+            type="number"
+            min="0"
+            defaultValue={currentStore?.totalCrew}
+            className="bg-dashboard-dark border-dashboard-text/20"
+            required
+          />
+        </div>
+      </div>
+      <Button type="submit" className="w-full">
+        {isEditing ? 'Update Store' : 'Add Store'}
+      </Button>
+    </form>
+  );
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold">Store Setup</h2>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button onClick={() => {
-              setIsEditing(false);
-              setCurrentStore(null);
-            }}>
-              Add Store
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{isEditing ? 'Edit Store' : 'Add New Store'}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Store Name</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  defaultValue={currentStore?.name}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="city">City</Label>
-                <Input
-                  id="city"
-                  name="city"
-                  defaultValue={currentStore?.city}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="cogsTarget">COGS Target (%)</Label>
-                <Input
-                  id="cogsTarget"
-                  name="cogsTarget"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  defaultValue={currentStore?.cogsTarget}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="regional">Regional</Label>
-                <Select name="regional" defaultValue={currentStore?.regional?.toString()}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Regional" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[1, 2, 3, 4].map((num) => (
-                      <SelectItem key={num} value={num.toString()}>
-                        {num}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="area">Area</Label>
-                <Select name="area" defaultValue={currentStore?.area?.toString()}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Area" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 20 }, (_, i) => i + 1).map((num) => (
-                      <SelectItem key={num} value={num.toString()}>
-                        {num}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="totalCrew">Total Crew</Label>
-                <Input
-                  id="totalCrew"
-                  name="totalCrew"
-                  type="number"
-                  min="0"
-                  defaultValue={currentStore?.totalCrew}
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full">
-                {isEditing ? 'Update Store' : 'Add Store'}
+        <div className="flex gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-dashboard-muted h-4 w-4" />
+            <Input
+              placeholder="Search stores..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 bg-dashboard-dark border-dashboard-text/20"
+            />
+          </div>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button onClick={() => {
+                setIsEditing(false);
+                setCurrentStore(null);
+              }}>
+                Add Store
               </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent className="bg-dashboard-dark text-dashboard-text">
+              <StoreForm />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Store Name</TableHead>
-            <TableHead>City</TableHead>
-            <TableHead>COGS Target</TableHead>
-            <TableHead>Regional</TableHead>
-            <TableHead>Area</TableHead>
-            <TableHead>Total Crew</TableHead>
+            <TableHead onClick={() => handleSort('name')} className="cursor-pointer">
+              Store Name <ArrowUpDown className="inline h-4 w-4" />
+            </TableHead>
+            <TableHead onClick={() => handleSort('city')} className="cursor-pointer">
+              City <ArrowUpDown className="inline h-4 w-4" />
+            </TableHead>
+            <TableHead onClick={() => handleSort('cogsTarget')} className="cursor-pointer">
+              COGS Target <ArrowUpDown className="inline h-4 w-4" />
+            </TableHead>
+            <TableHead onClick={() => handleSort('regional')} className="cursor-pointer">
+              Regional <ArrowUpDown className="inline h-4 w-4" />
+            </TableHead>
+            <TableHead onClick={() => handleSort('area')} className="cursor-pointer">
+              Area <ArrowUpDown className="inline h-4 w-4" />
+            </TableHead>
+            <TableHead onClick={() => handleSort('totalCrew')} className="cursor-pointer">
+              Total Crew <ArrowUpDown className="inline h-4 w-4" />
+            </TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {stores.map((store) => (
+          {filteredAndSortedStores.map((store) => (
             <TableRow key={store.id}>
               <TableCell>{store.name}</TableCell>
               <TableCell>{store.city}</TableCell>
@@ -183,11 +257,8 @@ const SetupStore = () => {
                       Edit
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Edit Store</DialogTitle>
-                    </DialogHeader>
-                    {/* Form content is reused from above */}
+                  <DialogContent className="bg-dashboard-dark text-dashboard-text">
+                    <StoreForm />
                   </DialogContent>
                 </Dialog>
               </TableCell>
