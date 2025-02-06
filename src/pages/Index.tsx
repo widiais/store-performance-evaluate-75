@@ -4,6 +4,8 @@ import MonthlyChart from '@/components/MonthlyChart';
 import CustomerRequests from '@/components/CustomerRequests';
 import SidePanel from '@/components/SidePanel';
 import SetupStore from '@/components/SetupStore';
+import SetupChamps from '@/components/SetupChamps';
+import ChampsForm from '@/components/ChampsForm';
 import { useState } from 'react';
 import { Switch } from "@/components/ui/switch";
 
