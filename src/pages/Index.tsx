@@ -3,6 +3,7 @@ import MetricCard from '@/components/MetricCard';
 import MonthlyChart from '@/components/MonthlyChart';
 import CustomerRequests from '@/components/CustomerRequests';
 import SidePanel from '@/components/SidePanel';
+import SetupStore from '@/components/SetupStore';
 import { useState } from 'react';
 import { Switch } from "@/components/ui/switch";
 
@@ -169,6 +170,8 @@ const Index = () => {
             </div>
           </>
         );
+      case 'setupstore':
+        return <SetupStore />;
       default:
         return null;
     }
