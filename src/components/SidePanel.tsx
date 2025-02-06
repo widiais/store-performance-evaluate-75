@@ -1,6 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LayoutDashboard, Settings, Users, Database } from "lucide-react";
 import SetupStore from "./SetupStore";
+import * as Tabs2 from "@radix-ui/react-tabs";
 
 interface SidePanelProps {
   onTabChange: (value: string) => void;
@@ -18,55 +19,63 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
           onValueChange={onTabChange}
         >
           <TabsList className="flex flex-col h-auto bg-transparent text-white">
-            <TabsTrigger 
-              value="dashboard" 
-              className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
-            >
-              <LayoutDashboard className="w-4 h-4" />
-              Dashboard
-            </TabsTrigger>
-            <TabsTrigger 
-              value="users" 
-              className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
-            >
-              <Users className="w-4 h-4" />
-              Users
-            </TabsTrigger>
-            <TabsTrigger 
-              value="settings" 
-              className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
-            >
-              <Settings className="w-4 h-4" />
-              Settings
-            </TabsTrigger>
-            <TabsTrigger 
-              value="datasetup" 
-              className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
-            >
-              <Database className="w-4 h-4" />
-              Data Setup
-            </TabsTrigger>
+            <Tabs2.List asChild>
+              <div className="flex flex-col gap-1">
+                <TabsTrigger 
+                  value="dashboard" 
+                  className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  Dashboard
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="users" 
+                  className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                >
+                  <Users className="w-4 h-4" />
+                  Users
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="settings" 
+                  className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                >
+                  <Settings className="w-4 h-4" />
+                  Settings
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="datasetup" 
+                  className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                >
+                  <Database className="w-4 h-4" />
+                  Data Setup
+                </TabsTrigger>
+              </div>
+            </Tabs2.List>
           </TabsList>
           <TabsContent value="datasetup">
             <div className="space-y-2">
-              <TabsTrigger 
-                value="setupstore" 
-                className="w-full justify-start gap-2 pl-6 data-[state=active]:bg-white/10 data-[state=active]:text-white"
-              >
-                Setup Store
-              </TabsTrigger>
-              <TabsTrigger 
-                value="setupchamps" 
-                className="w-full justify-start gap-2 pl-6 data-[state=active]:bg-white/10 data-[state=active]:text-white"
-              >
-                Setup CHAMPS
-              </TabsTrigger>
-              <TabsTrigger 
-                value="setupesp" 
-                className="w-full justify-start gap-2 pl-6 data-[state=active]:bg-white/10 data-[state=active]:text-white"
-              >
-                Setup ESP
-              </TabsTrigger>
+              <Tabs2.List asChild>
+                <div className="flex flex-col gap-1">
+                  <TabsTrigger 
+                    value="setupstore" 
+                    className="w-full justify-start gap-2 pl-6 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                  >
+                    Setup Store
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="setupchamps" 
+                    className="w-full justify-start gap-2 pl-6 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                  >
+                    Setup CHAMPS
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="setupesp" 
+                    className="w-full justify-start gap-2 pl-6 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                  >
+                    Setup ESP
+                  </TabsTrigger>
+                </div>
+              </Tabs2.List>
             </div>
           </TabsContent>
         </Tabs>
