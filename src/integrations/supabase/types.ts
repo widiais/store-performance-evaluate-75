@@ -9,7 +9,149 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      champs_evaluation_answers: {
+        Row: {
+          answer: boolean
+          created_at: string
+          evaluation_id: number | null
+          id: number
+          question_id: number | null
+          score: number
+          updated_at: string
+        }
+        Insert: {
+          answer: boolean
+          created_at?: string
+          evaluation_id?: number | null
+          id?: number
+          question_id?: number | null
+          score: number
+          updated_at?: string
+        }
+        Update: {
+          answer?: boolean
+          created_at?: string
+          evaluation_id?: number | null
+          id?: number
+          question_id?: number | null
+          score?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "champs_evaluation_answers_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "champs_evaluations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "champs_evaluation_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "champs_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      champs_evaluations: {
+        Row: {
+          created_at: string
+          evaluation_date: string
+          id: number
+          pic: string
+          store_id: number | null
+          total_score: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          evaluation_date: string
+          id?: number
+          pic: string
+          store_id?: number | null
+          total_score?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          evaluation_date?: string
+          id?: number
+          pic?: string
+          store_id?: number | null
+          total_score?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "champs_evaluations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      champs_questions: {
+        Row: {
+          created_at: string
+          id: number
+          points: number
+          question: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          points?: number
+          question: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          points?: number
+          question?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      stores: {
+        Row: {
+          area: number | null
+          city: string
+          cogs_target: number | null
+          created_at: string
+          id: number
+          name: string
+          regional: number | null
+          total_crew: number | null
+          updated_at: string
+        }
+        Insert: {
+          area?: number | null
+          city: string
+          cogs_target?: number | null
+          created_at?: string
+          id?: number
+          name: string
+          regional?: number | null
+          total_crew?: number | null
+          updated_at?: string
+        }
+        Update: {
+          area?: number | null
+          city?: string
+          cogs_target?: number | null
+          created_at?: string
+          id?: number
+          name?: string
+          regional?: number | null
+          total_crew?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

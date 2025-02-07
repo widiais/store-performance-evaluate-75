@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+
+import { useState, useMemo, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,20 +8,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 import { ArrowUpDown, Search } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface Store {
   id: number;
   name: string;
   city: string;
-  cogsTarget: number;
+  cogs_target: number;
   regional: number;
   area: number;
-  totalCrew: number;
+  total_crew: number;
 }
 
 const SetupStore = () => {
   const { toast } = useToast();
-  const [stores, setStores] = useState<Store[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [currentStore, setCurrentStore] = useState<Store | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,6 +30,78 @@ const SetupStore = () => {
     key: keyof Store | null;
     direction: "ascending" | "descending";
   }>({ key: null, direction: "ascending" });
+
+  const queryClient = useQueryClient();
+
+  // Fetch stores
+  const { data: stores = [], isLoading } = useQuery({
+    queryKey: ['stores'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('stores')
+        .select('*');
+      
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Add store mutation
+  const addStoreMutation = useMutation({
+    mutationFn: async (newStore: Omit<Store, 'id'>) => {
+      const { data, error } = await supabase
+        .from('stores')
+        .insert([newStore])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['stores'] });
+      toast({
+        title: "Store Added",
+        description: "New store has been successfully added.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to add store: " + error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update store mutation
+  const updateStoreMutation = useMutation({
+    mutationFn: async (store: Store) => {
+      const { data, error } = await supabase
+        .from('stores')
+        .update(store)
+        .eq('id', store.id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['stores'] });
+      toast({
+        title: "Store Updated",
+        description: "Store information has been successfully updated.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update store: " + error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleSort = (key: keyof Store) => {
     setSortConfig({
@@ -42,7 +116,7 @@ const SetupStore = () => {
   const filteredAndSortedStores = useMemo(() => {
     let filtered = stores.filter((store) =>
       Object.values(store).some((value) =>
-        value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+        value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
       )
     );
 
@@ -61,32 +135,24 @@ const SetupStore = () => {
     return filtered;
   }, [stores, searchTerm, sortConfig]);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const newStore = {
-      id: currentStore?.id || stores.length + 1,
+    const storeData = {
       name: formData.get('name') as string,
       city: formData.get('city') as string,
-      cogsTarget: parseFloat(formData.get('cogsTarget') as string),
+      cogs_target: parseFloat(formData.get('cogsTarget') as string),
       regional: parseInt(formData.get('regional') as string),
       area: parseInt(formData.get('area') as string),
-      totalCrew: parseInt(formData.get('totalCrew') as string),
+      total_crew: parseInt(formData.get('totalCrew') as string),
     };
 
-    if (isEditing) {
-      setStores(stores.map(store => store.id === currentStore?.id ? newStore : store));
-      toast({
-        title: "Store Updated",
-        description: "Store information has been successfully updated.",
-      });
+    if (isEditing && currentStore) {
+      await updateStoreMutation.mutateAsync({ ...storeData, id: currentStore.id });
     } else {
-      setStores([...stores, newStore]);
-      toast({
-        title: "Store Added",
-        description: "New store has been successfully added.",
-      });
+      await addStoreMutation.mutateAsync(storeData);
     }
+    
     setCurrentStore(null);
   };
 
@@ -186,6 +252,10 @@ const SetupStore = () => {
       </Button>
     </form>
   );
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="p-6">

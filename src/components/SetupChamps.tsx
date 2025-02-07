@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -6,53 +7,136 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Plus, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface ChampQuestion {
   id: number;
   question: string;
-  point: number;
+  points: number;
 }
 
 const SetupChamps = () => {
   const { toast } = useToast();
   const [questions, setQuestions] = useState<ChampQuestion[]>([]);
   const [lastEdit, setLastEdit] = useState<Date>(new Date());
+  const queryClient = useQueryClient();
 
-  const addQuestion = () => {
-    const newQuestion: ChampQuestion = {
-      id: questions.length + 1,
+  // Fetch questions
+  const { data: fetchedQuestions = [], isLoading } = useQuery({
+    queryKey: ['champs-questions'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('champs_questions')
+        .select('*')
+        .order('id');
+      
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  useEffect(() => {
+    if (fetchedQuestions) {
+      setQuestions(fetchedQuestions);
+    }
+  }, [fetchedQuestions]);
+
+  // Add question mutation
+  const addQuestionMutation = useMutation({
+    mutationFn: async (question: Omit<ChampQuestion, 'id'>) => {
+      const { data, error } = await supabase
+        .from('champs_questions')
+        .insert([question])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['champs-questions'] });
+      toast({
+        title: "Question Added",
+        description: "New question has been successfully added.",
+      });
+    },
+  });
+
+  // Update question mutation
+  const updateQuestionMutation = useMutation({
+    mutationFn: async (question: ChampQuestion) => {
+      const { data, error } = await supabase
+        .from('champs_questions')
+        .update({ question: question.question, points: question.points })
+        .eq('id', question.id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['champs-questions'] });
+      toast({
+        title: "Question Updated",
+        description: "Question has been successfully updated.",
+      });
+    },
+  });
+
+  // Delete question mutation
+  const deleteQuestionMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const { error } = await supabase
+        .from('champs_questions')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['champs-questions'] });
+      toast({
+        title: "Question Deleted",
+        description: "The question has been removed from the CHAMPS form.",
+      });
+    },
+  });
+
+  const addQuestion = async () => {
+    const newQuestion = {
       question: "",
-      point: 0,
+      points: 0,
     };
-    setQuestions([...questions, newQuestion]);
+    await addQuestionMutation.mutateAsync(newQuestion);
   };
 
-  const updateQuestion = (id: number, field: keyof ChampQuestion, value: string | number) => {
-    setQuestions(questions.map(q => 
-      q.id === id ? { ...q, [field]: value } : q
-    ));
+  const updateQuestion = async (id: number, field: keyof ChampQuestion, value: string | number) => {
+    const question = questions.find(q => q.id === id);
+    if (!question) return;
+
+    const updatedQuestion = {
+      ...question,
+      [field]: field === 'points' ? parseInt(value.toString()) : value
+    };
+
+    await updateQuestionMutation.mutateAsync(updatedQuestion);
     setLastEdit(new Date());
   };
 
-  const deleteQuestion = (id: number) => {
-    setQuestions(questions.filter(q => q.id !== id));
+  const deleteQuestion = async (id: number) => {
+    await deleteQuestionMutation.mutateAsync(id);
     setLastEdit(new Date());
-    toast({
-      title: "Question Deleted",
-      description: "The question has been removed from the CHAMPS form.",
-    });
   };
 
   const getTotalPoints = () => {
-    return questions.reduce((sum, q) => sum + q.point, 0);
+    return questions.reduce((sum, q) => sum + q.points, 0);
   };
 
-  const handleSave = () => {
-    toast({
-      title: "CHAMPS Form Saved",
-      description: "Your changes have been saved successfully.",
-    });
-  };
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="p-6">
@@ -60,13 +144,10 @@ const SetupChamps = () => {
         <div>
           <h2 className="text-2xl font-semibold mb-2">Setup CHAMPS Form</h2>
           <div className="flex gap-4 text-dashboard-muted">
-            <span>Total CHAMP Point: {getTotalPoints()}</span>
+            <span>Total CHAMP Points: {getTotalPoints()}</span>
             <span>Last Edit: {format(lastEdit, "dd/MM/yyyy, HH:mm")}</span>
           </div>
         </div>
-        <Button onClick={handleSave} className="bg-green-500 hover:bg-green-600">
-          Save
-        </Button>
       </div>
 
       <div className="glass-card p-6">
@@ -75,7 +156,7 @@ const SetupChamps = () => {
             <TableRow>
               <TableHead className="w-20">No</TableHead>
               <TableHead>Question</TableHead>
-              <TableHead className="w-32">Point</TableHead>
+              <TableHead className="w-32">Points</TableHead>
               <TableHead className="w-24">Action</TableHead>
             </TableRow>
           </TableHeader>
@@ -94,8 +175,8 @@ const SetupChamps = () => {
                 <TableCell>
                   <Input
                     type="number"
-                    value={q.point}
-                    onChange={(e) => updateQuestion(q.id, 'point', parseInt(e.target.value) || 0)}
+                    value={q.points}
+                    onChange={(e) => updateQuestion(q.id, 'points', parseInt(e.target.value) || 0)}
                     className="bg-dashboard-dark border-dashboard-text/20"
                     min={0}
                   />
