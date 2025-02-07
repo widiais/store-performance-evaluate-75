@@ -3,9 +3,8 @@ import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Save } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -18,7 +17,8 @@ interface ChampQuestion {
 
 const SetupChamps = () => {
   const { toast } = useToast();
-  const [questions, setQuestions] = useState<ChampQuestion[]>([]);
+  const [localQuestions, setLocalQuestions] = useState<ChampQuestion[]>([]);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastEdit, setLastEdit] = useState<Date>(new Date());
   const queryClient = useQueryClient();
 
@@ -37,101 +37,77 @@ const SetupChamps = () => {
   });
 
   useEffect(() => {
-    if (fetchedQuestions) {
-      setQuestions(fetchedQuestions);
+    if (fetchedQuestions && !hasUnsavedChanges) {
+      setLocalQuestions(fetchedQuestions);
     }
-  }, [fetchedQuestions]);
+  }, [fetchedQuestions, hasUnsavedChanges]);
 
-  // Add question mutation
-  const addQuestionMutation = useMutation({
-    mutationFn: async (question: Omit<ChampQuestion, 'id'>) => {
-      const { data, error } = await supabase
-        .from('champs_questions')
-        .insert([question])
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['champs-questions'] });
-      toast({
-        title: "Question Added",
-        description: "New question has been successfully added.",
-      });
-    },
-  });
-
-  // Update question mutation
-  const updateQuestionMutation = useMutation({
-    mutationFn: async (question: ChampQuestion) => {
-      const { data, error } = await supabase
-        .from('champs_questions')
-        .update({ question: question.question, points: question.points })
-        .eq('id', question.id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['champs-questions'] });
-      toast({
-        title: "Question Updated",
-        description: "Question has been successfully updated.",
-      });
-    },
-  });
-
-  // Delete question mutation
-  const deleteQuestionMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const { error } = await supabase
+  // Save all questions mutation
+  const saveQuestionsMutation = useMutation({
+    mutationFn: async (questions: ChampQuestion[]) => {
+      // Delete all existing questions
+      await supabase
         .from('champs_questions')
         .delete()
-        .eq('id', id);
+        .not('id', 'in', questions.filter(q => q.id).map(q => q.id));
+      
+      // Upsert all questions
+      const { data, error } = await supabase
+        .from('champs_questions')
+        .upsert(questions)
+        .select();
       
       if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['champs-questions'] });
+      setHasUnsavedChanges(false);
       toast({
-        title: "Question Deleted",
-        description: "The question has been removed from the CHAMPS form.",
+        title: "Changes Saved",
+        description: "All changes have been successfully saved.",
       });
     },
   });
 
-  const addQuestion = async () => {
+  const addQuestion = () => {
+    const maxId = Math.max(0, ...localQuestions.map(q => q.id || 0));
     const newQuestion = {
+      id: maxId + 1,
       question: "",
       points: 0,
     };
-    await addQuestionMutation.mutateAsync(newQuestion);
+    setLocalQuestions([...localQuestions, newQuestion]);
+    setHasUnsavedChanges(true);
   };
 
-  const updateQuestion = async (id: number, field: keyof ChampQuestion, value: string | number) => {
-    const question = questions.find(q => q.id === id);
-    if (!question) return;
-
-    const updatedQuestion = {
-      ...question,
-      [field]: field === 'points' ? parseInt(value.toString()) : value
-    };
-
-    await updateQuestionMutation.mutateAsync(updatedQuestion);
+  const updateQuestion = (id: number, field: keyof ChampQuestion, value: string | number) => {
+    const updatedQuestions = localQuestions.map(q => {
+      if (q.id === id) {
+        return {
+          ...q,
+          [field]: field === 'points' ? parseInt(value.toString()) : value
+        };
+      }
+      return q;
+    });
+    setLocalQuestions(updatedQuestions);
+    setHasUnsavedChanges(true);
     setLastEdit(new Date());
   };
 
-  const deleteQuestion = async (id: number) => {
-    await deleteQuestionMutation.mutateAsync(id);
+  const deleteQuestion = (id: number) => {
+    setLocalQuestions(localQuestions.filter(q => q.id !== id));
+    setHasUnsavedChanges(true);
     setLastEdit(new Date());
+  };
+
+  const saveChanges = async () => {
+    await saveQuestionsMutation.mutateAsync(localQuestions);
   };
 
   const getTotalPoints = () => {
-    return questions.reduce((sum, q) => sum + q.points, 0);
+    return localQuestions.reduce((sum, q) => sum + q.points, 0);
   };
 
   if (isLoading) {
@@ -161,7 +137,7 @@ const SetupChamps = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {questions.map((q, index) => (
+            {localQuestions.map((q, index) => (
               <TableRow key={q.id}>
                 <TableCell>{index + 1}</TableCell>
                 <TableCell>
@@ -195,13 +171,24 @@ const SetupChamps = () => {
           </TableBody>
         </Table>
 
-        <Button 
-          onClick={addQuestion}
-          className="mt-4 bg-green-500 hover:bg-green-600"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Question
-        </Button>
+        <div className="flex gap-2 mt-4">
+          <Button 
+            onClick={addQuestion}
+            className="bg-green-500 hover:bg-green-600"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Question
+          </Button>
+
+          <Button
+            onClick={saveChanges}
+            className="bg-blue-500 hover:bg-blue-600"
+            disabled={!hasUnsavedChanges}
+          >
+            <Save className="h-4 w-4 mr-2" />
+            Save Changes
+          </Button>
+        </div>
       </div>
     </div>
   );
