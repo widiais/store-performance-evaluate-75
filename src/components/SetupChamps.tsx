@@ -28,7 +28,7 @@ const SetupChamps = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('champs_questions')
-        .select('*')
+        .select('id, question, points')
         .order('id');
       
       if (error) throw error;
@@ -61,11 +61,17 @@ const SetupChamps = () => {
           .neq('id', -1); // This will delete all rows
       }
       
-      // Then upsert all current questions
+      // Then upsert all current questions with only the necessary fields
+      const questionsToUpsert = questions.map(({ id, question, points }) => ({
+        id,
+        question,
+        points,
+      }));
+
       const { data, error } = await supabase
         .from('champs_questions')
-        .upsert(questions)
-        .select();
+        .upsert(questionsToUpsert)
+        .select('id, question, points');
       
       if (error) throw error;
       return data;
