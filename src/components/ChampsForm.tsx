@@ -40,6 +40,7 @@ const ChampsForm = () => {
   const [pic, setPic] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [questions, setQuestions] = useState<QuestionState[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch questions
   const { data: fetchedQuestions = [] } = useQuery({
@@ -104,13 +105,68 @@ const ChampsForm = () => {
 
   const scores = calculateScores();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would save the evaluation to the database
-    toast({
-      title: "CHAMPS Form Submitted",
-      description: "Your evaluation has been saved successfully.",
-    });
+    if (!selectedStore || !date || !pic) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Insert evaluation
+      const { data: evalData, error: evalError } = await supabase
+        .from('champs_evaluations')
+        .insert({
+          store_id: parseInt(selectedStore),
+          evaluation_date: date,
+          pic: pic,
+          total_score: parseFloat(scores.kpiScore),
+          status: 'submitted'
+        })
+        .select()
+        .single();
+
+      if (evalError) throw evalError;
+
+      // Insert answers
+      const answers = questions.map(q => ({
+        evaluation_id: evalData.id,
+        question_id: q.id,
+        answer: q.status !== 'cross',
+        score: q.status === 'exclude' ? 0 : q.points
+      }));
+
+      const { error: answersError } = await supabase
+        .from('champs_evaluation_answers')
+        .insert(answers);
+
+      if (answersError) throw answersError;
+
+      toast({
+        title: "CHAMPS Form Submitted",
+        description: "Your evaluation has been saved successfully.",
+      });
+
+      // Reset form
+      setSelectedStore("");
+      setDate(format(new Date(), "yyyy-MM-dd"));
+      setPic("");
+      setQuestions(questions.map(q => ({ ...q, status: 'none' })));
+    } catch (error) {
+      console.error('Error submitting evaluation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to submit evaluation. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

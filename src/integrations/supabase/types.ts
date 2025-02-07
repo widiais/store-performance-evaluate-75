@@ -42,6 +42,13 @@ export type Database = {
             foreignKeyName: "champs_evaluation_answers_evaluation_id_fkey"
             columns: ["evaluation_id"]
             isOneToOne: false
+            referencedRelation: "champs_evaluation_report"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "champs_evaluation_answers_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
             referencedRelation: "champs_evaluations"
             referencedColumns: ["id"]
           },
@@ -60,6 +67,7 @@ export type Database = {
           evaluation_date: string
           id: number
           pic: string
+          status: string
           store_id: number | null
           total_score: number
           updated_at: string
@@ -69,6 +77,7 @@ export type Database = {
           evaluation_date: string
           id?: number
           pic: string
+          status?: string
           store_id?: number | null
           total_score?: number
           updated_at?: string
@@ -78,6 +87,7 @@ export type Database = {
           evaluation_date?: string
           id?: number
           pic?: string
+          status?: string
           store_id?: number | null
           total_score?: number
           updated_at?: string
@@ -154,7 +164,18 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      champs_evaluation_report: {
+        Row: {
+          evaluation_date: string | null
+          id: number | null
+          pic: string | null
+          status: string | null
+          store_city: string | null
+          store_name: string | null
+          total_score: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never

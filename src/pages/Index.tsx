@@ -8,6 +8,7 @@ import SetupChamps from '@/components/SetupChamps';
 import ChampsForm from '@/components/ChampsForm';
 import { useState } from 'react';
 import { Switch } from "@/components/ui/switch";
+import ChampReport from '@/components/ChampReport';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -178,6 +179,8 @@ const Index = () => {
         return <SetupChamps />;
       case 'champsform':
         return <ChampsForm />;
+      case 'champreport':
+        return <ChampReport />;
       default:
         return null;
     }
