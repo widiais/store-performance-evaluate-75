@@ -45,13 +45,23 @@ const SetupChamps = () => {
   // Save all questions mutation
   const saveQuestionsMutation = useMutation({
     mutationFn: async (questions: ChampQuestion[]) => {
-      // Delete all existing questions
-      await supabase
-        .from('champs_questions')
-        .delete()
-        .not('id', 'in', questions.filter(q => q.id).map(q => q.id));
+      const existingIds = questions.filter(q => q.id).map(q => q.id);
       
-      // Upsert all questions
+      // First delete questions that are not in the current set
+      if (existingIds.length > 0) {
+        await supabase
+          .from('champs_questions')
+          .delete()
+          .not('id', 'in', `(${existingIds.join(',')})`);
+      } else {
+        // If no existing IDs, delete all questions
+        await supabase
+          .from('champs_questions')
+          .delete()
+          .neq('id', -1); // This will delete all rows
+      }
+      
+      // Then upsert all current questions
       const { data, error } = await supabase
         .from('champs_questions')
         .upsert(questions)
