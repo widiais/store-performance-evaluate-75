@@ -19,6 +19,8 @@ interface Store {
   regional: number;
   area: number;
   total_crew: number;
+  created_at: string;
+  updated_at: string;
 }
 
 const SetupStore = () => {
@@ -48,7 +50,7 @@ const SetupStore = () => {
 
   // Add store mutation
   const addStoreMutation = useMutation({
-    mutationFn: async (newStore: Omit<Store, 'id'>) => {
+    mutationFn: async (newStore: Omit<Store, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('stores')
         .insert([newStore])
@@ -141,14 +143,14 @@ const SetupStore = () => {
     const storeData = {
       name: formData.get('name') as string,
       city: formData.get('city') as string,
-      cogs_target: parseFloat(formData.get('cogsTarget') as string),
+      cogs_target: parseFloat(formData.get('cogs_target') as string),
       regional: parseInt(formData.get('regional') as string),
       area: parseInt(formData.get('area') as string),
-      total_crew: parseInt(formData.get('totalCrew') as string),
+      total_crew: parseInt(formData.get('total_crew') as string),
     };
 
     if (isEditing && currentStore) {
-      await updateStoreMutation.mutateAsync({ ...storeData, id: currentStore.id });
+      await updateStoreMutation.mutateAsync({ ...storeData, id: currentStore.id, created_at: currentStore.created_at, updated_at: currentStore.updated_at });
     } else {
       await addStoreMutation.mutateAsync(storeData);
     }
@@ -191,15 +193,15 @@ const SetupStore = () => {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="cogsTarget">COGS Target (%)</Label>
+          <Label htmlFor="cogs_target">COGS Target (%)</Label>
           <Input
-            id="cogsTarget"
-            name="cogsTarget"
+            id="cogs_target"
+            name="cogs_target"
             type="number"
             step="0.01"
             min="0"
             max="100"
-            defaultValue={currentStore?.cogsTarget}
+            defaultValue={currentStore?.cogs_target}
             className="bg-dashboard-dark border-dashboard-text/20"
             required
           />
@@ -235,13 +237,13 @@ const SetupStore = () => {
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="totalCrew">Total Crew</Label>
+          <Label htmlFor="total_crew">Total Crew</Label>
           <Input
-            id="totalCrew"
-            name="totalCrew"
+            id="total_crew"
+            name="total_crew"
             type="number"
             min="0"
-            defaultValue={currentStore?.totalCrew}
+            defaultValue={currentStore?.total_crew}
             className="bg-dashboard-dark border-dashboard-text/20"
             required
           />
@@ -296,7 +298,7 @@ const SetupStore = () => {
             <TableHead onClick={() => handleSort('city')} className="cursor-pointer">
               City <ArrowUpDown className="inline h-4 w-4" />
             </TableHead>
-            <TableHead onClick={() => handleSort('cogsTarget')} className="cursor-pointer">
+            <TableHead onClick={() => handleSort('cogs_target')} className="cursor-pointer">
               COGS Target <ArrowUpDown className="inline h-4 w-4" />
             </TableHead>
             <TableHead onClick={() => handleSort('regional')} className="cursor-pointer">
@@ -305,7 +307,7 @@ const SetupStore = () => {
             <TableHead onClick={() => handleSort('area')} className="cursor-pointer">
               Area <ArrowUpDown className="inline h-4 w-4" />
             </TableHead>
-            <TableHead onClick={() => handleSort('totalCrew')} className="cursor-pointer">
+            <TableHead onClick={() => handleSort('total_crew')} className="cursor-pointer">
               Total Crew <ArrowUpDown className="inline h-4 w-4" />
             </TableHead>
             <TableHead>Actions</TableHead>
@@ -316,10 +318,10 @@ const SetupStore = () => {
             <TableRow key={store.id}>
               <TableCell>{store.name}</TableCell>
               <TableCell>{store.city}</TableCell>
-              <TableCell>{store.cogsTarget}%</TableCell>
+              <TableCell>{store.cogs_target}%</TableCell>
               <TableCell>{store.regional}</TableCell>
               <TableCell>{store.area}</TableCell>
-              <TableCell>{store.totalCrew}</TableCell>
+              <TableCell>{store.total_crew}</TableCell>
               <TableCell>
                 <Dialog>
                   <DialogTrigger asChild>
