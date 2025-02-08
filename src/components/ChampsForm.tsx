@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,8 +15,21 @@ import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { X, Ban } from "lucide-react";
-import debounce from 'lodash/debounce';
 import filter from 'lodash/filter';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Check } from "lucide-react"
+import { cn } from "@/lib/utils";
 
 interface Store {
   id: number;
@@ -35,12 +49,13 @@ interface QuestionState extends Question {
 
 const ChampsForm = () => {
   const { toast } = useToast();
-  const [selectedStore, setSelectedStore] = useState<string>("");
+  const [open, setOpen] = useState(false);
+  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [date, setDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [pic, setPic] = useState<string>("");
-  const [searchTerm, setSearchTerm] = useState<string>("");
   const [questions, setQuestions] = useState<QuestionState[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
 
   // Fetch stores from the database
   const { data: stores = [] } = useQuery({
@@ -74,8 +89,8 @@ const ChampsForm = () => {
   }, [fetchedQuestions]);
 
   const filteredStores = filter(stores, store =>
-    store.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    store.city.toLowerCase().includes(searchTerm.toLowerCase())
+    store.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+    store.city.toLowerCase().includes(searchValue.toLowerCase())
   );
 
   const handleQuestionStatusChange = (questionId: number, status: 'none' | 'cross' | 'exclude') => {
@@ -129,7 +144,7 @@ const ChampsForm = () => {
       const { data: evalData, error: evalError } = await supabase
         .from('champs_evaluations')
         .insert({
-          store_id: parseInt(selectedStore),
+          store_id: selectedStore.id,
           evaluation_date: date,
           pic: pic,
           total_score: parseFloat(scores.kpiScore),
@@ -160,7 +175,7 @@ const ChampsForm = () => {
       });
 
       // Reset form
-      setSelectedStore("");
+      setSelectedStore(null);
       setDate(format(new Date(), "yyyy-MM-dd"));
       setPic("");
       setQuestions(questions.map(q => ({ ...q, status: 'none' })));
@@ -176,11 +191,6 @@ const ChampsForm = () => {
     }
   };
 
-  // Debounced search handler
-  const debouncedSearch = debounce((value: string) => {
-    setSearchTerm(value);
-  }, 300);
-
   return (
     <div className="p-6">
       <h2 className="text-2xl font-semibold mb-6">CHAMPS Evaluation Form</h2>
@@ -188,30 +198,55 @@ const ChampsForm = () => {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="glass-card p-6 space-y-4">
           <div>
-            <Label htmlFor="store-search">Store</Label>
-            <div className="relative">
-              <Input
-                id="store-search"
-                placeholder="Search store..."
-                onChange={(e) => debouncedSearch(e.target.value)}
-                className="bg-dashboard-dark border-dashboard-text/20 mb-2"
-              />
-              <Select
-                value={selectedStore}
-                onValueChange={setSelectedStore}
-              >
-                <SelectTrigger className="bg-dashboard-dark border-dashboard-text/20">
-                  <SelectValue placeholder="Select store" />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredStores.map((store) => (
-                    <SelectItem key={store.id} value={store.id.toString()}>
-                      {store.name} - {store.city}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Label htmlFor="store">Store</Label>
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={open}
+                  className="w-full justify-between bg-dashboard-dark border-dashboard-text/20"
+                >
+                  {selectedStore ? `${selectedStore.name} - ${selectedStore.city}` : "Select store..."}
+                  <Check
+                    className={cn(
+                      "ml-2 h-4 w-4",
+                      selectedStore ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0">
+                <Command>
+                  <CommandInput 
+                    placeholder="Search store..." 
+                    value={searchValue}
+                    onValueChange={setSearchValue}
+                  />
+                  <CommandEmpty>No store found.</CommandEmpty>
+                  <CommandGroup>
+                    {filteredStores.map((store) => (
+                      <CommandItem
+                        key={store.id}
+                        value={`${store.name} ${store.city}`}
+                        onSelect={() => {
+                          setSelectedStore(store);
+                          setOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            selectedStore?.id === store.id ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {store.name} - {store.city}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div>
@@ -308,3 +343,4 @@ const ChampsForm = () => {
 };
 
 export default ChampsForm;
+
