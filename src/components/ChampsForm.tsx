@@ -49,7 +49,6 @@ const ChampsForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
-  // Fetch stores from the database with proper error handling and default value
   const { data: stores = [] } = useQuery({
     queryKey: ['stores'],
     queryFn: async () => {
@@ -62,7 +61,6 @@ const ChampsForm = () => {
     },
   });
 
-  // Fetch questions with proper error handling and default value
   const { data: fetchedQuestions = [] } = useQuery({
     queryKey: ['champs-questions'],
     queryFn: async () => {
@@ -82,8 +80,7 @@ const ChampsForm = () => {
     }
   }, [fetchedQuestions]);
 
-  // Filter stores with null check
-  const filteredStores = filter(stores || [], store =>
+  const filteredStores = filter(stores, store =>
     store.name.toLowerCase().includes(searchValue.toLowerCase()) ||
     store.city.toLowerCase().includes(searchValue.toLowerCase())
   );
@@ -183,6 +180,16 @@ const ChampsForm = () => {
     }
   };
 
+  const handleStoreSelect = (storeName: string) => {
+    const store = stores.find(s => 
+      `${s.name} ${s.city}`.toLowerCase() === storeName.toLowerCase()
+    );
+    if (store) {
+      setSelectedStore(store);
+      setOpen(false);
+    }
+  };
+
   return (
     <div className="p-6">
       <h2 className="text-2xl font-semibold mb-6">CHAMPS Evaluation Form</h2>
@@ -209,9 +216,11 @@ const ChampsForm = () => {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-full p-0">
-                <Command value={searchValue} onValueChange={setSearchValue}>
+                <Command shouldFilter={false}>
                   <CommandInput 
-                    placeholder="Search store..." 
+                    placeholder="Search store..."
+                    value={searchValue}
+                    onValueChange={setSearchValue}
                     className="h-9"
                   />
                   <CommandEmpty>No store found.</CommandEmpty>
@@ -220,10 +229,7 @@ const ChampsForm = () => {
                       <CommandItem
                         key={store.id}
                         value={`${store.name} ${store.city}`}
-                        onSelect={() => {
-                          setSelectedStore(store);
-                          setOpen(false);
-                        }}
+                        onSelect={handleStoreSelect}
                         className="cursor-pointer"
                       >
                         <Check
@@ -335,3 +341,4 @@ const ChampsForm = () => {
 };
 
 export default ChampsForm;
+
