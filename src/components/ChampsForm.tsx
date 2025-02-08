@@ -7,7 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { X, Ban } from "lucide-react";
+import { X, Ban, Check } from "lucide-react";
 import filter from 'lodash/filter';
 import {
   Command,
@@ -21,7 +21,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { Check } from "lucide-react"
 import { cn } from "@/lib/utils";
 
 interface Store {
@@ -59,7 +58,7 @@ const ChampsForm = () => {
         .select('id, name, city');
       
       if (error) throw error;
-      return data as Store[] || [];
+      return (data || []) as Store[];
     },
   });
 
@@ -83,10 +82,10 @@ const ChampsForm = () => {
     }
   }, [fetchedQuestions]);
 
-  const filteredStores = filter(stores, store =>
+  const filteredStores = stores ? filter(stores, store =>
     store.name.toLowerCase().includes(searchValue.toLowerCase()) ||
     store.city.toLowerCase().includes(searchValue.toLowerCase())
-  );
+  ) : [];
 
   const handleQuestionStatusChange = (questionId: number, status: 'none' | 'cross' | 'exclude') => {
     setQuestions(questions.map(q => {
@@ -220,7 +219,7 @@ const ChampsForm = () => {
                   />
                   <CommandEmpty>No store found.</CommandEmpty>
                   <CommandGroup>
-                    {(filteredStores || []).map((store) => (
+                    {filteredStores.map((store) => (
                       <CommandItem
                         key={store.id}
                         value={`${store.name} ${store.city}`}
@@ -338,4 +337,3 @@ const ChampsForm = () => {
 };
 
 export default ChampsForm;
-
