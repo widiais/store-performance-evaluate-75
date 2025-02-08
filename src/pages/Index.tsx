@@ -7,67 +7,14 @@ import SidePanel from '@/components/SidePanel';
 import SetupStore from '@/components/SetupStore';
 import SetupChamps from '@/components/SetupChamps';
 import ChampsForm from '@/components/ChampsForm';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Switch } from "@/components/ui/switch";
 import ChampReport from '@/components/ChampReport';
-import { supabase } from '@/integrations/supabase/client';
-import { Session } from '@supabase/supabase-js';
-import { Button } from '@/components/ui/button';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [session, setSession] = useState<Session | null>(null);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const handleLogin = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin
-      }
-    });
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-  };
-
-  const renderAuthButton = () => {
-    if (session) {
-      return (
-        <Button onClick={handleLogout} variant="outline" className="absolute top-4 right-4">
-          Logout
-        </Button>
-      );
-    }
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <h1 className="text-2xl font-bold mb-4">Welcome to the Dashboard</h1>
-        <Button onClick={handleLogin}>
-          Sign in with Google
-        </Button>
-      </div>
-    );
-  };
 
   const renderContent = () => {
-    if (!session) {
-      return renderAuthButton();
-    }
-
     switch (activeTab) {
       case 'dashboard':
         return (
@@ -242,15 +189,10 @@ const Index = () => {
 
   return (
     <div className="min-h-screen">
-      {session && <SidePanel onTabChange={setActiveTab} />}
-      <div className={session ? "pl-64" : ""}>
+      <SidePanel onTabChange={setActiveTab} />
+      <div className="pl-64">
         <div className="p-8">
           {renderContent()}
-          {session && (
-            <Button onClick={handleLogout} variant="outline" className="absolute top-4 right-4">
-              Logout
-            </Button>
-          )}
         </div>
       </div>
     </div>
