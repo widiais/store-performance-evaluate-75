@@ -4,13 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -66,7 +59,7 @@ const ChampsForm = () => {
         .select('id, name, city');
       
       if (error) throw error;
-      return data || [];
+      return data as Store[] || [];
     },
   });
 
@@ -80,12 +73,14 @@ const ChampsForm = () => {
         .order('id');
       
       if (error) throw error;
-      return data.map(q => ({ ...q, status: 'none' as const }));
+      return (data || []).map(q => ({ ...q, status: 'none' as const }));
     },
   });
 
   useEffect(() => {
-    setQuestions(fetchedQuestions);
+    if (fetchedQuestions.length > 0) {
+      setQuestions(fetchedQuestions);
+    }
   }, [fetchedQuestions]);
 
   const filteredStores = filter(stores, store =>
@@ -225,7 +220,7 @@ const ChampsForm = () => {
                   />
                   <CommandEmpty>No store found.</CommandEmpty>
                   <CommandGroup>
-                    {filteredStores.map((store) => (
+                    {(filteredStores || []).map((store) => (
                       <CommandItem
                         key={store.id}
                         value={`${store.name} ${store.city}`}
