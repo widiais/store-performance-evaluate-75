@@ -15,12 +15,12 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
-} from "@/components/ui/command"
+} from "@/components/ui/command";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
+} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 interface Store {
@@ -49,7 +49,7 @@ const ChampsForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
-  // Fetch stores from the database
+  // Fetch stores from the database with proper error handling and default value
   const { data: stores = [] } = useQuery({
     queryKey: ['stores'],
     queryFn: async () => {
@@ -62,7 +62,7 @@ const ChampsForm = () => {
     },
   });
 
-  // Fetch questions
+  // Fetch questions with proper error handling and default value
   const { data: fetchedQuestions = [] } = useQuery({
     queryKey: ['champs-questions'],
     queryFn: async () => {
@@ -82,10 +82,11 @@ const ChampsForm = () => {
     }
   }, [fetchedQuestions]);
 
-  const filteredStores = stores ? filter(stores, store =>
+  // Filter stores with null check
+  const filteredStores = filter(stores || [], store =>
     store.name.toLowerCase().includes(searchValue.toLowerCase()) ||
     store.city.toLowerCase().includes(searchValue.toLowerCase())
-  ) : [];
+  );
 
   const handleQuestionStatusChange = (questionId: number, status: 'none' | 'cross' | 'exclude') => {
     setQuestions(questions.map(q => {
