@@ -71,11 +71,15 @@ const ChampReport = () => {
         .eq('evaluation_id', selectedEvalId);
       
       if (error) throw error;
-      return answers.map(answer => ({
-        question: answer.champs_questions?.question || '',
-        points: answer.champs_questions?.points || 0,
-        status: answer.answer ? 'none' : 'cross'
-      }));
+      
+      // Only return crossed and excluded questions
+      return answers
+        .map(answer => ({
+          question: answer.champs_questions?.question || '',
+          points: answer.champs_questions?.points || 0,
+          status: answer.answer ? 'none' : 'cross'
+        }))
+        .filter(q => q.status !== 'none');
     },
     enabled: !!selectedEvalId,
   });
@@ -129,7 +133,7 @@ const ChampReport = () => {
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Evaluation Details</DialogTitle>
+            <DialogTitle>Lost Points Details</DialogTitle>
           </DialogHeader>
           {isLoadingDetails ? (
             <div>Loading details...</div>
@@ -149,9 +153,7 @@ const ChampReport = () => {
                       <TableCell>{q.question}</TableCell>
                       <TableCell className="text-right">{q.points}</TableCell>
                       <TableCell className="text-right">
-                        <span className={q.status === 'cross' ? 'text-red-500' : ''}>
-                          {q.status === 'cross' ? 'Lost' : 'Earned'}
-                        </span>
+                        <span className="text-red-500">Lost</span>
                       </TableCell>
                     </TableRow>
                   ))}

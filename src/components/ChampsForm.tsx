@@ -1,10 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Select,
   SelectContent,
@@ -16,6 +14,8 @@ import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { X, Ban } from "lucide-react";
+import debounce from 'lodash/debounce';
+import filter from 'lodash/filter';
 
 interface Store {
   id: number;
@@ -42,6 +42,19 @@ const ChampsForm = () => {
   const [questions, setQuestions] = useState<QuestionState[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Fetch stores from the database
+  const { data: stores = [] } = useQuery({
+    queryKey: ['stores'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('stores')
+        .select('id, name, city');
+      
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   // Fetch questions
   const { data: fetchedQuestions = [] } = useQuery({
     queryKey: ['champs-questions'],
@@ -60,13 +73,7 @@ const ChampsForm = () => {
     setQuestions(fetchedQuestions);
   }, [fetchedQuestions]);
 
-  // Mock stores data - in real app this would come from your store setup
-  const stores: Store[] = [
-    { id: 1, name: "Store A", city: "City A" },
-    { id: 2, name: "Store B", city: "City B" },
-  ];
-
-  const filteredStores = stores.filter(store =>
+  const filteredStores = filter(stores, store =>
     store.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     store.city.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -169,6 +176,11 @@ const ChampsForm = () => {
     }
   };
 
+  // Debounced search handler
+  const debouncedSearch = debounce((value: string) => {
+    setSearchTerm(value);
+  }, 300);
+
   return (
     <div className="p-6">
       <h2 className="text-2xl font-semibold mb-6">CHAMPS Evaluation Form</h2>
@@ -181,15 +193,14 @@ const ChampsForm = () => {
               <Input
                 id="store-search"
                 placeholder="Search store..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="bg-dashboard-dark border-dashboard-text/20"
+                onChange={(e) => debouncedSearch(e.target.value)}
+                className="bg-dashboard-dark border-dashboard-text/20 mb-2"
               />
               <Select
                 value={selectedStore}
                 onValueChange={setSelectedStore}
               >
-                <SelectTrigger className="mt-2 bg-dashboard-dark border-dashboard-text/20">
+                <SelectTrigger className="bg-dashboard-dark border-dashboard-text/20">
                   <SelectValue placeholder="Select store" />
                 </SelectTrigger>
                 <SelectContent>
@@ -288,7 +299,7 @@ const ChampsForm = () => {
           </table>
         </div>
 
-        <Button type="submit" className="w-full">
+        <Button type="submit" disabled={isSubmitting} className="w-full">
           Submit Evaluation
         </Button>
       </form>
