@@ -51,7 +51,7 @@ const ChampsForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
-  const { data: stores = [] } = useQuery({
+  const { data: stores = [], isLoading: isLoadingStores } = useQuery({
     queryKey: ['stores'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -82,7 +82,7 @@ const ChampsForm = () => {
     }
   }, [fetchedQuestions]);
 
-  const filteredStores = filter(stores, store =>
+  const filteredStores = filter(stores || [], store =>
     store.name.toLowerCase().includes(searchValue.toLowerCase()) ||
     store.city.toLowerCase().includes(searchValue.toLowerCase())
   );
@@ -390,3 +390,4 @@ const ChampsForm = () => {
 };
 
 export default ChampsForm;
+
