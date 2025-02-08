@@ -7,8 +7,10 @@ import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { X, Ban, Check } from "lucide-react";
+import { X, Ban, Check, Download, Search } from "lucide-react";
 import filter from 'lodash/filter';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import {
   Command,
   CommandEmpty,
@@ -190,9 +192,53 @@ const ChampsForm = () => {
     }
   };
 
+  const exportToPDF = async () => {
+    const element = document.getElementById('champs-form');
+    if (!element) return;
+
+    try {
+      const canvas = await html2canvas(element);
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      const imgX = (pdfWidth - imgWidth * ratio) / 2;
+      const imgY = 30;
+
+      pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+      pdf.save(`CHAMPS_Evaluation_${selectedStore?.name}_${date}.pdf`);
+
+      toast({
+        title: "PDF Exported",
+        description: "Your evaluation has been exported successfully."
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to export PDF. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-semibold mb-6">CHAMPS Evaluation Form</h2>
+    <div className="p-6 max-w-7xl mx-auto" id="champs-form">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-semibold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
+          CHAMPS Evaluation Form
+        </h2>
+        <Button
+          onClick={exportToPDF}
+          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+          disabled={!selectedStore}
+        >
+          <Download className="mr-2 h-4 w-4" />
+          Export PDF
+        </Button>
+      </div>
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="glass-card p-6 space-y-4">
@@ -204,15 +250,15 @@ const ChampsForm = () => {
                   variant="outline"
                   role="combobox"
                   aria-expanded={open}
-                  className="w-full justify-between bg-dashboard-dark border-dashboard-text/20"
+                  className="w-full justify-between bg-dashboard-dark/50 border-dashboard-text/20 hover:bg-dashboard-dark/70"
                 >
-                  {selectedStore ? `${selectedStore.name} - ${selectedStore.city}` : "Select store..."}
-                  <Check
-                    className={cn(
-                      "ml-2 h-4 w-4",
-                      selectedStore ? "opacity-100" : "opacity-0"
-                    )}
-                  />
+                  {selectedStore ? 
+                    <span className="flex items-center">
+                      <span className="h-2 w-2 rounded-full bg-green-400 mr-2" />
+                      {selectedStore.name} - {selectedStore.city}
+                    </span> 
+                    : "Select store..."}
+                  <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-full p-0">
@@ -224,7 +270,7 @@ const ChampsForm = () => {
                     className="h-9"
                   />
                   <CommandEmpty>No store found.</CommandEmpty>
-                  <CommandGroup>
+                  <CommandGroup className="max-h-64 overflow-auto">
                     {filteredStores.map((store) => (
                       <CommandItem
                         key={store.id}
@@ -247,58 +293,57 @@ const ChampsForm = () => {
             </Popover>
           </div>
 
-          <div>
-            <Label htmlFor="date">Date</Label>
-            <Input
-              id="date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="bg-dashboard-dark border-dashboard-text/20"
-            />
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="date">Date</Label>
+              <Input
+                id="date"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="bg-dashboard-dark/50 border-dashboard-text/20"
+              />
+            </div>
 
-          <div>
-            <Label htmlFor="pic">PIC (Person In Charge)</Label>
-            <Input
-              id="pic"
-              value={pic}
-              onChange={(e) => setPic(e.target.value)}
-              placeholder="Enter PIC name"
-              className="bg-dashboard-dark border-dashboard-text/20"
-            />
+            <div>
+              <Label htmlFor="pic">PIC (Person In Charge)</Label>
+              <Input
+                id="pic"
+                value={pic}
+                onChange={(e) => setPic(e.target.value)}
+                placeholder="Enter PIC name"
+                className="bg-dashboard-dark/50 border-dashboard-text/20"
+              />
+            </div>
           </div>
         </div>
 
         <div className="glass-card p-6">
-          <div className="mb-4">
-            <h3 className="text-lg font-medium">Scores Summary</h3>
-            <div className="grid grid-cols-2 gap-4 mt-2">
-              <div>
-                <p className="text-sm text-dashboard-muted">Initial Total Points:</p>
-                <p className="text-xl font-semibold">{scores.initialTotal}</p>
-              </div>
-              <div>
-                <p className="text-sm text-dashboard-muted">Adjusted Total Points:</p>
-                <p className="text-xl font-semibold">{scores.adjustedTotal}</p>
-              </div>
-              <div>
-                <p className="text-sm text-dashboard-muted">Points Earned:</p>
-                <p className="text-xl font-semibold">{scores.earnedPoints}</p>
-              </div>
-              <div>
-                <p className="text-sm text-dashboard-muted">Final KPI Score (0-4):</p>
-                <p className="text-xl font-semibold">{scores.kpiScore}</p>
-              </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="p-4 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20">
+              <p className="text-sm text-dashboard-muted">Initial Total Points</p>
+              <p className="text-2xl font-bold text-purple-400">{scores.initialTotal}</p>
+            </div>
+            <div className="p-4 rounded-lg bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20">
+              <p className="text-sm text-dashboard-muted">Adjusted Total</p>
+              <p className="text-2xl font-bold text-blue-400">{scores.adjustedTotal}</p>
+            </div>
+            <div className="p-4 rounded-lg bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20">
+              <p className="text-sm text-dashboard-muted">Points Earned</p>
+              <p className="text-2xl font-bold text-green-400">{scores.earnedPoints}</p>
+            </div>
+            <div className="p-4 rounded-lg bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/20">
+              <p className="text-sm text-dashboard-muted">KPI Score (0-4)</p>
+              <p className="text-2xl font-bold text-yellow-400">{scores.kpiScore}</p>
             </div>
           </div>
 
           <table className="w-full">
             <thead>
               <tr className="border-b border-dashboard-text/20">
-                <th className="text-left py-2">Question</th>
-                <th className="text-center py-2 w-24">Points</th>
-                <th className="text-center py-2 w-32">Action</th>
+                <th className="text-left py-2 text-dashboard-muted">Question</th>
+                <th className="text-center py-2 w-24 text-dashboard-muted">Points</th>
+                <th className="text-center py-2 w-32 text-dashboard-muted">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -332,8 +377,12 @@ const ChampsForm = () => {
           </table>
         </div>
 
-        <Button type="submit" disabled={isSubmitting} className="w-full">
-          Submit Evaluation
+        <Button 
+          type="submit" 
+          disabled={isSubmitting} 
+          className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+        >
+          {isSubmitting ? "Submitting..." : "Submit Evaluation"}
         </Button>
       </form>
     </div>
@@ -341,4 +390,3 @@ const ChampsForm = () => {
 };
 
 export default ChampsForm;
-
