@@ -105,17 +105,17 @@ const ChampReport = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {evaluations.map((eval, index) => (
-              <TableRow key={eval.id}>
+            {evaluations.map((evaluation, index) => (
+              <TableRow key={evaluation.id}>
                 <TableCell>{index + 1}</TableCell>
-                <TableCell>{eval.store_name} - {eval.store_city}</TableCell>
-                <TableCell>{format(new Date(eval.evaluation_date), 'dd/MM/yyyy')}</TableCell>
-                <TableCell className="text-right">{eval.total_score}</TableCell>
+                <TableCell>{evaluation.store_name} - {evaluation.store_city}</TableCell>
+                <TableCell>{format(new Date(evaluation.evaluation_date), 'dd/MM/yyyy')}</TableCell>
+                <TableCell className="text-right">{evaluation.total_score}</TableCell>
                 <TableCell>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleViewDetails(eval.id)}
+                    onClick={() => handleViewDetails(evaluation.id)}
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
