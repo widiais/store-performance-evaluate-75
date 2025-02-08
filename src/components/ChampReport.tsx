@@ -72,7 +72,6 @@ const ChampReport = () => {
       
       if (error) throw error;
       
-      // Only return crossed and excluded questions
       return answers
         .map(answer => ({
           question: answer.champs_questions?.question || '',
@@ -103,6 +102,7 @@ const ChampReport = () => {
             <TableRow>
               <TableHead>No</TableHead>
               <TableHead>Store</TableHead>
+              <TableHead>PIC</TableHead>
               <TableHead>Evaluation Date</TableHead>
               <TableHead className="text-right">KPI Score</TableHead>
               <TableHead className="w-[100px]">Action</TableHead>
@@ -113,8 +113,13 @@ const ChampReport = () => {
               <TableRow key={evaluation.id}>
                 <TableCell>{index + 1}</TableCell>
                 <TableCell>{evaluation.store_name} - {evaluation.store_city}</TableCell>
+                <TableCell>{evaluation.pic}</TableCell>
                 <TableCell>{format(new Date(evaluation.evaluation_date), 'dd/MM/yyyy')}</TableCell>
-                <TableCell className="text-right">{evaluation.total_score}</TableCell>
+                <TableCell className="text-right font-medium">
+                  <span className={`${evaluation.total_score >= 80 ? 'text-green-500' : 'text-red-500'}`}>
+                    {evaluation.total_score}%
+                  </span>
+                </TableCell>
                 <TableCell>
                   <Button
                     variant="outline"
@@ -151,9 +156,9 @@ const ChampReport = () => {
                   {detailedQuestions.map((q, index) => (
                     <TableRow key={index}>
                       <TableCell>{q.question}</TableCell>
-                      <TableCell className="text-right">{q.points}</TableCell>
+                      <TableCell className="text-right font-medium">{q.points}</TableCell>
                       <TableCell className="text-right">
-                        <span className="text-red-500">Lost</span>
+                        <span className="text-red-500 font-medium">Lost</span>
                       </TableCell>
                     </TableRow>
                   ))}
