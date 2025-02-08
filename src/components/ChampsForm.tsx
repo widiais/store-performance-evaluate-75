@@ -135,7 +135,6 @@ const ChampsForm = () => {
 
     setIsSubmitting(true);
     try {
-      // Insert evaluation
       const { data: evalData, error: evalError } = await supabase
         .from('champs_evaluations')
         .insert({
@@ -150,7 +149,6 @@ const ChampsForm = () => {
 
       if (evalError) throw evalError;
 
-      // Insert answers
       const answers = questions.map(q => ({
         evaluation_id: evalData.id,
         question_id: q.id,
@@ -169,7 +167,6 @@ const ChampsForm = () => {
         description: "Your evaluation has been saved successfully.",
       });
 
-      // Reset form
       setSelectedStore(null);
       setDate(format(new Date(), "yyyy-MM-dd"));
       setPic("");
@@ -212,11 +209,10 @@ const ChampsForm = () => {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-full p-0">
-                <Command>
+                <Command value={searchValue} onValueChange={setSearchValue}>
                   <CommandInput 
                     placeholder="Search store..." 
-                    value={searchValue}
-                    onValueChange={setSearchValue}
+                    className="h-9"
                   />
                   <CommandEmpty>No store found.</CommandEmpty>
                   <CommandGroup>
@@ -228,6 +224,7 @@ const ChampsForm = () => {
                           setSelectedStore(store);
                           setOpen(false);
                         }}
+                        className="cursor-pointer"
                       >
                         <Check
                           className={cn(
