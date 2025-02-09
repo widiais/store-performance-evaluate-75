@@ -1,7 +1,13 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutDashboard, Settings, Users, Database } from "lucide-react";
-import SetupStore from "./SetupStore";
+import { 
+  LayoutDashboard, 
+  Settings, 
+  Users, 
+  Database,
+  ClipboardList,
+  FileText,
+  FolderCog
+} from "lucide-react";
 import * as Tabs2 from "@radix-ui/react-tabs";
 
 interface SidePanelProps {
@@ -21,82 +27,96 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
         >
           <TabsList className="flex flex-col h-auto bg-transparent text-white">
             <Tabs2.List asChild>
-              <div className="flex flex-col gap-1">
-                <TabsTrigger 
-                  value="dashboard" 
-                  className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
-                >
-                  <LayoutDashboard className="w-4 h-4" />
-                  Dashboard
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="users" 
-                  className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
-                >
-                  <Users className="w-4 h-4" />
-                  Users
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="settings" 
-                  className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
-                >
-                  <Settings className="w-4 h-4" />
-                  Settings
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="datasetup" 
-                  className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
-                >
-                  <Database className="w-4 h-4" />
-                  Data Setup
-                </TabsTrigger>
-              </div>
-            </Tabs2.List>
-          </TabsList>
-          <TabsContent value="datasetup">
-            <div className="space-y-2">
-              <Tabs2.List asChild>
+              <div className="flex flex-col gap-4">
+                {/* Main Navigation */}
                 <div className="flex flex-col gap-1">
                   <TabsTrigger 
-                    value="setupstore" 
-                    className="w-full justify-start gap-2 pl-6 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                    value="dashboard" 
+                    className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
                   >
+                    <LayoutDashboard className="w-4 h-4" />
+                    Dashboard
+                  </TabsTrigger>
+                </div>
+
+                {/* Setup Section */}
+                <div className="flex flex-col gap-1">
+                  <div className="text-xs text-gray-400 uppercase px-2 mb-1">Setup</div>
+                  <TabsTrigger 
+                    value="setupstore" 
+                    className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                  >
+                    <FolderCog className="w-4 h-4" />
                     Setup Store
                   </TabsTrigger>
                   <TabsTrigger 
                     value="setupchamps" 
-                    className="w-full justify-start gap-2 pl-6 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                    className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
                   >
+                    <FolderCog className="w-4 h-4" />
                     Setup CHAMPS
                   </TabsTrigger>
+                </div>
+
+                {/* Forms Section */}
+                <div className="flex flex-col gap-1">
+                  <div className="text-xs text-gray-400 uppercase px-2 mb-1">Forms</div>
                   <TabsTrigger 
                     value="champsform" 
-                    className="w-full justify-start gap-2 pl-6 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                    className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
                   >
+                    <ClipboardList className="w-4 h-4" />
                     CHAMPS Form
                   </TabsTrigger>
                   <TabsTrigger 
-                    value="champreport" 
-                    className="w-full justify-start gap-2 pl-6 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                    value="espform" 
+                    className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
                   >
+                    <ClipboardList className="w-4 h-4" />
+                    ESP Form
+                  </TabsTrigger>
+                </div>
+
+                {/* Reports Section */}
+                <div className="flex flex-col gap-1">
+                  <div className="text-xs text-gray-400 uppercase px-2 mb-1">Reports</div>
+                  <TabsTrigger 
+                    value="champreport" 
+                    className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                  >
+                    <FileText className="w-4 h-4" />
                     CHAMPS Report
                   </TabsTrigger>
                   <TabsTrigger 
-                    value="espform" 
-                    className="w-full justify-start gap-2 pl-6 data-[state=active]:bg-white/10 data-[state=active]:text-white"
-                  >
-                    ESP Form
-                  </TabsTrigger>
-                  <TabsTrigger 
                     value="espreport" 
-                    className="w-full justify-start gap-2 pl-6 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                    className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
                   >
+                    <FileText className="w-4 h-4" />
                     ESP Report
                   </TabsTrigger>
                 </div>
-              </Tabs2.List>
-            </div>
-          </TabsContent>
+
+                {/* Admin Section */}
+                <div className="flex flex-col gap-1">
+                  <div className="text-xs text-gray-400 uppercase px-2 mb-1">Admin</div>
+                  <TabsTrigger 
+                    value="users" 
+                    className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                  >
+                    <Users className="w-4 h-4" />
+                    Users
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="settings" 
+                    className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                  >
+                    <Settings className="w-4 h-4" />
+                    Settings
+                  </TabsTrigger>
+                </div>
+              </div>
+            </Tabs2.List>
+          </TabsList>
         </Tabs>
       </div>
     </div>
