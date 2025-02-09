@@ -24,14 +24,14 @@ const ChampReportDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const { data: evaluation } = useQuery({
+  const { data: evaluation, isLoading } = useQuery({
     queryKey: ['champs-evaluation', id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('champs_evaluation_report')
         .select('*')
         .eq('id', parseInt(id || '0'))
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
       return data;
@@ -60,18 +60,34 @@ const ChampReportDetail = () => {
       
       if (error) throw error;
       
-      return (answers || []).map(answer => ({
+      return ((answers || []).map(answer => ({
         question: answer.champs_questions?.question || '',
         points: answer.champs_questions?.points || 0,
         status: answer.status as 'cross' | 'exclude' | 'none'
       }))
-      .filter(q => q.status !== 'none') as DetailedQuestion[];
+      .filter(q => q.status !== 'none')) as DetailedQuestion[];
     },
     enabled: !!id,
   });
 
-  if (isLoadingDetails) {
+  if (isLoading || isLoadingDetails) {
     return <div>Loading details...</div>;
+  }
+
+  if (!evaluation) {
+    return (
+      <div className="p-6">
+        <Button 
+          variant="outline" 
+          onClick={() => navigate(-1)}
+          className="mb-6"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Reports
+        </Button>
+        <p>No evaluation found.</p>
+      </div>
+    );
   }
 
   return (
@@ -90,22 +106,20 @@ const ChampReportDetail = () => {
           CHAMPS Evaluation Details
         </h2>
 
-        {evaluation && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="p-4 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20">
-              <p className="text-sm text-dashboard-muted">Store</p>
-              <p className="text-lg font-semibold">{evaluation.store_name} - {evaluation.store_city}</p>
-            </div>
-            <div className="p-4 rounded-lg bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20">
-              <p className="text-sm text-dashboard-muted">PIC</p>
-              <p className="text-lg font-semibold">{evaluation.pic}</p>
-            </div>
-            <div className="p-4 rounded-lg bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20">
-              <p className="text-sm text-dashboard-muted">Evaluation Date</p>
-              <p className="text-lg font-semibold">{format(new Date(evaluation.evaluation_date), 'dd MMMM yyyy')}</p>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="p-4 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20">
+            <p className="text-sm text-dashboard-muted">Store</p>
+            <p className="text-lg font-semibold">{evaluation.store_name} - {evaluation.store_city}</p>
           </div>
-        )}
+          <div className="p-4 rounded-lg bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20">
+            <p className="text-sm text-dashboard-muted">PIC</p>
+            <p className="text-lg font-semibold">{evaluation.pic}</p>
+          </div>
+          <div className="p-4 rounded-lg bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20">
+            <p className="text-sm text-dashboard-muted">Evaluation Date</p>
+            <p className="text-lg font-semibold">{format(new Date(evaluation.evaluation_date), 'dd MMMM yyyy')}</p>
+          </div>
+        </div>
 
         <div className="glass-card p-4 bg-dashboard-dark/30 rounded-lg border border-dashboard-text/10">
           <h3 className="text-lg font-semibold mb-4">Lost Points Details</h3>
