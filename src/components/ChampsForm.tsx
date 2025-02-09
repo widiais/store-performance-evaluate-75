@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,10 +82,10 @@ const ChampsForm = () => {
     }
   }, [fetchedQuestions]);
 
-  const filteredStores = filter(stores || [], store =>
+  const filteredStores = filter(stores, store =>
     store.name.toLowerCase().includes(searchValue.toLowerCase()) ||
     store.city.toLowerCase().includes(searchValue.toLowerCase())
-  );
+  ) || [];
 
   const handleQuestionStatusChange = (questionId: number, status: 'none' | 'cross' | 'exclude') => {
     setQuestions(questions.map(q => {
@@ -183,7 +184,7 @@ const ChampsForm = () => {
 
   const handleStoreSelect = (storeName: string) => {
     const store = stores.find(s => 
-      `${s.name} ${s.city}`.toLowerCase() === storeName.toLowerCase()
+      `${s.name} - ${s.city}`.toLowerCase() === storeName.toLowerCase()
     );
     if (store) {
       setSelectedStore(store);
@@ -273,7 +274,7 @@ const ChampsForm = () => {
                     {filteredStores.map((store) => (
                       <CommandItem
                         key={store.id}
-                        value={`${store.name} ${store.city}`}
+                        value={`${store.name} - ${store.city}`}
                         onSelect={handleStoreSelect}
                         className="cursor-pointer"
                       >
@@ -389,3 +390,4 @@ const ChampsForm = () => {
 };
 
 export default ChampsForm;
+
