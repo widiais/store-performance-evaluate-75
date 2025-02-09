@@ -112,10 +112,10 @@ const ChampReport = () => {
   };
 
   const filteredAndSortedEvaluations = evaluations
-    .filter(eval => 
-      eval.store_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      eval.store_city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      eval.pic.toLowerCase().includes(searchQuery.toLowerCase())
+    .filter(evaluation => 
+      evaluation.store_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      evaluation.store_city.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      evaluation.pic.toLowerCase().includes(searchQuery.toLowerCase())
     )
     .sort((a: ChampEvaluation, b: ChampEvaluation) => {
       if (sortField === 'evaluation_date') {
