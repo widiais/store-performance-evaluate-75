@@ -16,6 +16,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { useState } from "react";
 import { format } from "date-fns";
@@ -229,6 +230,9 @@ const ChampReport = () => {
             <DialogTitle className="text-2xl font-semibold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
               Evaluation Details
             </DialogTitle>
+            <DialogDescription>
+              Review the evaluation details and lost points
+            </DialogDescription>
           </DialogHeader>
           {isLoadingDetails ? (
             <div>Loading details...</div>
@@ -261,7 +265,7 @@ const ChampReport = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {(detailedQuestions || []).map((q, index) => (
+                    {detailedQuestions.map((q, index) => (
                       <TableRow key={index}>
                         <TableCell>{q.question}</TableCell>
                         <TableCell className="text-right font-medium">{q.points}</TableCell>
