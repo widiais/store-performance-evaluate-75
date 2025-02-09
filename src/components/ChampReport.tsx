@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -37,10 +36,15 @@ interface DetailedQuestion {
   status: 'cross' | 'exclude' | 'none';
 }
 
+interface ChampReportProps {
+  onSelectReport: (id: number) => void;
+  selectedReportId: number | null;
+}
+
 type SortField = 'store_name' | 'pic' | 'evaluation_date' | 'total_score';
 type SortOrder = 'asc' | 'desc';
 
-const ChampReport = () => {
+const ChampReport = ({ onSelectReport, selectedReportId }: ChampReportProps) => {
   const [selectedEvalId, setSelectedEvalId] = useState<number | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -94,6 +98,7 @@ const ChampReport = () => {
   const handleViewDetails = (evalId: number) => {
     setSelectedEvalId(evalId);
     setIsDetailOpen(true);
+    onSelectReport(evalId);
   };
 
   const toggleSort = (field: SortField) => {
