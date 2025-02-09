@@ -123,9 +123,13 @@ const ChampReport = () => {
           ? new Date(a[sortField]).getTime() - new Date(b[sortField]).getTime()
           : new Date(b[sortField]).getTime() - new Date(a[sortField]).getTime();
       }
+      
+      const aValue = String(a[sortField]).toLowerCase();
+      const bValue = String(b[sortField]).toLowerCase();
+      
       return sortOrder === 'asc'
-        ? a[sortField] > b[sortField] ? 1 : -1
-        : b[sortField] > a[sortField] ? 1 : -1;
+        ? aValue.localeCompare(bValue)
+        : bValue.localeCompare(aValue);
     });
 
   const selectedEvaluation = evaluations.find(e => e.id === selectedEvalId);
@@ -278,4 +282,3 @@ const ChampReport = () => {
 };
 
 export default ChampReport;
-
