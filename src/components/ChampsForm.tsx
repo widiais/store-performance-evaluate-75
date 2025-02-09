@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,43 +47,54 @@ interface StoreSelectProps {
 }
 
 const StoreSelect = ({ selectedStore, onStoreSelect, stores }: StoreSelectProps) => {
-  const [inputValue, setInputValue] = useState("");
+  const [searchValue, setSearchValue] = useState("");
 
   useEffect(() => {
     if (selectedStore) {
-      setInputValue(`${selectedStore.name} - ${selectedStore.city}`);
+      setSearchValue(`${selectedStore.name} - ${selectedStore.city}`);
+    } else {
+      setSearchValue("");
     }
   }, [selectedStore]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setInputValue(value);
-    // Cari store yang cocok berdasarkan input (case-insensitive)
-    const match = stores.find(
-      (store) => `${store.name} - ${store.city}`.toLowerCase() === value.toLowerCase()
-    );
-    if (match) {
-      onStoreSelect(match);
-    } else {
-      // Jika tidak cocok, kita set selectedStore ke null (bisa disesuaikan)
+    setSearchValue(value);
+
+    if (!value.trim()) {
       onStoreSelect(null);
+      return;
+    }
+
+    const storeMatch = stores.find(
+      store => `${store.name} - ${store.city}` === value
+    );
+
+    if (storeMatch) {
+      onStoreSelect(storeMatch);
     }
   };
 
+  const storeOptions = useMemo(() => {
+    return stores.map(store => ({
+      value: `${store.name} - ${store.city}`,
+      store: store
+    }));
+  }, [stores]);
+
   return (
-    <div className="relative">
+    <div className="relative w-full">
       <Input
-        id="store"
         type="text"
-        list="store-options"
-        placeholder="Select store..."
-        value={inputValue}
-        onChange={handleChange}
-        className="bg-dashboard-dark/50 border-dashboard-text/20"
+        list="store-list"
+        value={searchValue}
+        onChange={handleInputChange}
+        placeholder="Select or type store name..."
+        className="w-full bg-dashboard-dark/50 border-dashboard-text/20"
       />
-      <datalist id="store-options">
-        {(Array.isArray(stores) ? stores : []).map((store) => (
-          <option key={store.id} value={`${store.name} - ${store.city}`} />
+      <datalist id="store-list">
+        {storeOptions.map(({ value }, index) => (
+          <option key={index} value={value} />
         ))}
       </datalist>
     </div>
@@ -105,10 +116,11 @@ const ChampsForm = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('stores')
-        .select('id, name, city');
+        .select('id, name, city')
+        .order('name');
       
       if (error) throw error;
-      return (data || []) as Store[];
+      return data || [];
     },
   });
 
@@ -132,7 +144,7 @@ const ChampsForm = () => {
   }, [fetchedQuestions]);
 
   const handleQuestionStatusChange = (questionId: number, status: 'none' | 'cross' | 'exclude') => {
-    setQuestions(questions.map(q => {
+    setQuestions(prev => prev.map(q => {
       if (q.id === questionId) {
         return { ...q, status: q.status === status ? 'none' : status };
       }
@@ -151,7 +163,7 @@ const ChampsForm = () => {
     
     const adjustedTotal = initialTotal - excludedPoints;
     const earnedPoints = adjustedTotal - crossedPoints;
-    const percentage = (earnedPoints / adjustedTotal) * 100;
+    const percentage = (earnedPoints / (adjustedTotal || 1)) * 100;
     const kpiScore = (percentage / 100) * 4;
 
     return {
@@ -282,46 +294,11 @@ const ChampsForm = () => {
             <Label htmlFor="store" className="text-dashboard-text mb-1.5 block">
               Store
             </Label>
-            <Popover open={open} onOpenChange={setOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={open}
-                  className="w-full justify-between bg-dashboard-dark/50 border-dashboard-text/20"
-                >
-                  {selectedStore ? `${selectedStore.name} - ${selectedStore.city}` : "Select store..."}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-0">
-                <Command>
-                  <CommandInput placeholder="Search store..." />
-                  <CommandEmpty>No store found.</CommandEmpty>
-                  <CommandGroup>
-                    {(stores || []).map((store) => (
-                      <CommandItem
-                        key={store.id}
-                        value={`${store.name} - ${store.city}`}
-                        onSelect={() => {
-                          setSelectedStore(store);
-                          setOpen(false);
-                        }}
-                        className="cursor-pointer"
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            selectedStore?.id === store.id ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        {store.name} - {store.city}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </Command>
-              </PopoverContent>
-            </Popover>
+            <StoreSelect
+              selectedStore={selectedStore}
+              onStoreSelect={setSelectedStore}
+              stores={stores}
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -384,6 +361,7 @@ const ChampsForm = () => {
                   <td className="p-3">
                     <div className="flex justify-center gap-2">
                       <Button
+                        type="button"
                         variant={q.status === 'cross' ? "destructive" : "outline"}
                         size="sm"
                         onClick={() => handleQuestionStatusChange(q.id, 'cross')}
@@ -392,6 +370,7 @@ const ChampsForm = () => {
                         <X className="h-4 w-4" />
                       </Button>
                       <Button
+                        type="button"
                         variant={q.status === 'exclude' ? "destructive" : "outline"}
                         size="sm"
                         onClick={() => handleQuestionStatusChange(q.id, 'exclude')}

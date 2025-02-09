@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -10,11 +9,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Eye, Search, SortAsc, SortDesc } from "lucide-react";
+import { Eye, Search, SortAsc, SortDesc, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import _ from "lodash";
 
 interface ChampEvaluation {
   id: number;
@@ -28,11 +28,14 @@ interface ChampEvaluation {
 type SortField = 'store_name' | 'pic' | 'evaluation_date' | 'total_score';
 type SortOrder = 'asc' | 'desc';
 
+const ITEMS_PER_PAGE = 10;
+
 const ChampReport = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<SortField>('evaluation_date');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const { data: evaluations = [], isLoading } = useQuery({
     queryKey: ['champs-evaluations'],
@@ -63,29 +66,39 @@ const ChampReport = () => {
       <SortDesc className="w-4 h-4 ml-1" />;
   };
 
-  const filteredAndSortedEvaluations = evaluations
+  // Menggunakan lodash untuk filter dan sort
+  const filteredAndSortedEvaluations = _.chain(evaluations)
     .filter(evaluation => 
-      evaluation.store_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      evaluation.store_city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      evaluation.pic.toLowerCase().includes(searchQuery.toLowerCase())
+      _.some([
+        evaluation.store_name.toLowerCase(),
+        evaluation.store_city.toLowerCase(),
+        evaluation.pic.toLowerCase()
+      ], field => field.includes(searchQuery.toLowerCase()))
     )
-    .sort((a: ChampEvaluation, b: ChampEvaluation) => {
-      if (sortField === 'evaluation_date') {
-        return sortOrder === 'asc' 
-          ? new Date(a.evaluation_date).getTime() - new Date(b.evaluation_date).getTime()
-          : new Date(b.evaluation_date).getTime() - new Date(a.evaluation_date).getTime();
+    .orderBy([
+      item => {
+        if (sortField === 'evaluation_date') {
+          return new Date(item[sortField]).getTime();
+        }
+        return _.get(item, sortField, '').toLowerCase();
       }
-      
-      const aValue = String(a[sortField]).toLowerCase();
-      const bValue = String(b[sortField]).toLowerCase();
-      
-      return sortOrder === 'asc'
-        ? aValue.localeCompare(bValue)
-        : bValue.localeCompare(aValue);
-    });
+    ], [sortOrder])
+    .value();
+
+  // Paginasi
+  const totalPages = Math.ceil(filteredAndSortedEvaluations.length / ITEMS_PER_PAGE);
+  const paginatedData = _.slice(
+    filteredAndSortedEvaluations,
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500" />
+      </div>
+    );
   }
 
   return (
@@ -148,9 +161,9 @@ const ChampReport = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredAndSortedEvaluations.map((evaluation, index) => (
+              {paginatedData.map((evaluation, index) => (
                 <TableRow key={evaluation.id} className="cursor-pointer hover:bg-dashboard-dark/50">
-                  <TableCell>{index + 1}</TableCell>
+                  <TableCell>{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</TableCell>
                   <TableCell>{evaluation.store_name} - {evaluation.store_city}</TableCell>
                   <TableCell>{evaluation.pic}</TableCell>
                   <TableCell>{format(new Date(evaluation.evaluation_date), 'dd/MM/yyyy')}</TableCell>
@@ -172,6 +185,41 @@ const ChampReport = () => {
               ))}
             </TableBody>
           </Table>
+
+          {/* Pagination Controls */}
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-gray-500">
+              Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, filteredAndSortedEvaluations.length)} of {filteredAndSortedEvaluations.length} entries
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              {_.range(1, totalPages + 1).map(page => (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(page)}
+                >
+                  {page}
+                </Button>
+              ))}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
