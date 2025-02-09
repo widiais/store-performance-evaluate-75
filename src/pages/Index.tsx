@@ -10,10 +10,11 @@ import ChampsForm from '@/components/ChampsForm';
 import { useState } from 'react';
 import { Switch } from "@/components/ui/switch";
 import ChampReport from '@/components/ChampReport';
+import ChampReportDetail from '@/components/ChampReportDetail';
+import { Routes, Route } from 'react-router-dom';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -182,7 +183,12 @@ const Index = () => {
       case 'champsform':
         return <ChampsForm />;
       case 'champreport':
-        return <ChampReport onSelectReport={setSelectedReportId} selectedReportId={selectedReportId} />;
+        return (
+          <Routes>
+            <Route path="/" element={<ChampReport />} />
+            <Route path="/report/:id" element={<ChampReportDetail />} />
+          </Routes>
+        );
       default:
         return null;
     }
@@ -201,4 +207,3 @@ const Index = () => {
 };
 
 export default Index;
-
