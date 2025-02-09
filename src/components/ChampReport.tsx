@@ -55,7 +55,7 @@ const ChampReport = () => {
         .order('evaluation_date', { ascending: false });
       
       if (error) throw error;
-      return data;
+      return data as ChampEvaluation[];
     },
   });
 
@@ -117,11 +117,11 @@ const ChampReport = () => {
       eval.store_city.toLowerCase().includes(searchQuery.toLowerCase()) ||
       eval.pic.toLowerCase().includes(searchQuery.toLowerCase())
     )
-    .sort((a, b) => {
+    .sort((a: ChampEvaluation, b: ChampEvaluation) => {
       if (sortField === 'evaluation_date') {
         return sortOrder === 'asc' 
-          ? new Date(a[sortField]).getTime() - new Date(b[sortField]).getTime()
-          : new Date(b[sortField]).getTime() - new Date(a[sortField]).getTime();
+          ? new Date(a.evaluation_date).getTime() - new Date(b.evaluation_date).getTime()
+          : new Date(b.evaluation_date).getTime() - new Date(a.evaluation_date).getTime();
       }
       
       const aValue = String(a[sortField]).toLowerCase();
