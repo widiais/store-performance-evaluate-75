@@ -46,7 +46,7 @@ const ChampReport = () => {
   const [sortField, setSortField] = useState<SortField>('evaluation_date');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
-  const { data: evaluations, isLoading } = useQuery({
+  const { data: evaluations = [], isLoading } = useQuery({
     queryKey: ['champs-evaluations'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -59,7 +59,7 @@ const ChampReport = () => {
     },
   });
 
-  const { data: detailedQuestions, isLoading: isLoadingDetails } = useQuery({
+  const { data: detailedQuestions = [], isLoading: isLoadingDetails } = useQuery({
     queryKey: ['evaluation-details', selectedEvalId],
     queryFn: async () => {
       if (!selectedEvalId) return [];
@@ -85,7 +85,7 @@ const ChampReport = () => {
           points: answer.champs_questions?.points || 0,
           status: answer.answer ? 'none' : 'cross'
         }))
-        .filter(q => q.status !== 'none');
+        .filter(q => q.status !== 'none') as DetailedQuestion[];
     },
     enabled: !!selectedEvalId,
   });
@@ -111,7 +111,7 @@ const ChampReport = () => {
       <SortDesc className="w-4 h-4 ml-1" />;
   };
 
-  const filteredAndSortedEvaluations = (evaluations || [])
+  const filteredAndSortedEvaluations = evaluations
     .filter(evaluation => 
       evaluation.store_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       evaluation.store_city.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -132,7 +132,7 @@ const ChampReport = () => {
         : bValue.localeCompare(aValue);
     });
 
-  const selectedEvaluation = evaluations?.find(e => e.id === selectedEvalId);
+  const selectedEvaluation = evaluations.find(e => e.id === selectedEvalId);
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -261,7 +261,7 @@ const ChampReport = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {detailedQuestions.map((q, index) => (
+                    {(detailedQuestions || []).map((q, index) => (
                       <TableRow key={index}>
                         <TableCell>{q.question}</TableCell>
                         <TableCell className="text-right font-medium">{q.points}</TableCell>
