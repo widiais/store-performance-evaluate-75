@@ -46,7 +46,7 @@ const ChampReport = () => {
   const [sortField, setSortField] = useState<SortField>('evaluation_date');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
-  const { data: evaluations = [], isLoading } = useQuery({
+  const { data: evaluations, isLoading } = useQuery({
     queryKey: ['champs-evaluations'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -55,11 +55,11 @@ const ChampReport = () => {
         .order('evaluation_date', { ascending: false });
       
       if (error) throw error;
-      return data as ChampEvaluation[];
+      return (data || []) as ChampEvaluation[];
     },
   });
 
-  const { data: detailedQuestions = [], isLoading: isLoadingDetails } = useQuery({
+  const { data: detailedQuestions, isLoading: isLoadingDetails } = useQuery({
     queryKey: ['evaluation-details', selectedEvalId],
     queryFn: async () => {
       if (!selectedEvalId) return [];
@@ -79,7 +79,7 @@ const ChampReport = () => {
       
       if (error) throw error;
       
-      return answers
+      return (answers || [])
         .map(answer => ({
           question: answer.champs_questions?.question || '',
           points: answer.champs_questions?.points || 0,
@@ -111,7 +111,7 @@ const ChampReport = () => {
       <SortDesc className="w-4 h-4 ml-1" />;
   };
 
-  const filteredAndSortedEvaluations = evaluations
+  const filteredAndSortedEvaluations = (evaluations || [])
     .filter(evaluation => 
       evaluation.store_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       evaluation.store_city.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -132,7 +132,7 @@ const ChampReport = () => {
         : bValue.localeCompare(aValue);
     });
 
-  const selectedEvaluation = evaluations.find(e => e.id === selectedEvalId);
+  const selectedEvaluation = evaluations?.find(e => e.id === selectedEvalId);
 
   if (isLoading) {
     return <div>Loading...</div>;
