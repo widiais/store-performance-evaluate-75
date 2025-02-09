@@ -7,6 +7,7 @@ import SidePanel from '@/components/SidePanel';
 import SetupStore from '@/components/SetupStore';
 import SetupChamps from '@/components/SetupChamps';
 import ChampsForm from '@/components/ChampsForm';
+import EspForm from '@/components/EspForm';
 import { useState } from 'react';
 import { Switch } from "@/components/ui/switch";
 import ChampReport from '@/components/ChampReport';
@@ -182,6 +183,8 @@ const Index = () => {
         return <SetupChamps />;
       case 'champsform':
         return <ChampsForm />;
+      case 'espform':
+        return <EspForm />;
       case 'champreport':
         return (
           <Routes>

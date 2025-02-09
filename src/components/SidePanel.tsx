@@ -1,3 +1,4 @@
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LayoutDashboard, Settings, Users, Database } from "lucide-react";
 import SetupStore from "./SetupStore";
@@ -81,10 +82,10 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
                     CHAMPS Report
                   </TabsTrigger>
                   <TabsTrigger 
-                    value="setupesp" 
+                    value="espform" 
                     className="w-full justify-start gap-2 pl-6 data-[state=active]:bg-white/10 data-[state=active]:text-white"
                   >
-                    Setup ESP
+                    ESP Form
                   </TabsTrigger>
                 </div>
               </Tabs2.List>

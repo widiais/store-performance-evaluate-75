@@ -129,6 +129,95 @@ export type Database = {
         }
         Relationships: []
       }
+      esp_evaluations: {
+        Row: {
+          created_at: string
+          evaluation_date: string
+          final_score: number
+          id: number
+          kpi_score: number
+          pic: string
+          status: string
+          store_id: number | null
+          total_score: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          evaluation_date: string
+          final_score?: number
+          id?: number
+          kpi_score?: number
+          pic: string
+          status?: string
+          store_id?: number | null
+          total_score?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          evaluation_date?: string
+          final_score?: number
+          id?: number
+          kpi_score?: number
+          pic?: string
+          status?: string
+          store_id?: number | null
+          total_score?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "esp_evaluations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      esp_findings: {
+        Row: {
+          created_at: string
+          deduction_points: number
+          evaluation_id: number | null
+          finding: string
+          id: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deduction_points?: number
+          evaluation_id?: number | null
+          finding: string
+          id?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deduction_points?: number
+          evaluation_id?: number | null
+          finding?: string
+          id?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "esp_findings_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "esp_evaluation_report"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "esp_findings_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "esp_evaluations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stores: {
         Row: {
           area: number | null
@@ -171,6 +260,20 @@ export type Database = {
         Row: {
           evaluation_date: string | null
           id: number | null
+          pic: string | null
+          status: string | null
+          store_city: string | null
+          store_name: string | null
+          total_score: number | null
+        }
+        Relationships: []
+      }
+      esp_evaluation_report: {
+        Row: {
+          evaluation_date: string | null
+          final_score: number | null
+          id: number | null
+          kpi_score: number | null
           pic: string | null
           status: string | null
           store_city: string | null
