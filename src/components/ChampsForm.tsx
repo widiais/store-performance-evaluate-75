@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,7 +6,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { X, Ban, Check, Download, Search } from "lucide-react";
+import { X, Ban, Check, Download, Search, ChevronsUpDown } from "lucide-react";
 import filter from 'lodash/filter';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -24,6 +23,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import debounce from 'lodash/debounce';
 
 interface Store {
   id: number;
@@ -41,9 +41,58 @@ interface QuestionState extends Question {
   status: 'none' | 'cross' | 'exclude';
 }
 
+interface StoreSelectProps {
+  selectedStore: Store | null;
+  onStoreSelect: (store: Store | null) => void;
+  stores: Store[];
+}
+
+const StoreSelect = ({ selectedStore, onStoreSelect, stores }: StoreSelectProps) => {
+  const [inputValue, setInputValue] = useState("");
+
+  useEffect(() => {
+    if (selectedStore) {
+      setInputValue(`${selectedStore.name} - ${selectedStore.city}`);
+    }
+  }, [selectedStore]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInputValue(value);
+    // Cari store yang cocok berdasarkan input (case-insensitive)
+    const match = stores.find(
+      (store) => `${store.name} - ${store.city}`.toLowerCase() === value.toLowerCase()
+    );
+    if (match) {
+      onStoreSelect(match);
+    } else {
+      // Jika tidak cocok, kita set selectedStore ke null (bisa disesuaikan)
+      onStoreSelect(null);
+    }
+  };
+
+  return (
+    <div className="relative">
+      <Input
+        id="store"
+        type="text"
+        list="store-options"
+        placeholder="Select store..."
+        value={inputValue}
+        onChange={handleChange}
+        className="bg-dashboard-dark/50 border-dashboard-text/20"
+      />
+      <datalist id="store-options">
+        {(Array.isArray(stores) ? stores : []).map((store) => (
+          <option key={store.id} value={`${store.name} - ${store.city}`} />
+        ))}
+      </datalist>
+    </div>
+  );
+};
+
 const ChampsForm = () => {
   const { toast } = useToast();
-  const [open, setOpen] = useState(false);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [date, setDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [pic, setPic] = useState<string>("");
@@ -81,11 +130,6 @@ const ChampsForm = () => {
       setQuestions(fetchedQuestions);
     }
   }, [fetchedQuestions]);
-
-  const filteredStores = filter(stores, store =>
-    store.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-    store.city.toLowerCase().includes(searchValue.toLowerCase())
-  ) || [];
 
   const handleQuestionStatusChange = (questionId: number, status: 'none' | 'cross' | 'exclude') => {
     setQuestions(questions.map(q => {
@@ -152,7 +196,8 @@ const ChampsForm = () => {
         evaluation_id: evalData.id,
         question_id: q.id,
         answer: q.status !== 'cross',
-        score: q.status === 'exclude' ? 0 : q.points
+        score: q.status === 'exclude' ? 0 : q.points,
+        status: q.status
       }));
 
       const { error: answersError } = await supabase
@@ -179,16 +224,6 @@ const ChampsForm = () => {
       });
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handleStoreSelect = (storeName: string) => {
-    const store = stores.find(s => 
-      `${s.name} - ${s.city}`.toLowerCase() === storeName.toLowerCase()
-    );
-    if (store) {
-      setSelectedStore(store);
-      setOpen(false);
     }
   };
 
@@ -225,139 +260,99 @@ const ChampsForm = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto" id="champs-form">
+    <div className="w-full max-w-5xl mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
+        <h2 className="text-xl md:text-2xl font-semibold text-purple-400">
           CHAMPS Evaluation Form
         </h2>
         <Button
           onClick={exportToPDF}
-          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+          variant="outline"
+          className="hidden md:flex items-center gap-2 text-purple-400 border-purple-400/20 hover:bg-purple-400/10"
           disabled={!selectedStore}
         >
-          <Download className="mr-2 h-4 w-4" />
+          <Download className="h-4 w-4" />
           Export PDF
         </Button>
       </div>
       
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="glass-card p-6 space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid gap-4 p-4 bg-dashboard-dark/30 rounded-lg border border-dashboard-text/10">
           <div>
-            <Label htmlFor="store">Store</Label>
-            <Popover open={open} onOpenChange={setOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={open}
-                  className="w-full justify-between bg-dashboard-dark/50 border-dashboard-text/20 hover:bg-dashboard-dark/70"
-                >
-                  {selectedStore ? 
-                    <span className="flex items-center">
-                      <span className="h-2 w-2 rounded-full bg-green-400 mr-2" />
-                      {selectedStore.name} - {selectedStore.city}
-                    </span> 
-                    : "Select store..."}
-                  <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-0">
-                <Command shouldFilter={false}>
-                  <CommandInput 
-                    placeholder="Search store..."
-                    value={searchValue}
-                    onValueChange={setSearchValue}
-                    className="h-9"
-                  />
-                  <CommandEmpty>No store found.</CommandEmpty>
-                  <CommandGroup className="max-h-64 overflow-auto">
-                    {filteredStores.map((store) => (
-                      <CommandItem
-                        key={store.id}
-                        value={`${store.name} - ${store.city}`}
-                        onSelect={handleStoreSelect}
-                        className="cursor-pointer"
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            selectedStore?.id === store.id ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        {store.name} - {store.city}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </Command>
-              </PopoverContent>
-            </Popover>
+            <Label htmlFor="store" className="text-dashboard-text mb-1.5 block">
+              Store
+            </Label>
+            <StoreSelect
+              selectedStore={selectedStore}
+              onStoreSelect={setSelectedStore}
+              stores={stores}
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="date">Date</Label>
+              <Label htmlFor="date" className="text-dashboard-text mb-1.5 block">Date</Label>
               <Input
                 id="date"
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="bg-dashboard-dark/50 border-dashboard-text/20"
+                className="h-10 bg-dashboard-dark/50 border-dashboard-text/20"
               />
             </div>
-
             <div>
-              <Label htmlFor="pic">PIC (Person In Charge)</Label>
+              <Label htmlFor="pic" className="text-dashboard-text mb-1.5 block">PIC (Person In Charge)</Label>
               <Input
                 id="pic"
                 value={pic}
                 onChange={(e) => setPic(e.target.value)}
                 placeholder="Enter PIC name"
-                className="bg-dashboard-dark/50 border-dashboard-text/20"
+                className="h-10 bg-dashboard-dark/50 border-dashboard-text/20"
               />
             </div>
           </div>
         </div>
 
-        <div className="glass-card p-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="p-4 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20">
-              <p className="text-sm text-dashboard-muted">Initial Total Points</p>
-              <p className="text-2xl font-bold text-purple-400">{scores.initialTotal}</p>
-            </div>
-            <div className="p-4 rounded-lg bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20">
-              <p className="text-sm text-dashboard-muted">Adjusted Total</p>
-              <p className="text-2xl font-bold text-blue-400">{scores.adjustedTotal}</p>
-            </div>
-            <div className="p-4 rounded-lg bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20">
-              <p className="text-sm text-dashboard-muted">Points Earned</p>
-              <p className="text-2xl font-bold text-green-400">{scores.earnedPoints}</p>
-            </div>
-            <div className="p-4 rounded-lg bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/20">
-              <p className="text-sm text-dashboard-muted">KPI Score (0-4)</p>
-              <p className="text-2xl font-bold text-yellow-400">{scores.kpiScore}</p>
-            </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="p-3 rounded-lg bg-purple-500/5 border border-purple-500/10">
+            <p className="text-xs text-dashboard-muted">Initial Total</p>
+            <p className="text-lg font-semibold text-purple-400">{scores.initialTotal}</p>
           </div>
+          <div className="p-3 rounded-lg bg-blue-500/5 border border-blue-500/10">
+            <p className="text-xs text-dashboard-muted">Adjusted Total</p>
+            <p className="text-lg font-semibold text-blue-400">{scores.adjustedTotal}</p>
+          </div>
+          <div className="p-3 rounded-lg bg-green-500/5 border border-green-500/10">
+            <p className="text-xs text-dashboard-muted">Points Earned</p>
+            <p className="text-lg font-semibold text-green-400">{scores.earnedPoints}</p>
+          </div>
+          <div className="p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/10">
+            <p className="text-xs text-dashboard-muted">KPI Score</p>
+            <p className="text-lg font-semibold text-yellow-400">{scores.kpiScore}</p>
+          </div>
+        </div>
 
+        <div className="overflow-x-auto rounded-lg border border-dashboard-text/10">
           <table className="w-full">
-            <thead>
-              <tr className="border-b border-dashboard-text/20">
-                <th className="text-left py-2 text-dashboard-muted">Question</th>
-                <th className="text-center py-2 w-24 text-dashboard-muted">Points</th>
-                <th className="text-center py-2 w-32 text-dashboard-muted">Action</th>
+            <thead className="bg-dashboard-dark/30">
+              <tr>
+                <th className="text-left p-3 text-sm font-medium text-dashboard-muted">Question</th>
+                <th className="text-center p-3 w-20 text-sm font-medium text-dashboard-muted">Points</th>
+                <th className="text-center p-3 w-28 text-sm font-medium text-dashboard-muted">Action</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-dashboard-text/10">
               {questions.map((q) => (
-                <tr key={q.id} className="border-b border-dashboard-text/20">
-                  <td className="py-3">{q.question}</td>
-                  <td className="text-center">{q.points}</td>
-                  <td>
+                <tr key={q.id} className="hover:bg-dashboard-dark/20">
+                  <td className="p-3">{q.question}</td>
+                  <td className="text-center p-3">{q.points}</td>
+                  <td className="p-3">
                     <div className="flex justify-center gap-2">
                       <Button
                         variant={q.status === 'cross' ? "destructive" : "outline"}
                         size="sm"
                         onClick={() => handleQuestionStatusChange(q.id, 'cross')}
-                        className="w-10 h-10"
+                        className="w-9 h-9 p-0"
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -365,7 +360,7 @@ const ChampsForm = () => {
                         variant={q.status === 'exclude' ? "destructive" : "outline"}
                         size="sm"
                         onClick={() => handleQuestionStatusChange(q.id, 'exclude')}
-                        className="w-10 h-10"
+                        className="w-9 h-9 p-0"
                       >
                         <Ban className="h-4 w-4" />
                       </Button>
@@ -379,8 +374,8 @@ const ChampsForm = () => {
 
         <Button 
           type="submit" 
-          disabled={isSubmitting} 
-          className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+          disabled={isSubmitting}
+          className="w-full h-11 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
         >
           {isSubmitting ? "Submitting..." : "Submit Evaluation"}
         </Button>
