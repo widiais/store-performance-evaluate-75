@@ -30,12 +30,13 @@ const ChampReportDetail = () => {
       const { data, error } = await supabase
         .from('champs_evaluation_report')
         .select('*')
-        .eq('id', id)
+        .eq('id', parseInt(id || '0'))
         .single();
       
       if (error) throw error;
       return data;
     },
+    enabled: !!id,
   });
 
   const { data: detailedQuestions = [], isLoading: isLoadingDetails } = useQuery({
@@ -55,14 +56,14 @@ const ChampReportDetail = () => {
             points
           )
         `)
-        .eq('evaluation_id', id);
+        .eq('evaluation_id', parseInt(id));
       
       if (error) throw error;
       
       return (answers || []).map(answer => ({
         question: answer.champs_questions?.question || '',
         points: answer.champs_questions?.points || 0,
-        status: answer.status
+        status: answer.status as 'cross' | 'exclude' | 'none'
       }))
       .filter(q => q.status !== 'none') as DetailedQuestion[];
     },

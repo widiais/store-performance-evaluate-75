@@ -17,6 +17,7 @@ export type Database = {
           id: number
           question_id: number | null
           score: number
+          status: string
           updated_at: string
         }
         Insert: {
@@ -26,6 +27,7 @@ export type Database = {
           id?: number
           question_id?: number | null
           score: number
+          status?: string
           updated_at?: string
         }
         Update: {
@@ -35,6 +37,7 @@ export type Database = {
           id?: number
           question_id?: number | null
           score?: number
+          status?: string
           updated_at?: string
         }
         Relationships: [
