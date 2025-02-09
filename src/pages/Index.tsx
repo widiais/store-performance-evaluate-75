@@ -12,6 +12,8 @@ import { useState } from 'react';
 import { Switch } from "@/components/ui/switch";
 import ChampReport from '@/components/ChampReport';
 import ChampReportDetail from '@/components/ChampReportDetail';
+import EspReport from '@/components/EspReport';
+import EspReportDetail from '@/components/EspReportDetail';
 import { Routes, Route } from 'react-router-dom';
 
 const Index = () => {
@@ -190,6 +192,13 @@ const Index = () => {
           <Routes>
             <Route path="/" element={<ChampReport />} />
             <Route path="/report/:id" element={<ChampReportDetail />} />
+          </Routes>
+        );
+      case 'espreport':
+        return (
+          <Routes>
+            <Route path="/" element={<EspReport />} />
+            <Route path="/report/:id" element={<EspReportDetail />} />
           </Routes>
         );
       default:
