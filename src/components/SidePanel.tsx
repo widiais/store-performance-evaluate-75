@@ -87,6 +87,12 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
                   >
                     ESP Form
                   </TabsTrigger>
+                  <TabsTrigger 
+                    value="espreport" 
+                    className="w-full justify-start gap-2 pl-6 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                  >
+                    ESP Report
+                  </TabsTrigger>
                 </div>
               </Tabs2.List>
             </div>
