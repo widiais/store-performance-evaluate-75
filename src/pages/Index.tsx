@@ -13,6 +13,7 @@ import ChampReport from '@/components/ChampReport';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -181,7 +182,7 @@ const Index = () => {
       case 'champsform':
         return <ChampsForm />;
       case 'champreport':
-        return <ChampReport />;
+        return <ChampReport onSelectReport={setSelectedReportId} selectedReportId={selectedReportId} />;
       default:
         return null;
     }
@@ -200,3 +201,4 @@ const Index = () => {
 };
 
 export default Index;
+
