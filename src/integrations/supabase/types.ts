@@ -129,6 +129,102 @@ export type Database = {
         }
         Relationships: []
       }
+      cleanliness_evaluation_answers: {
+        Row: {
+          answer: boolean
+          created_at: string
+          evaluation_id: number | null
+          id: number
+          question_id: number | null
+          score: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          answer: boolean
+          created_at?: string
+          evaluation_id?: number | null
+          id?: number
+          question_id?: number | null
+          score: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          answer?: boolean
+          created_at?: string
+          evaluation_id?: number | null
+          id?: number
+          question_id?: number | null
+          score?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleanliness_evaluation_answers_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "cleanliness_evaluation_report"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cleanliness_evaluation_answers_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "cleanliness_evaluations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cleanliness_evaluation_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "cleanliness_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cleanliness_evaluations: {
+        Row: {
+          created_at: string
+          evaluation_date: string
+          id: number
+          pic: string
+          status: string
+          store_id: number | null
+          total_score: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          evaluation_date: string
+          id?: number
+          pic: string
+          status?: string
+          store_id?: number | null
+          total_score?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          evaluation_date?: string
+          id?: number
+          pic?: string
+          status?: string
+          store_id?: number | null
+          total_score?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleanliness_evaluations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cleanliness_questions: {
         Row: {
           created_at: string
@@ -242,6 +338,102 @@ export type Database = {
           },
         ]
       }
+      product_quality_evaluation_answers: {
+        Row: {
+          answer: boolean
+          created_at: string
+          evaluation_id: number | null
+          id: number
+          question_id: number | null
+          score: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          answer: boolean
+          created_at?: string
+          evaluation_id?: number | null
+          id?: number
+          question_id?: number | null
+          score: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          answer?: boolean
+          created_at?: string
+          evaluation_id?: number | null
+          id?: number
+          question_id?: number | null
+          score?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_quality_evaluation_answers_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "product_quality_evaluation_report"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_quality_evaluation_answers_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "product_quality_evaluations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_quality_evaluation_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "product_quality_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_quality_evaluations: {
+        Row: {
+          created_at: string
+          evaluation_date: string
+          id: number
+          pic: string
+          status: string
+          store_id: number | null
+          total_score: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          evaluation_date: string
+          id?: number
+          pic: string
+          status?: string
+          store_id?: number | null
+          total_score?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          evaluation_date?: string
+          id?: number
+          pic?: string
+          status?: string
+          store_id?: number | null
+          total_score?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_quality_evaluations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_quality_questions: {
         Row: {
           created_at: string
@@ -265,6 +457,102 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      service_evaluation_answers: {
+        Row: {
+          answer: boolean
+          created_at: string
+          evaluation_id: number | null
+          id: number
+          question_id: number | null
+          score: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          answer: boolean
+          created_at?: string
+          evaluation_id?: number | null
+          id?: number
+          question_id?: number | null
+          score: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          answer?: boolean
+          created_at?: string
+          evaluation_id?: number | null
+          id?: number
+          question_id?: number | null
+          score?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_evaluation_answers_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "service_evaluation_report"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_evaluation_answers_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "service_evaluations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_evaluation_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "service_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_evaluations: {
+        Row: {
+          created_at: string
+          evaluation_date: string
+          id: number
+          pic: string
+          status: string
+          store_id: number | null
+          total_score: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          evaluation_date: string
+          id?: number
+          pic: string
+          status?: string
+          store_id?: number | null
+          total_score?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          evaluation_date?: string
+          id?: number
+          pic?: string
+          status?: string
+          store_id?: number | null
+          total_score?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_evaluations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       service_questions: {
         Row: {
@@ -340,12 +628,48 @@ export type Database = {
         }
         Relationships: []
       }
+      cleanliness_evaluation_report: {
+        Row: {
+          evaluation_date: string | null
+          id: number | null
+          pic: string | null
+          status: string | null
+          store_city: string | null
+          store_name: string | null
+          total_score: number | null
+        }
+        Relationships: []
+      }
       esp_evaluation_report: {
         Row: {
           evaluation_date: string | null
           final_score: number | null
           id: number | null
           kpi_score: number | null
+          pic: string | null
+          status: string | null
+          store_city: string | null
+          store_name: string | null
+          total_score: number | null
+        }
+        Relationships: []
+      }
+      product_quality_evaluation_report: {
+        Row: {
+          evaluation_date: string | null
+          id: number | null
+          pic: string | null
+          status: string | null
+          store_city: string | null
+          store_name: string | null
+          total_score: number | null
+        }
+        Relationships: []
+      }
+      service_evaluation_report: {
+        Row: {
+          evaluation_date: string | null
+          id: number | null
           pic: string | null
           status: string | null
           store_city: string | null
