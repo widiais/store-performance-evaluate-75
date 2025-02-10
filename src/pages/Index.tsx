@@ -10,11 +10,20 @@ import SetupCleanliness from '@/components/SetupCleanliness';
 import SetupProductQuality from '@/components/SetupProductQuality';
 import SetupService from '@/components/SetupService';
 import ChampsForm from '@/components/ChampsForm';
+import CleanlinessForm from '@/components/CleanlinessForm';
+import ServiceForm from '@/components/ServiceForm';
+import ProductQualityForm from '@/components/ProductQualityForm';
 import EspForm from '@/components/EspForm';
 import { useState } from 'react';
 import { Switch } from "@/components/ui/switch";
 import ChampReport from '@/components/ChampReport';
 import ChampReportDetail from '@/components/ChampReportDetail';
+import CleanlinessReport from '@/components/CleanlinessReport';
+import CleanlinessReportDetail from '@/components/CleanlinessReportDetail';
+import ServiceReport from '@/components/ServiceReport';
+import ServiceReportDetail from '@/components/ServiceReportDetail';
+import ProductQualityReport from '@/components/ProductQualityReport';
+import ProductQualityReportDetail from '@/components/ProductQualityReportDetail';
 import EspReport from '@/components/EspReport';
 import EspReportDetail from '@/components/EspReportDetail';
 import { Routes, Route } from 'react-router-dom';
@@ -71,10 +80,22 @@ const Index = () => {
         return <SetupService />;
       case 'champsform':
         return <ChampsForm />;
+      case 'cleanlinessform':
+        return <CleanlinessForm />;
+      case 'serviceform':
+        return <ServiceForm />;
+      case 'productqualityform':
+        return <ProductQualityForm />;
       case 'espform':
         return <EspForm />;
       case 'champreport':
         return <ChampReport />;
+      case 'cleanlinessreport':
+        return <CleanlinessReport />;
+      case 'servicereport':
+        return <ServiceReport />;
+      case 'productqualityreport':
+        return <ProductQualityReport />;
       case 'espreport':
         return <EspReport />;
       default:
@@ -89,6 +110,9 @@ const Index = () => {
         <Routes>
           <Route path="/" element={renderContent()} />
           <Route path="/champ-report/:id" element={<ChampReportDetail />} />
+          <Route path="/cleanliness-report/:id" element={<CleanlinessReportDetail />} />
+          <Route path="/service-report/:id" element={<ServiceReportDetail />} />
+          <Route path="/product-quality-report/:id" element={<ProductQualityReportDetail />} />
           <Route path="/esp-report/:id" element={<EspReportDetail />} />
         </Routes>
       </div>

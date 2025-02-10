@@ -91,6 +91,27 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
                     CHAMPS Form
                   </TabsTrigger>
                   <TabsTrigger 
+                    value="cleanlinessform" 
+                    className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                  >
+                    <ClipboardList className="w-4 h-4" />
+                    Cleanliness Form
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="serviceform" 
+                    className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                  >
+                    <ClipboardList className="w-4 h-4" />
+                    Service Form
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="productqualityform" 
+                    className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                  >
+                    <ClipboardList className="w-4 h-4" />
+                    Product Quality Form
+                  </TabsTrigger>
+                  <TabsTrigger 
                     value="espform" 
                     className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
                   >
@@ -108,6 +129,27 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
                   >
                     <FileText className="w-4 h-4" />
                     CHAMPS Report
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="cleanlinessreport" 
+                    className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                  >
+                    <FileText className="w-4 h-4" />
+                    Cleanliness Report
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="servicereport" 
+                    className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                  >
+                    <FileText className="w-4 h-4" />
+                    Service Report
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="productqualityreport" 
+                    className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                  >
+                    <FileText className="w-4 h-4" />
+                    Product Quality Report
                   </TabsTrigger>
                   <TabsTrigger 
                     value="espreport" 
