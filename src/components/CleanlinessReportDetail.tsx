@@ -14,7 +14,7 @@ const CleanlinessReportDetail = () => {
       const { data, error } = await supabase
         .from('cleanliness_evaluation_report')
         .select('*')
-        .eq('id', id)
+        .eq('id', parseInt(id as string))
         .single();
 
       if (error) throw error;

@@ -14,7 +14,7 @@ const ProductQualityReportDetail = () => {
       const { data, error } = await supabase
         .from('product_quality_evaluation_report')
         .select('*')
-        .eq('id', id)
+        .eq('id', parseInt(id as string))
         .single();
 
       if (error) throw error;

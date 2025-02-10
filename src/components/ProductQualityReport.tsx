@@ -55,7 +55,7 @@ const ProductQualityReport = () => {
                   <TableCell>{new Date(report.evaluation_date).toLocaleDateString()}</TableCell>
                   <TableCell>{report.total_score}%</TableCell>
                   <TableCell>
-                    <Badge variant={report.status === 'completed' ? 'success' : 'warning'}>
+                    <Badge variant={report.status === 'completed' ? 'default' : 'secondary'}>
                       {report.status}
                     </Badge>
                   </TableCell>
