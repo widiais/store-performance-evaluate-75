@@ -1,29 +1,25 @@
+
 import React from 'react';
-import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
-import 'react-circular-progressbar/dist/styles.css';
+import { LucideIcon } from 'lucide-react';
 
 interface MetricCardProps {
   title: string;
-  value: number;
-  color: string;
+  value: string;
+  description: string;
+  icon: LucideIcon;
 }
 
-const MetricCard = ({ title, value, color }: MetricCardProps) => {
+const MetricCard = ({ title, value, description, icon: Icon }: MetricCardProps) => {
   return (
-    <div className="metric-card">
-      <div className="relative w-32 h-32 mb-6">
-        <CircularProgressbar
-          value={value}
-          text={`${value}%`}
-          styles={buildStyles({
-            textSize: '1.25rem',
-            pathColor: color,
-            textColor: color,
-            trailColor: 'rgba(255,255,255,0.1)',
-          })}
-        />
+    <div className="p-6 bg-card rounded-lg border border-border">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-medium">{title}</h3>
+        <Icon className="w-5 h-5 text-muted-foreground" />
       </div>
-      <h3 className="text-lg font-medium text-dashboard-text">{title}</h3>
+      <div>
+        <p className="text-2xl font-bold mb-2">{value}</p>
+        <p className="text-sm text-muted-foreground">{description}</p>
+      </div>
     </div>
   );
 };
