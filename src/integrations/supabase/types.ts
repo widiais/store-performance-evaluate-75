@@ -129,6 +129,30 @@ export type Database = {
         }
         Relationships: []
       }
+      cleanliness_questions: {
+        Row: {
+          created_at: string
+          id: number
+          points: number
+          question: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          points?: number
+          question: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          points?: number
+          question?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       esp_evaluations: {
         Row: {
           created_at: string
@@ -217,6 +241,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      product_quality_questions: {
+        Row: {
+          created_at: string
+          id: number
+          points: number
+          question: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          points?: number
+          question: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          points?: number
+          question?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      service_questions: {
+        Row: {
+          created_at: string
+          id: number
+          points: number
+          question: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          points?: number
+          question: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          points?: number
+          question?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       stores: {
         Row: {

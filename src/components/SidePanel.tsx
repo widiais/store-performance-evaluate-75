@@ -1,3 +1,4 @@
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   LayoutDashboard, 
@@ -55,6 +56,27 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
                   >
                     <FolderCog className="w-4 h-4" />
                     Setup CHAMPS
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="setupcleanliness" 
+                    className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                  >
+                    <FolderCog className="w-4 h-4" />
+                    Setup Cleanliness
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="setupproductquality" 
+                    className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                  >
+                    <FolderCog className="w-4 h-4" />
+                    Setup Product Quality
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="setupservice" 
+                    className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                  >
+                    <FolderCog className="w-4 h-4" />
+                    Setup Service
                   </TabsTrigger>
                 </div>
 
