@@ -100,6 +100,13 @@ export type Database = {
             foreignKeyName: "champs_evaluations_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
+            referencedRelation: "financial_records_report"
+            referencedColumns: ["store_id"]
+          },
+          {
+            foreignKeyName: "champs_evaluations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
@@ -220,6 +227,13 @@ export type Database = {
             foreignKeyName: "cleanliness_evaluations_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
+            referencedRelation: "financial_records_report"
+            referencedColumns: ["store_id"]
+          },
+          {
+            foreignKeyName: "cleanliness_evaluations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
@@ -291,6 +305,13 @@ export type Database = {
             foreignKeyName: "esp_evaluations_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
+            referencedRelation: "financial_records_report"
+            referencedColumns: ["store_id"]
+          },
+          {
+            foreignKeyName: "esp_evaluations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
@@ -334,6 +355,57 @@ export type Database = {
             columns: ["evaluation_id"]
             isOneToOne: false
             referencedRelation: "esp_evaluations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_records: {
+        Row: {
+          cogs_achieved: number
+          created_at: string
+          id: number
+          input_date: string
+          pic: string
+          store_id: number | null
+          total_opex: number
+          total_sales: number
+          updated_at: string
+        }
+        Insert: {
+          cogs_achieved: number
+          created_at?: string
+          id?: number
+          input_date: string
+          pic: string
+          store_id?: number | null
+          total_opex: number
+          total_sales: number
+          updated_at?: string
+        }
+        Update: {
+          cogs_achieved?: number
+          created_at?: string
+          id?: number
+          input_date?: string
+          pic?: string
+          store_id?: number | null
+          total_opex?: number
+          total_sales?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_records_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "financial_records_report"
+            referencedColumns: ["store_id"]
+          },
+          {
+            foreignKeyName: "financial_records_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
             referencedColumns: ["id"]
           },
         ]
@@ -425,6 +497,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "product_quality_evaluations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "financial_records_report"
+            referencedColumns: ["store_id"]
+          },
           {
             foreignKeyName: "product_quality_evaluations_store_id_fkey"
             columns: ["store_id"]
@@ -549,6 +628,13 @@ export type Database = {
             foreignKeyName: "service_evaluations_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
+            referencedRelation: "financial_records_report"
+            referencedColumns: ["store_id"]
+          },
+          {
+            foreignKeyName: "service_evaluations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
@@ -651,6 +737,21 @@ export type Database = {
           store_city: string | null
           store_name: string | null
           total_score: number | null
+        }
+        Relationships: []
+      }
+      financial_records_report: {
+        Row: {
+          cogs_achieved: number | null
+          cogs_target: number | null
+          id: number | null
+          input_date: string | null
+          pic: string | null
+          store_city: string | null
+          store_id: number | null
+          store_name: string | null
+          total_opex: number | null
+          total_sales: number | null
         }
         Relationships: []
       }

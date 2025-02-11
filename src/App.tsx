@@ -15,6 +15,8 @@ import ProductQualityReport from "@/components/ProductQualityReport";
 import ProductQualityReportDetail from "@/components/ProductQualityReportDetail";
 import EspReport from "@/components/EspReport";
 import EspReportDetail from "@/components/EspReportDetail";
+import FinanceDataForm from "@/components/FinanceDataForm";
+import FinanceReport from "@/components/FinanceReport";
 import { ThemeProvider } from "./components/ui/theme-provider";
 
 const queryClient = new QueryClient();
@@ -38,6 +40,8 @@ const App = () => (
             <Route path="/product-quality-report/:id" element={<ProductQualityReportDetail />} />
             <Route path="/esp-report" element={<EspReport />} />
             <Route path="/esp-report/:id" element={<EspReportDetail />} />
+            <Route path="/finance-form" element={<FinanceDataForm />} />
+            <Route path="/finance-report" element={<FinanceReport />} />
           </Routes>
         </Router>
       </ThemeProvider>

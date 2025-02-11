@@ -1,4 +1,3 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   LayoutDashboard, 
@@ -7,7 +6,8 @@ import {
   Database,
   ClipboardList,
   FileText,
-  FolderCog
+  FolderCog,
+  Wallet
 } from "lucide-react";
 import * as Tabs2 from "@radix-ui/react-tabs";
 
@@ -157,6 +157,25 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
                   >
                     <FileText className="w-4 h-4" />
                     ESP Report
+                  </TabsTrigger>
+                </div>
+
+                {/* Finance Section */}
+                <div className="flex flex-col gap-1">
+                  <div className="text-xs text-gray-400 uppercase px-2 mb-1">Finance</div>
+                  <TabsTrigger 
+                    value="financeform" 
+                    className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                  >
+                    <Wallet className="w-4 h-4" />
+                    Finance Data Form
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="financereport" 
+                    className="w-full justify-start gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                  >
+                    <FileText className="w-4 h-4" />
+                    Finance Report
                   </TabsTrigger>
                 </div>
 
