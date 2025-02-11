@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PDFDownloadLink } from '@react-pdf/renderer';
@@ -114,66 +113,70 @@ const EspReportDetail = () => {
   }
 
   return (
-    <div className="p-6 min-h-screen bg-gradient-to-br from-purple-900/10 to-pink-900/10">
+    <div className="p-4 sm:p-6 min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto">
-        <Button variant="outline" onClick={() => navigate(-1)} className="mb-6">
+        <Button 
+          variant="outline" 
+          onClick={() => navigate(-1)} 
+          className="mb-4 sm:mb-6 border-gray-200 hover:bg-gray-100 w-full sm:w-auto"
+        >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Reports
         </Button>
 
-        <h2 className="text-2xl font-semibold mb-6 bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
+        <h2 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6 text-gray-900">
           ESP Evaluation Details
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="p-4 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20">
-            <p className="text-sm text-dashboard-muted">Store</p>
-            <p className="text-lg font-semibold">{evaluation.store_name} - {evaluation.store_city}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="p-3 sm:p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+            <p className="text-sm text-gray-600">Store</p>
+            <p className="text-base sm:text-lg font-semibold text-gray-900">{evaluation.store_name} - {evaluation.store_city}</p>
           </div>
-          <div className="p-4 rounded-lg bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20">
-            <p className="text-sm text-dashboard-muted">PIC</p>
-            <p className="text-lg font-semibold">{evaluation.pic}</p>
+          <div className="p-3 sm:p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+            <p className="text-sm text-gray-600">PIC</p>
+            <p className="text-base sm:text-lg font-semibold text-gray-900">{evaluation.pic}</p>
           </div>
-          <div className="p-4 rounded-lg bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20">
-            <p className="text-sm text-dashboard-muted">Evaluation Date</p>
-            <p className="text-lg font-semibold">
+          <div className="p-3 sm:p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+            <p className="text-sm text-gray-600">Evaluation Date</p>
+            <p className="text-base sm:text-lg font-semibold text-gray-900">
               {format(new Date(evaluation.evaluation_date), 'dd MMMM yyyy')}
             </p>
           </div>
-          <div className="p-4 rounded-lg bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/20">
-            <p className="text-sm text-dashboard-muted">Status</p>
-            <p className="text-lg font-semibold">{evaluation.status}</p>
+          <div className="p-3 sm:p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+            <p className="text-sm text-gray-600">Status</p>
+            <p className="text-base sm:text-lg font-semibold text-gray-900">{evaluation.status}</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="p-4 rounded-lg bg-purple-500/5 border border-purple-500/10">
-            <p className="text-sm text-dashboard-muted">Total Score</p>
-            <p className="text-lg font-semibold">{evaluation.total_score}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="p-3 sm:p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+            <p className="text-sm text-gray-600">Total Score</p>
+            <p className="text-base sm:text-lg font-semibold text-gray-900">{evaluation.total_score}</p>
           </div>
-          <div className="p-4 rounded-lg bg-green-500/5 border border-green-500/10">
-            <p className="text-sm text-dashboard-muted">Final Score</p>
-            <p className="text-lg font-semibold">
-              <span className={evaluation.final_score >= 90 ? 'text-green-500' : 'text-red-500'}>
+          <div className="p-3 sm:p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+            <p className="text-sm text-gray-600">Final Score</p>
+            <p className="text-base sm:text-lg font-semibold">
+              <span className={evaluation.final_score >= 90 ? 'text-green-600' : 'text-red-600'}>
                 {evaluation.final_score}
               </span>
             </p>
           </div>
-          <div className="p-4 rounded-lg bg-blue-500/5 border border-blue-500/10">
-            <p className="text-sm text-dashboard-muted">KPI Score</p>
-            <p className="text-lg font-semibold">
-              <span className={evaluation.kpi_score >= 3 ? 'text-green-500' : 'text-red-500'}>
+          <div className="p-3 sm:p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+            <p className="text-sm text-gray-600">KPI Score</p>
+            <p className="text-base sm:text-lg font-semibold">
+              <span className={evaluation.kpi_score >= 3 ? 'text-green-600' : 'text-red-600'}>
                 {evaluation.kpi_score}
               </span>
             </p>
           </div>
         </div>
 
-        <div className="flex gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
           <Button
             variant="outline"
             onClick={handleExcelDownload}
-            className="flex items-center gap-2"
+            className="flex items-center justify-center gap-2 border-gray-200 hover:bg-gray-100 w-full sm:w-auto"
           >
             <FileSpreadsheet className="w-4 h-4" />
             Download Excel
@@ -187,13 +190,13 @@ const EspReportDetail = () => {
               />
             }
             fileName={`ESP_Report_${evaluation.store_name}_${format(new Date(evaluation.evaluation_date), 'dd-MM-yyyy')}.pdf`}
-            className="inline-block"
+            className="w-full sm:w-auto"
           >
             {({ loading }) => (
               <Button
                 variant="outline"
                 disabled={loading}
-                className="flex items-center gap-2"
+                className="flex items-center justify-center gap-2 border-gray-200 hover:bg-gray-100 w-full"
               >
                 <FileText className="w-4 h-4" />
                 {loading ? "Generating PDF..." : "Download PDF"}
@@ -202,28 +205,30 @@ const EspReportDetail = () => {
           </PDFDownloadLink>
         </div>
 
-        <div className="glass-card p-4 bg-dashboard-dark/30 rounded-lg border border-dashboard-text/10">
-          <h3 className="text-lg font-semibold mb-4">Findings</h3>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>No</TableHead>
-                <TableHead>Finding</TableHead>
-                <TableHead className="text-right">Deduction Points</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {findings.map((finding, index) => (
-                <TableRow key={finding.id}>
-                  <TableCell>{index + 1}</TableCell>
-                  <TableCell>{finding.finding}</TableCell>
-                  <TableCell className="text-right font-medium text-red-500">
-                    -{finding.deduction_points}
-                  </TableCell>
+        <div className="glass-card p-3 sm:p-6 bg-white rounded-lg border border-gray-200 shadow-sm overflow-x-auto">
+          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-gray-900">Findings</h3>
+          <div className="min-w-[640px]">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-gray-700">No</TableHead>
+                  <TableHead className="text-gray-700">Finding</TableHead>
+                  <TableHead className="text-gray-700 text-right">Deduction Points</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {findings.map((finding, index) => (
+                  <TableRow key={finding.id} className="hover:bg-gray-50">
+                    <TableCell className="text-gray-900 text-sm sm:text-base">{index + 1}</TableCell>
+                    <TableCell className="text-gray-900 text-sm sm:text-base">{finding.finding}</TableCell>
+                    <TableCell className="text-right font-medium text-red-600 text-sm sm:text-base">
+                      -{finding.deduction_points}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </div>
     </div>

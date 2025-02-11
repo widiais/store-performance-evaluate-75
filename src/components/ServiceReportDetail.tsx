@@ -108,7 +108,7 @@ const ServiceReportDetail = () => {
     
     // Sheet 1: General Info
     const generalInfo = [
-      ['Service Evaluation Report'],
+      ['CRS-Store Service Evaluation Report'],
       [],
       ['Store', `${evaluation.store_name} - ${evaluation.store_city}`],
       ['PIC', evaluation.pic],
@@ -140,35 +140,39 @@ const ServiceReportDetail = () => {
   };
 
   return (
-    <div className="p-6 min-h-screen bg-gradient-to-br from-purple-900/10 to-pink-900/10">
+    <div className="p-4 sm:p-6 min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto">
-        <Button variant="outline" onClick={() => navigate(-1)} className="mb-6">
+        <Button 
+          variant="outline" 
+          onClick={() => navigate(-1)} 
+          className="mb-4 sm:mb-6 border-gray-200 hover:bg-gray-100 w-full sm:w-auto"
+        >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Reports
         </Button>
 
-        <h2 className="text-2xl font-semibold mb-6 bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
+        <h2 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6 text-gray-900">
           Service Evaluation Details
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="p-4 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20">
-            <p className="text-sm text-dashboard-muted">Store</p>
-            <p className="text-lg font-semibold">{evaluation.store_name} - {evaluation.store_city}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="p-3 sm:p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+            <p className="text-sm text-gray-600">Store</p>
+            <p className="text-base sm:text-lg font-semibold text-gray-900">{evaluation.store_name} - {evaluation.store_city}</p>
           </div>
-          <div className="p-4 rounded-lg bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20">
-            <p className="text-sm text-dashboard-muted">PIC</p>
-            <p className="text-lg font-semibold">{evaluation.pic}</p>
+          <div className="p-3 sm:p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+            <p className="text-sm text-gray-600">PIC</p>
+            <p className="text-base sm:text-lg font-semibold text-gray-900">{evaluation.pic}</p>
           </div>
-          <div className="p-4 rounded-lg bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20">
-            <p className="text-sm text-dashboard-muted">Evaluation Date</p>
-            <p className="text-lg font-semibold">
+          <div className="p-3 sm:p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+            <p className="text-sm text-gray-600">Evaluation Date</p>
+            <p className="text-base sm:text-lg font-semibold text-gray-900">
               {evaluation.evaluation_date ? format(new Date(evaluation.evaluation_date), 'dd MMMM yyyy') : '-'}
             </p>
           </div>
-          <div className="p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+          <div className="p-3 sm:p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
             <p className="text-sm text-gray-600">Final Score</p>
-            <p className="text-lg font-semibold">
+            <p className="text-base sm:text-lg font-semibold">
               <span className={evaluation.total_score >= 3 ? 'text-green-600' : 'text-red-600'}>
                 {evaluation.total_score}
               </span>
@@ -176,26 +180,26 @@ const ServiceReportDetail = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="p-3 sm:p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
             <p className="text-sm text-gray-600">Adjusted Points</p>
-            <p className="text-lg font-semibold">{adjustedPoints}</p>
+            <p className="text-base sm:text-lg font-semibold text-gray-900">{adjustedPoints}</p>
           </div>
-          <div className="p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+          <div className="p-3 sm:p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
             <p className="text-sm text-gray-600">Loss Points</p>
-            <p className="text-lg font-semibold text-red-600">{lostPoints}</p>
+            <p className="text-base sm:text-lg font-semibold text-red-600">{lostPoints}</p>
           </div>
-          <div className="p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+          <div className="p-3 sm:p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
             <p className="text-sm text-gray-600">Gained Points</p>
-            <p className="text-lg font-semibold text-green-600">{earnedPoints}</p>
+            <p className="text-base sm:text-lg font-semibold text-green-600">{earnedPoints}</p>
           </div>
         </div>
 
-        <div className="flex gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
           <Button
             variant="outline"
             onClick={handleExcelDownload}
-            className="flex items-center gap-2"
+            className="flex items-center justify-center gap-2 border-gray-200 hover:bg-gray-100 w-full sm:w-auto"
           >
             <FileSpreadsheet className="w-4 h-4" />
             Download Excel
@@ -204,18 +208,18 @@ const ServiceReportDetail = () => {
           <PDFDownloadLink
             document={
               <ServiceReportPDF 
-                evaluation={evaluation} 
+                evaluation={evaluation}
                 questions={questions}
               />
             }
             fileName={`Service_Report_${evaluation.store_name}_${format(new Date(evaluation.evaluation_date), 'dd-MM-yyyy')}.pdf`}
-            className="inline-block"
+            className="w-full sm:w-auto"
           >
             {({ loading }) => (
               <Button
                 variant="outline"
                 disabled={loading}
-                className="flex items-center gap-2"
+                className="flex items-center justify-center gap-2 border-gray-200 hover:bg-gray-100 w-full"
               >
                 <FileText className="w-4 h-4" />
                 {loading ? "Generating PDF..." : "Download PDF"}
@@ -224,48 +228,50 @@ const ServiceReportDetail = () => {
           </PDFDownloadLink>
         </div>
 
-        <div className="glass-card p-4 bg-dashboard-dark/30 rounded-lg border border-dashboard-text/10">
-          <h3 className="text-lg font-semibold mb-4">Questions Details</h3>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Question</TableHead>
-                <TableHead className="w-[100px] text-right">Points</TableHead>
-                <TableHead className="w-[100px] text-right">Score</TableHead>
-                <TableHead className="w-[120px] text-center">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {questions.map((q, index) => (
-                <TableRow key={index}>
-                  <TableCell>{q.question}</TableCell>
-                  <TableCell className="text-right font-medium">{q.points}</TableCell>
-                  <TableCell className="text-right">
-                    <span className={q.score === q.points ? 'text-green-500' : 'text-red-500'}>
-                      {q.score}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {q.status === 'cross' && (
-                      <div className="flex items-center justify-center text-red-500">
-                        <X className="w-4 h-4 mr-1" />
-                        <span>Cross</span>
-                      </div>
-                    )}
-                    {q.status === 'exclude' && (
-                      <div className="flex items-center justify-center text-yellow-500">
-                        <Ban className="w-4 h-4 mr-1" />
-                        <span>Exclude</span>
-                      </div>
-                    )}
-                    {q.status === 'none' && (
-                      <span className="text-green-500">Pass</span>
-                    )}
-                  </TableCell>
+        <div className="glass-card p-3 sm:p-6 bg-white rounded-lg border border-gray-200 shadow-sm overflow-x-auto">
+          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-gray-900">Questions Details</h3>
+          <div className="min-w-[640px]">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-gray-700">Question</TableHead>
+                  <TableHead className="text-gray-700 w-[100px] text-right">Points</TableHead>
+                  <TableHead className="text-gray-700 w-[100px] text-right">Score</TableHead>
+                  <TableHead className="text-gray-700 w-[120px] text-center">Status</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {questions.map((q, index) => (
+                  <TableRow key={index} className="hover:bg-gray-50">
+                    <TableCell className="text-gray-900 text-sm sm:text-base">{q.question}</TableCell>
+                    <TableCell className="text-right font-medium text-gray-900 text-sm sm:text-base">{q.points}</TableCell>
+                    <TableCell className="text-right text-sm sm:text-base">
+                      <span className={q.score === q.points ? 'text-green-600' : 'text-red-600'}>
+                        {q.score}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-center text-sm sm:text-base">
+                      {q.status === 'cross' && (
+                        <div className="flex items-center justify-center text-red-600">
+                          <X className="w-4 h-4 mr-1" />
+                          <span>Cross</span>
+                        </div>
+                      )}
+                      {q.status === 'exclude' && (
+                        <div className="flex items-center justify-center text-yellow-600">
+                          <Ban className="w-4 h-4 mr-1" />
+                          <span>Exclude</span>
+                        </div>
+                      )}
+                      {q.status === 'none' && (
+                        <span className="text-green-600">Pass</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </div>
     </div>

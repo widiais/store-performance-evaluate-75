@@ -222,7 +222,7 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
           <div className="p-6">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-2xl font-semibold bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 bg-clip-text text-transparent">
-                Evaluasi
+                CRS-Store Performance Evaluation
               </h2>
               {isMobile && (
                 <Button

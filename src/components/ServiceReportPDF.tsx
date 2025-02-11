@@ -138,7 +138,7 @@ const ServiceReportPDF = ({ evaluation, questions }: ServiceReportPDFProps) => {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        <Text style={styles.header}>Service Evaluation Report</Text>
+        <Text style={styles.header}>CRS-Store Service Evaluation Report</Text>
         
         <View style={styles.infoSection}>
           <View style={styles.infoRow}>

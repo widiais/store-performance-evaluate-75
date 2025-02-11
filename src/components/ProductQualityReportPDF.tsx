@@ -139,7 +139,7 @@ const ProductQualityReportPDF = ({ evaluation, questions }: ProductQualityReport
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        <Text style={styles.header}>Product Quality Evaluation Report</Text>
+        <Text style={styles.header}>CRS-Store Product Quality Evaluation Report</Text>
         
         <View style={styles.infoSection}>
           <View style={styles.infoRow}>

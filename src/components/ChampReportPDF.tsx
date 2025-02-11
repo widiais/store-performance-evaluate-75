@@ -146,7 +146,7 @@ const ChampsPDF = ({ evaluation, questions, scores }: ChampsPDFProps) => {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        <Text style={styles.header}>CHAMPS Evaluation Report</Text>
+        <Text style={styles.header}>CRS-Store CHAMPS Evaluation Report</Text>
         
         <View style={styles.infoSection}>
           <View style={styles.infoRow}>

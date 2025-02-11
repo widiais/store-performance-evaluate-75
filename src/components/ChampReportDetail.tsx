@@ -119,7 +119,7 @@ const ChampReportDetail = () => {
     
     // Sheet 1: Informasi Umum
     const generalInfo = [
-      ['CHAMPS Evaluation Report'],
+      ['CRS-Store CHAMPS Evaluation Report'],
       [],
       ['Store', `${evaluation.store_name} - ${evaluation.store_city}`],
       ['PIC', evaluation.pic],

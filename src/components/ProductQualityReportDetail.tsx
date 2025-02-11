@@ -105,7 +105,7 @@ const ProductQualityReportDetail = () => {
     
     // Sheet 1: General Info
     const generalInfo = [
-      ['Product Quality Evaluation Report'],
+      ['CRS-Store Product Quality Evaluation Report'],
       [],
       ['Store', `${evaluation.store_name} - ${evaluation.store_city}`],
       ['PIC', evaluation.pic],
@@ -137,14 +137,18 @@ const ProductQualityReportDetail = () => {
   };
 
   return (
-    <div className="p-6 min-h-screen bg-gradient-to-br from-purple-900/10 to-pink-900/10">
+    <div className="p-6 min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto">
-        <Button variant="outline" onClick={() => navigate(-1)} className="mb-6">
+        <Button 
+          variant="outline" 
+          onClick={() => navigate(-1)} 
+          className="mb-6 border-gray-200 hover:bg-gray-100"
+        >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Reports
         </Button>
 
-        <h2 className="text-2xl font-semibold mb-6 bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
+        <h2 className="text-2xl font-semibold mb-6 text-gray-900">
           Product Quality Evaluation Details
         </h2>
 
@@ -176,7 +180,7 @@ const ProductQualityReportDetail = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
             <p className="text-sm text-gray-600">Adjusted Points</p>
-            <p className="text-lg font-semibold">{adjustedPoints}</p>
+            <p className="text-lg font-semibold text-gray-900">{adjustedPoints}</p>
           </div>
           <div className="p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
             <p className="text-sm text-gray-600">Loss Points</p>
@@ -192,7 +196,7 @@ const ProductQualityReportDetail = () => {
           <Button
             variant="outline"
             onClick={handleExcelDownload}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 border-gray-200 hover:bg-gray-100"
           >
             <FileSpreadsheet className="w-4 h-4" />
             Download Excel
@@ -201,7 +205,7 @@ const ProductQualityReportDetail = () => {
           <PDFDownloadLink
             document={
               <ProductQualityReportPDF 
-                evaluation={evaluation} 
+                evaluation={evaluation}
                 questions={questions}
               />
             }
@@ -212,7 +216,7 @@ const ProductQualityReportDetail = () => {
               <Button
                 variant="outline"
                 disabled={loading}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 border-gray-200 hover:bg-gray-100"
               >
                 <FileText className="w-4 h-4" />
                 {loading ? "Generating PDF..." : "Download PDF"}
@@ -221,7 +225,7 @@ const ProductQualityReportDetail = () => {
           </PDFDownloadLink>
         </div>
 
-        <div className="glass-card p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div className="glass-card p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
           <h3 className="text-lg font-semibold mb-4 text-gray-900">Questions Details</h3>
           <Table>
             <TableHeader>
@@ -234,7 +238,7 @@ const ProductQualityReportDetail = () => {
             </TableHeader>
             <TableBody>
               {questions.map((q, index) => (
-                <TableRow key={index}>
+                <TableRow key={index} className="hover:bg-gray-50">
                   <TableCell className="text-gray-900">{q.question}</TableCell>
                   <TableCell className="text-right font-medium text-gray-900">{q.points}</TableCell>
                   <TableCell className="text-right">

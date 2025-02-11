@@ -1,4 +1,3 @@
-
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { format } from "date-fns";
 
@@ -105,7 +104,7 @@ const EspPDF = ({ evaluation, findings }: EspPDFProps) => {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        <Text style={styles.header}>ESP Evaluation Report</Text>
+        <Text style={styles.header}>CRS-Store ESP Evaluation Report</Text>
         
         <View style={styles.infoSection}>
           <View style={styles.infoRow}>
