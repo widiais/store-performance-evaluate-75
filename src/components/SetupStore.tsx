@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -16,6 +15,7 @@ interface Store {
   name: string;
   city: string;
   cogs_target: number;
+  opex_target: number;
   regional: number;
   area: number;
   total_crew: number;
@@ -35,7 +35,6 @@ const SetupStore = () => {
 
   const queryClient = useQueryClient();
 
-  // Fetch stores
   const { data: stores = [], isLoading } = useQuery({
     queryKey: ['stores'],
     queryFn: async () => {
@@ -48,7 +47,6 @@ const SetupStore = () => {
     },
   });
 
-  // Add store mutation
   const addStoreMutation = useMutation({
     mutationFn: async (newStore: Omit<Store, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
@@ -76,7 +74,6 @@ const SetupStore = () => {
     },
   });
 
-  // Update store mutation
   const updateStoreMutation = useMutation({
     mutationFn: async (store: Store) => {
       const { data, error } = await supabase
@@ -144,6 +141,7 @@ const SetupStore = () => {
       name: formData.get('name') as string,
       city: formData.get('city') as string,
       cogs_target: parseFloat(formData.get('cogs_target') as string),
+      opex_target: parseFloat(formData.get('opex_target') as string),
       regional: parseInt(formData.get('regional') as string),
       area: parseInt(formData.get('area') as string),
       total_crew: parseInt(formData.get('total_crew') as string),
@@ -202,6 +200,20 @@ const SetupStore = () => {
             min="0"
             max="100"
             defaultValue={currentStore?.cogs_target}
+            className="bg-dashboard-dark border-dashboard-text/20"
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="opex_target">OPEX Target (%)</Label>
+          <Input
+            id="opex_target"
+            name="opex_target"
+            type="number"
+            step="0.01"
+            min="0"
+            max="100"
+            defaultValue={currentStore?.opex_target}
             className="bg-dashboard-dark border-dashboard-text/20"
             required
           />
@@ -301,6 +313,9 @@ const SetupStore = () => {
             <TableHead onClick={() => handleSort('cogs_target')} className="cursor-pointer">
               COGS Target <ArrowUpDown className="inline h-4 w-4" />
             </TableHead>
+            <TableHead onClick={() => handleSort('opex_target')} className="cursor-pointer">
+              OPEX Target <ArrowUpDown className="inline h-4 w-4" />
+            </TableHead>
             <TableHead onClick={() => handleSort('regional')} className="cursor-pointer">
               Regional <ArrowUpDown className="inline h-4 w-4" />
             </TableHead>
@@ -319,6 +334,7 @@ const SetupStore = () => {
               <TableCell>{store.name}</TableCell>
               <TableCell>{store.city}</TableCell>
               <TableCell>{store.cogs_target}%</TableCell>
+              <TableCell>{store.opex_target}%</TableCell>
               <TableCell>{store.regional}</TableCell>
               <TableCell>{store.area}</TableCell>
               <TableCell>{store.total_crew}</TableCell>

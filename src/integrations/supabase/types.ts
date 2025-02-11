@@ -672,6 +672,7 @@ export type Database = {
           created_at: string
           id: number
           name: string
+          opex_target: number | null
           regional: number | null
           total_crew: number | null
           updated_at: string
@@ -683,6 +684,7 @@ export type Database = {
           created_at?: string
           id?: number
           name: string
+          opex_target?: number | null
           regional?: number | null
           total_crew?: number | null
           updated_at?: string
@@ -694,6 +696,7 @@ export type Database = {
           created_at?: string
           id?: number
           name?: string
+          opex_target?: number | null
           regional?: number | null
           total_crew?: number | null
           updated_at?: string

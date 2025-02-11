@@ -1,14 +1,19 @@
 
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   LayoutDashboard, 
   FileText, 
   FolderCog,
   ClipboardList,
-  Wallet
+  Wallet,
+  Menu,
+  X
 } from "lucide-react";
 import * as Tabs2 from "@radix-ui/react-tabs";
 import { useNavigate } from 'react-router-dom';
+import { Button } from "./ui/button";
+import { cn } from "@/lib/utils";
 
 interface SidePanelProps {
   onTabChange: (value: string) => void;
@@ -28,6 +33,20 @@ interface MenuSection {
 
 const SidePanel = ({ onTabChange }: SidePanelProps) => {
   const navigate = useNavigate();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      if (window.innerWidth >= 768) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const menuSections: MenuSection[] = [
     {
@@ -156,20 +175,32 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
 
   const handleTabChange = (value: string) => {
     onTabChange(value);
-    
-    // Find the menu item and navigate if it has a route
     const menuItem = menuSections.flatMap(section => section.items)
       .find(item => item.value === value);
     
     if (menuItem?.route) {
       navigate(menuItem.route);
     }
+    if (isMobile) {
+      setIsMobileMenuOpen(false);
+    }
   };
 
-  return (
-    <div className="h-screen fixed left-0 top-0 w-64 glass-card border-r border-white/10">
+  const sidebarContent = (
+    <div className="h-full">
       <div className="p-6">
-        <h2 className="text-xl font-medium mb-6">Navigation</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-medium">Navigation</h2>
+          {isMobile && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <X className="h-6 w-6" />
+            </Button>
+          )}
+        </div>
         <Tabs 
           defaultValue="dashboard" 
           orientation="vertical" 
@@ -178,7 +209,7 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
         >
           <TabsList className="flex flex-col h-auto bg-transparent text-white">
             <Tabs2.List asChild>
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-4 max-h-[calc(100vh-200px)] overflow-y-auto">
                 {menuSections.map((section) => (
                   <div key={section.title} className="flex flex-col gap-1">
                     <div className="text-xs text-gray-400 uppercase px-2 mb-1">
@@ -202,6 +233,41 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
         </Tabs>
       </div>
     </div>
+  );
+
+  return (
+    <>
+      {/* Mobile Menu Button */}
+      {isMobile && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="fixed top-4 left-4 z-50"
+          onClick={() => setIsMobileMenuOpen(true)}
+        >
+          <Menu className="h-6 w-6" />
+        </Button>
+      )}
+
+      {/* Sidebar */}
+      <div
+        className={cn(
+          "fixed inset-y-0 left-0 z-40 w-64 glass-card border-r border-white/10 transition-transform duration-300 ease-in-out",
+          isMobile && !isMobileMenuOpen && "-translate-x-full",
+          !isMobile && "translate-x-0"
+        )}
+      >
+        {sidebarContent}
+      </div>
+
+      {/* Overlay for mobile */}
+      {isMobile && isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+    </>
   );
 };
 
