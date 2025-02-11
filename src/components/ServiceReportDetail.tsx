@@ -166,10 +166,10 @@ const ServiceReportDetail = () => {
               {evaluation.evaluation_date ? format(new Date(evaluation.evaluation_date), 'dd MMMM yyyy') : '-'}
             </p>
           </div>
-          <div className="p-4 rounded-lg bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/20">
-            <p className="text-sm text-dashboard-muted">Final Score</p>
+          <div className="p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+            <p className="text-sm text-gray-600">Final Score</p>
             <p className="text-lg font-semibold">
-              <span className={evaluation.total_score >= 3 ? 'text-green-500' : 'text-red-500'}>
+              <span className={evaluation.total_score >= 3 ? 'text-green-600' : 'text-red-600'}>
                 {evaluation.total_score}
               </span>
             </p>
@@ -177,17 +177,17 @@ const ServiceReportDetail = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="p-4 rounded-lg bg-purple-500/5 border border-purple-500/10">
-            <p className="text-sm text-dashboard-muted">Adjusted Points</p>
+          <div className="p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+            <p className="text-sm text-gray-600">Adjusted Points</p>
             <p className="text-lg font-semibold">{adjustedPoints}</p>
           </div>
-          <div className="p-4 rounded-lg bg-red-500/5 border border-red-500/10">
-            <p className="text-sm text-dashboard-muted">Loss Points</p>
-            <p className="text-lg font-semibold text-red-500">{lostPoints}</p>
+          <div className="p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+            <p className="text-sm text-gray-600">Loss Points</p>
+            <p className="text-lg font-semibold text-red-600">{lostPoints}</p>
           </div>
-          <div className="p-4 rounded-lg bg-green-500/5 border border-green-500/10">
-            <p className="text-sm text-dashboard-muted">Gained Points</p>
-            <p className="text-lg font-semibold text-green-500">{earnedPoints}</p>
+          <div className="p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+            <p className="text-sm text-gray-600">Gained Points</p>
+            <p className="text-lg font-semibold text-green-600">{earnedPoints}</p>
           </div>
         </div>
 

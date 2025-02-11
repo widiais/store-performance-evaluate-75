@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -68,7 +67,7 @@ const StoreSelect = ({ selectedStore, onStoreSelect, stores }: StoreSelectProps)
         value={searchValue}
         onChange={handleInputChange}
         placeholder="Select or type store name..."
-        className="w-full bg-dashboard-dark/50 border-dashboard-text/20"
+        className="w-full bg-white border-gray-200 text-gray-900 placeholder:text-gray-400"
       />
       <datalist id="store-list">
         {stores.map((store) => (
@@ -222,15 +221,15 @@ const ServiceForm = () => {
   return (
     <div className="w-full max-w-5xl mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl md:text-2xl font-semibold text-purple-400">
+        <h2 className="text-xl md:text-2xl font-semibold text-gray-900">
           Service Evaluation Form
         </h2>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid gap-4 p-4 bg-dashboard-dark/30 rounded-lg border border-dashboard-text/10">
+        <div className="grid gap-4 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
           <div>
-            <label htmlFor="store" className="text-dashboard-text mb-1.5 block">
+            <label htmlFor="store" className="text-gray-700 mb-1.5 block">
               Store
             </label>
             <StoreSelect
@@ -242,61 +241,61 @@ const ServiceForm = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="date" className="text-dashboard-text mb-1.5 block">Date</label>
+              <label htmlFor="date" className="text-gray-700 mb-1.5 block">Date</label>
               <Input
                 id="date"
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="h-10 bg-dashboard-dark/50 border-dashboard-text/20"
+                className="h-10 bg-white border-gray-200 text-gray-900"
               />
             </div>
             <div>
-              <label htmlFor="pic" className="text-dashboard-text mb-1.5 block">PIC (Person In Charge)</label>
+              <label htmlFor="pic" className="text-gray-700 mb-1.5 block">PIC (Person In Charge)</label>
               <Input
                 id="pic"
                 value={pic}
                 onChange={(e) => setPic(e.target.value)}
                 placeholder="Enter PIC name"
-                className="h-10 bg-dashboard-dark/50 border-dashboard-text/20"
+                className="h-10 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400"
               />
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="p-3 rounded-lg bg-purple-500/5 border border-purple-500/10">
-            <p className="text-xs text-dashboard-muted">Initial Total</p>
-            <p className="text-lg font-semibold text-purple-400">{scores.initialTotal}</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="p-3 rounded-lg bg-white border border-gray-200 shadow-sm">
+            <p className="text-xs text-gray-600">Initial Total</p>
+            <p className="text-lg font-semibold text-gray-900">{scores.initialTotal}</p>
           </div>
-          <div className="p-3 rounded-lg bg-blue-500/5 border border-blue-500/10">
-            <p className="text-xs text-dashboard-muted">Adjusted Total</p>
-            <p className="text-lg font-semibold text-blue-400">{scores.adjustedTotal}</p>
+          <div className="p-3 rounded-lg bg-white border border-gray-200 shadow-sm">
+            <p className="text-xs text-gray-600">Adjusted Total</p>
+            <p className="text-lg font-semibold text-gray-900">{scores.adjustedTotal}</p>
           </div>
-          <div className="p-3 rounded-lg bg-green-500/5 border border-green-500/10">
-            <p className="text-xs text-dashboard-muted">Points Earned</p>
-            <p className="text-lg font-semibold text-green-400">{scores.earnedPoints}</p>
+          <div className="p-3 rounded-lg bg-white border border-gray-200 shadow-sm">
+            <p className="text-xs text-gray-600">Points Earned</p>
+            <p className="text-lg font-semibold text-green-600">{scores.earnedPoints}</p>
           </div>
-          <div className="p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/10">
-            <p className="text-xs text-dashboard-muted">KPI Score</p>
-            <p className="text-lg font-semibold text-yellow-400">{scores.kpiScore}</p>
+          <div className="p-3 rounded-lg bg-white border border-gray-200 shadow-sm">
+            <p className="text-xs text-gray-600">KPI Score</p>
+            <p className="text-lg font-semibold text-blue-600">{scores.kpiScore}</p>
           </div>
         </div>
 
-        <div className="overflow-x-auto rounded-lg border border-dashboard-text/10">
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
           <table className="w-full">
-            <thead className="bg-dashboard-dark/30">
+            <thead className="bg-gray-50">
               <tr>
-                <th className="text-left p-3 text-sm font-medium text-dashboard-muted">Question</th>
-                <th className="text-center p-3 w-20 text-sm font-medium text-dashboard-muted">Points</th>
-                <th className="text-center p-3 w-28 text-sm font-medium text-dashboard-muted">Action</th>
+                <th className="text-left p-3 text-sm font-medium text-gray-700">Question</th>
+                <th className="text-center p-3 w-20 text-sm font-medium text-gray-700">Points</th>
+                <th className="text-center p-3 w-28 text-sm font-medium text-gray-700">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-dashboard-text/10">
+            <tbody className="divide-y divide-gray-200">
               {questions.map((q) => (
-                <tr key={q.id} className="hover:bg-dashboard-dark/20">
-                  <td className="p-3">{q.question}</td>
-                  <td className="text-center p-3">{q.points}</td>
+                <tr key={q.id} className="hover:bg-gray-50">
+                  <td className="p-3 text-gray-900">{q.question}</td>
+                  <td className="text-center p-3 text-gray-900">{q.points}</td>
                   <td className="p-3">
                     <div className="flex justify-center gap-2">
                       <Button
@@ -325,10 +324,10 @@ const ServiceForm = () => {
           </table>
         </div>
 
-        <Button 
+        <Button
           type="submit" 
           disabled={isSubmitting}
-          className="w-full h-11 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+          className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white"
         >
           {isSubmitting ? "Submitting..." : "Submit Evaluation"}
         </Button>

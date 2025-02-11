@@ -149,24 +149,24 @@ const ProductQualityReportDetail = () => {
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="p-4 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20">
-            <p className="text-sm text-dashboard-muted">Store</p>
-            <p className="text-lg font-semibold">{evaluation.store_name} - {evaluation.store_city}</p>
+          <div className="p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+            <p className="text-sm text-gray-600">Store</p>
+            <p className="text-lg font-semibold text-gray-900">{evaluation.store_name} - {evaluation.store_city}</p>
           </div>
-          <div className="p-4 rounded-lg bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20">
-            <p className="text-sm text-dashboard-muted">PIC</p>
-            <p className="text-lg font-semibold">{evaluation.pic}</p>
+          <div className="p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+            <p className="text-sm text-gray-600">PIC</p>
+            <p className="text-lg font-semibold text-gray-900">{evaluation.pic}</p>
           </div>
-          <div className="p-4 rounded-lg bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20">
-            <p className="text-sm text-dashboard-muted">Evaluation Date</p>
-            <p className="text-lg font-semibold">
+          <div className="p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+            <p className="text-sm text-gray-600">Evaluation Date</p>
+            <p className="text-lg font-semibold text-gray-900">
               {evaluation.evaluation_date ? format(new Date(evaluation.evaluation_date), 'dd MMMM yyyy') : '-'}
             </p>
           </div>
-          <div className="p-4 rounded-lg bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/20">
-            <p className="text-sm text-dashboard-muted">Final Score</p>
+          <div className="p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+            <p className="text-sm text-gray-600">Final Score</p>
             <p className="text-lg font-semibold">
-              <span className={evaluation.total_score >= 3 ? 'text-green-500' : 'text-red-500'}>
+              <span className={evaluation.total_score >= 3 ? 'text-green-600' : 'text-red-600'}>
                 {evaluation.total_score}
               </span>
             </p>
@@ -174,17 +174,17 @@ const ProductQualityReportDetail = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="p-4 rounded-lg bg-purple-500/5 border border-purple-500/10">
-            <p className="text-sm text-dashboard-muted">Adjusted Points</p>
+          <div className="p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+            <p className="text-sm text-gray-600">Adjusted Points</p>
             <p className="text-lg font-semibold">{adjustedPoints}</p>
           </div>
-          <div className="p-4 rounded-lg bg-red-500/5 border border-red-500/10">
-            <p className="text-sm text-dashboard-muted">Loss Points</p>
-            <p className="text-lg font-semibold text-red-500">{crossPoints}</p>
+          <div className="p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+            <p className="text-sm text-gray-600">Loss Points</p>
+            <p className="text-lg font-semibold text-red-600">{crossPoints}</p>
           </div>
-          <div className="p-4 rounded-lg bg-green-500/5 border border-green-500/10">
-            <p className="text-sm text-dashboard-muted">Gained Points</p>
-            <p className="text-lg font-semibold text-green-500">{earnedPoints}</p>
+          <div className="p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
+            <p className="text-sm text-gray-600">Gained Points</p>
+            <p className="text-lg font-semibold text-green-600">{earnedPoints}</p>
           </div>
         </div>
 
@@ -221,42 +221,42 @@ const ProductQualityReportDetail = () => {
           </PDFDownloadLink>
         </div>
 
-        <div className="glass-card p-4 bg-dashboard-dark/30 rounded-lg border border-dashboard-text/10">
-          <h3 className="text-lg font-semibold mb-4">Questions Details</h3>
+        <div className="glass-card p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+          <h3 className="text-lg font-semibold mb-4 text-gray-900">Questions Details</h3>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Question</TableHead>
-                <TableHead className="w-[100px] text-right">Points</TableHead>
-                <TableHead className="w-[100px] text-right">Score</TableHead>
-                <TableHead className="w-[120px] text-center">Status</TableHead>
+                <TableHead className="text-gray-700">Question</TableHead>
+                <TableHead className="text-gray-700 w-[100px] text-right">Points</TableHead>
+                <TableHead className="text-gray-700 w-[100px] text-right">Score</TableHead>
+                <TableHead className="text-gray-700 w-[120px] text-center">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {questions.map((q, index) => (
                 <TableRow key={index}>
-                  <TableCell>{q.question}</TableCell>
-                  <TableCell className="text-right font-medium">{q.points}</TableCell>
+                  <TableCell className="text-gray-900">{q.question}</TableCell>
+                  <TableCell className="text-right font-medium text-gray-900">{q.points}</TableCell>
                   <TableCell className="text-right">
-                    <span className={q.score === q.points ? 'text-green-500' : 'text-red-500'}>
+                    <span className={q.score === q.points ? 'text-green-600' : 'text-red-600'}>
                       {q.score}
                     </span>
                   </TableCell>
                   <TableCell className="text-center">
                     {q.status === 'cross' && (
-                      <div className="flex items-center justify-center text-red-500">
+                      <div className="flex items-center justify-center text-red-600">
                         <X className="w-4 h-4 mr-1" />
                         <span>Cross</span>
                       </div>
                     )}
                     {q.status === 'exclude' && (
-                      <div className="flex items-center justify-center text-yellow-500">
+                      <div className="flex items-center justify-center text-yellow-600">
                         <Ban className="w-4 h-4 mr-1" />
                         <span>Exclude</span>
                       </div>
                     )}
                     {q.status === 'none' && (
-                      <span className="text-green-500">Pass</span>
+                      <span className="text-green-600">Pass</span>
                     )}
                   </TableCell>
                 </TableRow>

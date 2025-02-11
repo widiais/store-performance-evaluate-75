@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -126,37 +125,37 @@ const SetupProductQuality = () => {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 bg-gray-50">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-semibold mb-2">Setup Product Quality Form</h2>
-          <div className="flex gap-4 text-dashboard-muted">
+          <h2 className="text-2xl font-semibold mb-2 text-gray-900">Setup Product Quality Form</h2>
+          <div className="flex gap-4 text-gray-600">
             <span>Total Points: {getTotalPoints()}</span>
             <span>Last Edit: {format(lastEdit, "dd/MM/yyyy, HH:mm")}</span>
           </div>
         </div>
       </div>
 
-      <div className="glass-card p-6">
+      <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-20">No</TableHead>
-              <TableHead>Question</TableHead>
-              <TableHead className="w-32">Points</TableHead>
-              <TableHead className="w-24">Action</TableHead>
+              <TableHead className="w-20 text-gray-700">No</TableHead>
+              <TableHead className="text-gray-700">Question</TableHead>
+              <TableHead className="w-32 text-gray-700">Points</TableHead>
+              <TableHead className="w-24 text-gray-700">Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {localQuestions.map((q, index) => (
               <TableRow key={q.id}>
-                <TableCell>{index + 1}</TableCell>
+                <TableCell className="text-gray-900">{index + 1}</TableCell>
                 <TableCell>
                   <Input
                     value={q.question}
                     onChange={(e) => updateQuestion(q.id, 'question', e.target.value)}
                     placeholder="Enter question here..."
-                    className="bg-dashboard-dark border-dashboard-text/20"
+                    className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400"
                   />
                 </TableCell>
                 <TableCell>
@@ -164,7 +163,7 @@ const SetupProductQuality = () => {
                     type="number"
                     value={q.points}
                     onChange={(e) => updateQuestion(q.id, 'points', parseInt(e.target.value) || 0)}
-                    className="bg-dashboard-dark border-dashboard-text/20"
+                    className="bg-white border-gray-200 text-gray-900"
                     min={0}
                   />
                 </TableCell>
@@ -185,7 +184,7 @@ const SetupProductQuality = () => {
         <div className="flex gap-2 mt-4">
           <Button 
             onClick={addQuestion}
-            className="bg-green-500 hover:bg-green-600"
+            className="bg-green-600 hover:bg-green-700 text-white"
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Question
@@ -193,7 +192,7 @@ const SetupProductQuality = () => {
 
           <Button
             onClick={saveChanges}
-            className="bg-blue-500 hover:bg-blue-600"
+            className="bg-blue-600 hover:bg-blue-700 text-white"
             disabled={!hasUnsavedChanges}
           >
             <Save className="h-4 w-4 mr-2" />

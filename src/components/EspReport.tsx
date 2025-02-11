@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -102,9 +101,9 @@ const EspReport = () => {
   }
 
   return (
-    <div className="p-6 min-h-screen bg-gradient-to-br from-purple-900/10 to-pink-900/10">
+    <div className="p-6 min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto">
-        <h2 className="text-2xl font-semibold mb-6 bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
+        <h2 className="text-2xl font-semibold mb-6 text-gray-900">
           ESP Evaluation Report
         </h2>
         
@@ -115,73 +114,58 @@ const EspReport = () => {
               placeholder="Search by store, city, or PIC..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-dashboard-dark/50 border-dashboard-text/20"
+              className="pl-10 bg-white border-gray-200"
             />
           </div>
         </div>
 
-        <div className="glass-card p-6 bg-dashboard-dark/30 rounded-lg border border-dashboard-text/10">
+        <div className="glass-card p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>No</TableHead>
-                <TableHead 
-                  className="cursor-pointer"
-                  onClick={() => toggleSort('store_name')}
-                >
+                <TableHead className="text-gray-700">No</TableHead>
+                <TableHead className="text-gray-700 cursor-pointer" onClick={() => toggleSort('store_name')}>
                   <div className="flex items-center">
                     Store {getSortIcon('store_name')}
                   </div>
                 </TableHead>
-                <TableHead 
-                  className="cursor-pointer"
-                  onClick={() => toggleSort('pic')}
-                >
+                <TableHead className="text-gray-700 cursor-pointer" onClick={() => toggleSort('pic')}>
                   <div className="flex items-center">
                     PIC {getSortIcon('pic')}
                   </div>
                 </TableHead>
-                <TableHead 
-                  className="cursor-pointer"
-                  onClick={() => toggleSort('evaluation_date')}
-                >
+                <TableHead className="text-gray-700 cursor-pointer" onClick={() => toggleSort('evaluation_date')}>
                   <div className="flex items-center">
                     Evaluation Date {getSortIcon('evaluation_date')}
                   </div>
                 </TableHead>
-                <TableHead 
-                  className="text-right cursor-pointer"
-                  onClick={() => toggleSort('final_score')}
-                >
+                <TableHead className="text-gray-700 text-right cursor-pointer" onClick={() => toggleSort('final_score')}>
                   <div className="flex items-center justify-end">
                     Score {getSortIcon('final_score')}
                   </div>
                 </TableHead>
-                <TableHead 
-                  className="text-right cursor-pointer"
-                  onClick={() => toggleSort('kpi_score')}
-                >
+                <TableHead className="text-gray-700 text-right cursor-pointer" onClick={() => toggleSort('kpi_score')}>
                   <div className="flex items-center justify-end">
                     KPI {getSortIcon('kpi_score')}
                   </div>
                 </TableHead>
-                <TableHead className="w-[100px]">Action</TableHead>
+                <TableHead className="text-gray-700 w-[100px]">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedData.map((evaluation, index) => (
-                <TableRow key={evaluation.id} className="cursor-pointer hover:bg-dashboard-dark/50">
-                  <TableCell>{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</TableCell>
-                  <TableCell>{evaluation.store_name} - {evaluation.store_city}</TableCell>
-                  <TableCell>{evaluation.pic}</TableCell>
-                  <TableCell>{format(new Date(evaluation.evaluation_date), 'dd/MM/yyyy')}</TableCell>
+                <TableRow key={evaluation.id} className="cursor-pointer hover:bg-gray-50">
+                  <TableCell className="text-gray-900">{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</TableCell>
+                  <TableCell className="text-gray-900">{evaluation.store_name} - {evaluation.store_city}</TableCell>
+                  <TableCell className="text-gray-900">{evaluation.pic}</TableCell>
+                  <TableCell className="text-gray-900">{format(new Date(evaluation.evaluation_date), 'dd/MM/yyyy')}</TableCell>
                   <TableCell className="text-right font-medium">
-                    <span className={`${evaluation.final_score >= 90 ? 'text-green-500' : 'text-red-500'}`}>
+                    <span className={`${evaluation.final_score >= 90 ? 'text-green-600' : 'text-red-600'}`}>
                       {evaluation.final_score}
                     </span>
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    <span className={`${evaluation.kpi_score >= 3 ? 'text-green-500' : 'text-red-500'}`}>
+                    <span className={`${evaluation.kpi_score >= 3 ? 'text-green-600' : 'text-red-600'}`}>
                       {evaluation.kpi_score}
                     </span>
                   </TableCell>
@@ -190,6 +174,7 @@ const EspReport = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => navigate(`/esp-report/${evaluation.id}`)}
+                      className="border-gray-200 hover:bg-gray-100"
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
