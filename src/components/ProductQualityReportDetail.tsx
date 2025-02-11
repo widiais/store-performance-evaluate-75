@@ -186,4 +186,73 @@ const ProductQualityReportDetail = () => {
             <p className="text-sm text-dashboard-muted">Adjusted Points</p>
             <p className="text-lg font-semibold">{adjustedPoints}</p>
           </div>
-          <div className="p
+          <div className="p-4 rounded-lg bg-red-500/5 border border-red-500/10">
+            <p className="text-sm text-dashboard-muted">Loss Points</p>
+            <p className="text-lg font-semibold text-red-500">{lossPoints}</p>
+          </div>
+          <div className="p-4 rounded-lg bg-green-500/5 border border-green-500/10">
+            <p className="text-sm text-dashboard-muted">Gained Points</p>
+            <p className="text-lg font-semibold text-green-500">{gainedPoints}</p>
+          </div>
+        </div>
+
+        <div className="flex gap-4 mb-6">
+          <Button
+            variant="outline"
+            onClick={handleExcelDownload}
+            className="flex items-center gap-2"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            Download Excel
+          </Button>
+        </div>
+
+        <div className="glass-card p-4 bg-dashboard-dark/30 rounded-lg border border-dashboard-text/10">
+          <h3 className="text-lg font-semibold mb-4">Questions Details</h3>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Question</TableHead>
+                <TableHead className="w-[100px] text-right">Points</TableHead>
+                <TableHead className="w-[100px] text-right">Score</TableHead>
+                <TableHead className="w-[120px] text-center">Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {questions.map((q, index) => (
+                <TableRow key={index}>
+                  <TableCell>{q.question}</TableCell>
+                  <TableCell className="text-right font-medium">{q.points}</TableCell>
+                  <TableCell className="text-right">
+                    <span className={q.score === q.points ? 'text-green-500' : 'text-red-500'}>
+                      {q.score}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {q.status === 'cross' && (
+                      <div className="flex items-center justify-center text-red-500">
+                        <X className="w-4 h-4 mr-1" />
+                        <span>Cross</span>
+                      </div>
+                    )}
+                    {q.status === 'exclude' && (
+                      <div className="flex items-center justify-center text-yellow-500">
+                        <Ban className="w-4 h-4 mr-1" />
+                        <span>Exclude</span>
+                      </div>
+                    )}
+                    {q.status === 'none' && (
+                      <span className="text-green-500">Pass</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ProductQualityReportDetail;
