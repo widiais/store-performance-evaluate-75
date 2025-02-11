@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import * as XLSX from 'xlsx';
@@ -15,6 +14,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Ban, X, FileSpreadsheet, FileText } from "lucide-react";
+import ProductQualityReportPDF from "./ProductQualityReportPDF";
 
 const ProductQualityReportDetail = () => {
   const { id } = useParams();
@@ -92,21 +92,13 @@ const ProductQualityReportDetail = () => {
   }
 
   // Calculate total score
-  const totalPoints = questions.reduce((sum, q) => sum + q.points, 0);
-  const earnedPoints = questions.reduce((sum, q) => sum + q.score, 0);
-  const lostPoints = totalPoints - earnedPoints;
-
-  const gainedPoints = questions
-    .filter(q => q.status !== 'cross' && q.status !== 'exclude')
-    .reduce((sum, q) => sum + q.points, 0);
-
-  const lossPoints = questions
-    .filter(q => q.status === 'cross')
-    .reduce((sum, q) => sum + q.points, 0);
-
   const adjustedPoints = questions
     .filter(q => q.status !== 'exclude')
     .reduce((sum, q) => sum + q.points, 0);
+  const crossPoints = questions
+    .filter(q => q.status === 'cross')
+    .reduce((sum, q) => sum + q.points, 0);
+  const earnedPoints = adjustedPoints - crossPoints;
 
   const handleExcelDownload = () => {
     const workbook = XLSX.utils.book_new();
@@ -121,9 +113,9 @@ const ProductQualityReportDetail = () => {
       ['Final Score', evaluation.total_score],
       [],
       ['Score Summary'],
-      ['Total Points', totalPoints],
+      ['Total Points', adjustedPoints],
       ['Earned Points', earnedPoints],
-      ['Lost Points', lostPoints]
+      ['Lost Points', crossPoints]
     ];
     
     const ws1 = XLSX.utils.aoa_to_sheet(generalInfo);
@@ -188,11 +180,11 @@ const ProductQualityReportDetail = () => {
           </div>
           <div className="p-4 rounded-lg bg-red-500/5 border border-red-500/10">
             <p className="text-sm text-dashboard-muted">Loss Points</p>
-            <p className="text-lg font-semibold text-red-500">{lossPoints}</p>
+            <p className="text-lg font-semibold text-red-500">{crossPoints}</p>
           </div>
           <div className="p-4 rounded-lg bg-green-500/5 border border-green-500/10">
             <p className="text-sm text-dashboard-muted">Gained Points</p>
-            <p className="text-lg font-semibold text-green-500">{gainedPoints}</p>
+            <p className="text-lg font-semibold text-green-500">{earnedPoints}</p>
           </div>
         </div>
 
@@ -205,6 +197,28 @@ const ProductQualityReportDetail = () => {
             <FileSpreadsheet className="w-4 h-4" />
             Download Excel
           </Button>
+          
+          <PDFDownloadLink
+            document={
+              <ProductQualityReportPDF 
+                evaluation={evaluation} 
+                questions={questions}
+              />
+            }
+            fileName={`Product_Quality_Report_${evaluation.store_name}_${format(new Date(evaluation.evaluation_date), 'dd-MM-yyyy')}.pdf`}
+            className="inline-block"
+          >
+            {({ loading }) => (
+              <Button
+                variant="outline"
+                disabled={loading}
+                className="flex items-center gap-2"
+              >
+                <FileText className="w-4 h-4" />
+                {loading ? "Generating PDF..." : "Download PDF"}
+              </Button>
+            )}
+          </PDFDownloadLink>
         </div>
 
         <div className="glass-card p-4 bg-dashboard-dark/30 rounded-lg border border-dashboard-text/10">
