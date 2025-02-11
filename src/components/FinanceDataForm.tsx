@@ -48,10 +48,9 @@ const FinanceDataForm = () => {
     const ws = XLSX.utils.json_to_sheet(templateData);
     XLSX.utils.book_append_sheet(workbook, ws, "Template");
     
-    // Lock ID Toko, Nama Toko, and Target COGS columns
+    // Lock ID Toko, Nama Toko, and Target COGS columns using correct ProtectInfo properties
     ws['!protect'] = {
       password: '',
-      sheet: true,
       formatCells: false,
       formatColumns: false,
       formatRows: false,
@@ -60,10 +59,26 @@ const FinanceDataForm = () => {
       insertHyperlinks: false,
       deleteColumns: false,
       deleteRows: false,
+      selectLockedCells: true,
+      selectUnlockedCells: true,
       sort: false,
       autoFilter: false,
       pivotTables: false,
+      objects: false,
+      scenarios: false
     };
+
+    // Set column protection
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:F100');
+    ws['!cols'] = Array(range.e.c + 1).fill({ hidden: false });
+    
+    // Lock specific columns
+    for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+      ['A', 'B', 'C'].forEach(C => {
+        const cell = ws[C + (R + 1)];
+        if (cell) cell.l = { hidden: false, locked: true };
+      });
+    }
     
     XLSX.writeFile(workbook, `Finance_Data_Template_${format(new Date(), 'dd-MM-yyyy')}.xlsx`);
   };
