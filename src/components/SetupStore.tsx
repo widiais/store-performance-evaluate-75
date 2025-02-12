@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect } from "react";
+
+import { useState, useMemo } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ interface Store {
   regional: number;
   area: number;
   total_crew: number;
+  avg_cu_per_day: number;
   created_at: string;
   updated_at: string;
 }
@@ -145,6 +147,7 @@ const SetupStore = () => {
       regional: parseInt(formData.get('regional') as string),
       area: parseInt(formData.get('area') as string),
       total_crew: parseInt(formData.get('total_crew') as string),
+      avg_cu_per_day: parseInt(formData.get('avg_cu_per_day') as string),
     };
 
     if (isEditing && currentStore) {
@@ -154,11 +157,6 @@ const SetupStore = () => {
     }
     
     setCurrentStore(null);
-  };
-
-  const handleEdit = (store: Store) => {
-    setCurrentStore(store);
-    setIsEditing(true);
   };
 
   const StoreForm = () => (
@@ -260,16 +258,24 @@ const SetupStore = () => {
             required
           />
         </div>
+        <div className="space-y-2">
+          <Label htmlFor="avg_cu_per_day">Average Customer per Day</Label>
+          <Input
+            id="avg_cu_per_day"
+            name="avg_cu_per_day"
+            type="number"
+            min="0"
+            defaultValue={currentStore?.avg_cu_per_day}
+            className="bg-dashboard-dark border-dashboard-text/20"
+            required
+          />
+        </div>
       </div>
       <Button type="submit" className="w-full">
         {isEditing ? 'Update Store' : 'Add Store'}
       </Button>
     </form>
   );
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
 
   return (
     <div className="p-6">
@@ -325,6 +331,9 @@ const SetupStore = () => {
             <TableHead onClick={() => handleSort('total_crew')} className="cursor-pointer">
               Total Crew <ArrowUpDown className="inline h-4 w-4" />
             </TableHead>
+            <TableHead onClick={() => handleSort('avg_cu_per_day')} className="cursor-pointer">
+              Avg. Customer/Day <ArrowUpDown className="inline h-4 w-4" />
+            </TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -338,6 +347,7 @@ const SetupStore = () => {
               <TableCell>{store.regional}</TableCell>
               <TableCell>{store.area}</TableCell>
               <TableCell>{store.total_crew}</TableCell>
+              <TableCell>{store.avg_cu_per_day}</TableCell>
               <TableCell>
                 <Dialog>
                   <DialogTrigger asChild>
