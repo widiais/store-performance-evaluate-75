@@ -1,8 +1,9 @@
-
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 interface ComplaintWeight {
   channel: string;
@@ -27,6 +28,7 @@ interface ComplaintDetail {
 
 const ComplaintReportDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
 
   const { data: weights } = useQuery<ComplaintWeight[]>({
     queryKey: ['complaint-weights'],
@@ -95,11 +97,33 @@ const ComplaintReportDetail = () => {
   ];
 
   const kpiPercentage = (detail.total_weighted_complaints / (detail.avg_cu_per_day * 30)) * 100;
+  
+  // Fungsi untuk menghitung KPI Score berdasarkan persentase
+  const calculateKPIScore = (percentage: number) => {
+    if (percentage <= 0.1) return 4;       // <= 0.1% = 4 (Sangat Baik)
+    if (percentage <= 0.3) return 3;       // <= 0.3% = 3 (Baik)
+    if (percentage <= 0.5) return 2;       // <= 0.5% = 2 (Cukup)
+    if (percentage <= 0.7) return 1;       // <= 0.7% = 1 (Kurang)
+    return 0;                              // > 0.7% = 0 (Sangat Kurang)
+  };
+
+  const kpiScore = calculateKPIScore(kpiPercentage);
 
   return (
     <div className="p-6">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Report Detail Complain</h1>
+        <div className="flex items-center gap-4 mb-6">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/complaint-report')}
+            className="gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          <h1 className="text-2xl font-bold">Report Detail Complain</h1>
+        </div>
         
         <div className="bg-white rounded-lg shadow p-6 space-y-6">
           <div className="grid grid-cols-2 gap-4">
@@ -121,7 +145,9 @@ const ComplaintReportDetail = () => {
             </div>
             <div>
               <p className="text-gray-600">KPI Score</p>
-              <p className="font-semibold">{detail.kpi_score.toFixed(2)} ({kpiPercentage.toFixed(2)}%)</p>
+              <p className={`font-semibold ${kpiScore >= 3 ? 'text-green-600' : kpiScore >= 2 ? 'text-yellow-600' : 'text-red-600'}`}>
+                {kpiScore} ({kpiPercentage.toFixed(2)}%)
+              </p>
             </div>
           </div>
 
@@ -157,12 +183,24 @@ const ComplaintReportDetail = () => {
                 <span className="font-medium">{detail.avg_cu_per_day * 30}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-gray-600">Percentage</span>
+                <span className="text-gray-600">Complaint Percentage</span>
                 <span className="font-medium">{kpiPercentage.toFixed(2)}%</span>
               </div>
               <div className="flex items-center justify-between font-semibold">
                 <span>Final KPI Score</span>
-                <span>{detail.kpi_score.toFixed(2)}</span>
+                <span className={kpiScore >= 3 ? 'text-green-600' : kpiScore >= 2 ? 'text-yellow-600' : 'text-red-600'}>
+                  {kpiScore}
+                </span>
+              </div>
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg text-sm">
+                <p className="font-medium mb-2">KPI Score Range:</p>
+                <ul className="space-y-1 text-gray-600">
+                  <li>4 (Sangat Baik) = Complaint ≤ 0.1%</li>
+                  <li>3 (Baik) = Complaint ≤ 0.3%</li>
+                  <li>2 (Cukup) = Complaint ≤ 0.5%</li>
+                  <li>1 (Kurang) = Complaint ≤ 0.7%</li>
+                  <li>0 (Sangat Kurang) = Complaint {'>'} 0.7%</li>
+                </ul>
               </div>
             </div>
           </div>

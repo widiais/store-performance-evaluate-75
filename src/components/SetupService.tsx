@@ -35,10 +35,10 @@ const SetupService = () => {
   });
 
   useEffect(() => {
-    if (fetchedQuestions && !hasUnsavedChanges) {
+    if (fetchedQuestions && !hasUnsavedChanges && JSON.stringify(localQuestions) !== JSON.stringify(fetchedQuestions)) {
       setLocalQuestions(fetchedQuestions);
     }
-  }, [fetchedQuestions, hasUnsavedChanges]);
+  }, [fetchedQuestions]);
 
   const saveQuestionsMutation = useMutation({
     mutationFn: async (questions: ServiceQuestion[]) => {

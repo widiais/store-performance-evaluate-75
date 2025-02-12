@@ -21,7 +21,6 @@ const SetupChamps = () => {
   const [lastEdit, setLastEdit] = useState<Date>(new Date());
   const queryClient = useQueryClient();
 
-  // Fetch questions
   const { data: fetchedQuestions = [], isLoading } = useQuery({
     queryKey: ['champs-questions'],
     queryFn: async () => {
@@ -36,10 +35,10 @@ const SetupChamps = () => {
   });
 
   useEffect(() => {
-    if (fetchedQuestions && !hasUnsavedChanges) {
+    if (fetchedQuestions && !hasUnsavedChanges && JSON.stringify(localQuestions) !== JSON.stringify(fetchedQuestions)) {
       setLocalQuestions(fetchedQuestions);
     }
-  }, [fetchedQuestions, hasUnsavedChanges]);
+  }, [fetchedQuestions]);
 
   // Save all questions mutation
   const saveQuestionsMutation = useMutation({
