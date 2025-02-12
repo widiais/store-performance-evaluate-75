@@ -26,7 +26,7 @@ interface ComplaintDetail {
 }
 
 const ComplaintReportDetail = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
 
   const { data: weights } = useQuery<ComplaintWeight[]>({
     queryKey: ['complaint-weights'],
@@ -43,11 +43,13 @@ const ComplaintReportDetail = () => {
     queryKey: ['complaint-detail', id],
     queryFn: async () => {
       if (!id) throw new Error('No ID provided');
+      const numericId = parseInt(id);
+      if (isNaN(numericId)) throw new Error('Invalid ID format');
       
       const { data, error } = await supabase
         .from('complaint_records_report')
         .select('*')
-        .eq('id', parseInt(id))
+        .eq('id', numericId)
         .single();
       
       if (error) throw error;
