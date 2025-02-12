@@ -263,6 +263,84 @@ export type Database = {
         }
         Relationships: []
       }
+      complaint_records: {
+        Row: {
+          created_at: string
+          gmaps_count: number
+          id: number
+          input_date: string
+          online_order_count: number
+          social_media_count: number
+          store_id: number | null
+          total_weighted_complaints: number
+          updated_at: string
+          whatsapp_count: number
+        }
+        Insert: {
+          created_at?: string
+          gmaps_count?: number
+          id?: never
+          input_date: string
+          online_order_count?: number
+          social_media_count?: number
+          store_id?: number | null
+          total_weighted_complaints?: number
+          updated_at?: string
+          whatsapp_count?: number
+        }
+        Update: {
+          created_at?: string
+          gmaps_count?: number
+          id?: never
+          input_date?: string
+          online_order_count?: number
+          social_media_count?: number
+          store_id?: number | null
+          total_weighted_complaints?: number
+          updated_at?: string
+          whatsapp_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "complaint_records_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "financial_records_report"
+            referencedColumns: ["store_id"]
+          },
+          {
+            foreignKeyName: "complaint_records_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      complaint_weights: {
+        Row: {
+          channel: string
+          created_at: string
+          id: number
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          id?: never
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          id?: never
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: []
+      }
       esp_evaluations: {
         Row: {
           created_at: string
@@ -726,6 +804,21 @@ export type Database = {
           store_city: string | null
           store_name: string | null
           total_score: number | null
+        }
+        Relationships: []
+      }
+      complaint_records_report: {
+        Row: {
+          area: number | null
+          gmaps_count: number | null
+          id: number | null
+          input_date: string | null
+          online_order_count: number | null
+          regional: number | null
+          social_media_count: number | null
+          store_name: string | null
+          total_weighted_complaints: number | null
+          whatsapp_count: number | null
         }
         Relationships: []
       }

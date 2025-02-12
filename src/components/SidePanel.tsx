@@ -91,6 +91,12 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
           label: "Setup Service",
           value: "setupservice",
           route: "/setup-service"
+        },
+        {
+          icon: FolderCog,
+          label: "Setup Complain",
+          value: "setupcomplain",
+          route: "/setup-complain"
         }
       ]
     },
@@ -126,6 +132,18 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
           label: "ESP Form",
           value: "espform",
           route: "/esp-form"
+        },
+        {
+          icon: ClipboardList,
+          label: "Finance Data Form",
+          value: "financeform",
+          route: "/finance-form"
+        },
+        {
+          icon: ClipboardList,
+          label: "Complaint Form",
+          value: "complaintform",
+          route: "/complaint-form"
         }
       ]
     },

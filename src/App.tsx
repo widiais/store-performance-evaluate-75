@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,19 +17,11 @@ import EspReport from "@/components/EspReport";
 import EspReportDetail from "@/components/EspReportDetail";
 import FinanceDataForm from "@/components/FinanceDataForm";
 import FinanceReport from "@/components/FinanceReport";
+import SetupComplain from "@/components/SetupComplain";
+import ComplaintForm from "@/components/ComplaintForm";
 import { ThemeProvider } from "./components/ui/theme-provider";
 import SidePanel from "@/components/SidePanel";
 import { useState } from "react";
-import SetupStore from "@/components/SetupStore";
-import SetupChamps from "@/components/SetupChamps";
-import SetupCleanliness from "@/components/SetupCleanliness";
-import SetupProductQuality from "@/components/SetupProductQuality";
-import SetupService from "@/components/SetupService";
-import ChampsForm from "@/components/ChampsForm";
-import CleanlinessForm from "@/components/CleanlinessForm";
-import ServiceForm from "@/components/ServiceForm";
-import ProductQualityForm from "@/components/ProductQualityForm";
-import EspForm from "@/components/EspForm";
 
 const queryClient = new QueryClient();
 
@@ -47,16 +40,8 @@ const App = () => {
               <div className="pl-64 md:pl-64 w-full">
                 <Routes>
                   <Route path="/" element={<Index />} />
-                  <Route path="/setup-store" element={<SetupStore />} />
-                  <Route path="/setup-champs" element={<SetupChamps />} />
-                  <Route path="/setup-cleanliness" element={<SetupCleanliness />} />
-                  <Route path="/setup-product-quality" element={<SetupProductQuality />} />
-                  <Route path="/setup-service" element={<SetupService />} />
-                  <Route path="/champs-form" element={<ChampsForm />} />
-                  <Route path="/cleanliness-form" element={<CleanlinessForm />} />
-                  <Route path="/service-form" element={<ServiceForm />} />
-                  <Route path="/product-quality-form" element={<ProductQualityForm />} />
-                  <Route path="/esp-form" element={<EspForm />} />
+                  <Route path="/setup-complain" element={<SetupComplain />} />
+                  <Route path="/complaint-form" element={<ComplaintForm />} />
                   <Route path="/report" element={<ChampReport />} />
                   <Route path="/report/:id" element={<ChampReportDetail />} />
                   <Route path="/cleanliness-report" element={<CleanlinessReport />} />
