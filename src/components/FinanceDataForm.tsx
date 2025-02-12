@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -23,6 +24,15 @@ interface FinancialRecord {
   input_date: string;
   pic: string;
   cogs_target: number;
+  cogs_achieved: number;
+  total_sales: number;
+  total_opex: number;
+}
+
+interface FinancialRecordInsert {
+  store_id: number;
+  input_date: string;
+  pic: string;
   cogs_achieved: number;
   total_sales: number;
   total_opex: number;
@@ -97,20 +107,23 @@ const FinanceDataForm = () => {
           return;
         }
 
-        // Upload data
-        const records: FinancialRecord[] = jsonData.map((row) => ({
-          store_name: row.store_name!,
-          store_city: row.store_city!,
-          input_date: inputDate,
-          pic: pic,
-          cogs_target: Number(row.cogs_target),
-          cogs_achieved: Number(row.cogs_achieved),
-          total_sales: Number(row.total_sales),
-          total_opex: Number(row.total_opex),
-        }));
+        // Convert to database format
+        const records: FinancialRecordInsert[] = jsonData.map((row) => {
+          const store = stores?.find(s => s.name === row.store_name);
+          if (!store) throw new Error(`Store not found: ${row.store_name}`);
+
+          return {
+            store_id: store.id,
+            input_date: inputDate,
+            pic: pic,
+            cogs_achieved: Number(row.cogs_achieved),
+            total_sales: Number(row.total_sales),
+            total_opex: Number(row.total_opex),
+          };
+        });
 
         const { error } = await supabase
-          .from('financial_records_report')
+          .from('financial_records')
           .insert(records);
 
         if (error) throw error;
