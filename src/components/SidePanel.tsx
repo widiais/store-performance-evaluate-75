@@ -7,7 +7,8 @@ import {
   ClipboardList,
   Wallet,
   Menu,
-  X
+  X,
+  MessageSquare
 } from "lucide-react";
 import * as Tabs2 from "@radix-ui/react-tabs";
 import { useNavigate } from 'react-router-dom';
@@ -179,23 +180,18 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
           label: "ESP Report",
           value: "espreport",
           route: "/esp-report"
-        }
-      ]
-    },
-    {
-      title: "Finance",
-      items: [
-        {
-          icon: Wallet,
-          label: "Finance Data Form",
-          value: "financeform",
-          route: "/finance-form"
         },
         {
           icon: FileText,
           label: "Finance Report",
           value: "financereport",
           route: "/finance-report"
+        },
+        {
+          icon: MessageSquare,
+          label: "Complaint Report",
+          value: "complaintreport",
+          route: "/complaint-report"
         }
       ]
     }

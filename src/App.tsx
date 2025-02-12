@@ -37,7 +37,7 @@ const App = () => {
           <Toaster />
           <Sonner />
           <Router>
-            <div className="min-h-screen flex">
+            <div className="min-h-screen flex w-full">
               <SidePanel onTabChange={setActiveTab} />
               <div className="pl-64 md:pl-64 w-full">
                 <Routes>
