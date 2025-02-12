@@ -74,7 +74,8 @@ const SetupComplain = () => {
     whatsapp: 'WhatsApp',
     social_media: 'Social Media',
     gmaps: 'Google Maps',
-    online_order: 'Online Order'
+    online_order: 'Online Order',
+    late_handling: 'Late Handling'
   };
 
   return (

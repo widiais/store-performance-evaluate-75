@@ -32,6 +32,7 @@ interface ComplaintRecord {
   social_media_count: number;
   gmaps_count: number;
   online_order_count: number;
+  late_handling_count: number;
 }
 
 const ComplaintForm = () => {
@@ -76,6 +77,7 @@ const ComplaintForm = () => {
       social_media_count: '',
       gmaps_count: '',
       online_order_count: '',
+      late_handling_count: ''
     })));
 
     const workbook = XLSX.utils.book_new();
@@ -90,7 +92,8 @@ const ComplaintForm = () => {
       record.whatsapp_count * (weightMap.whatsapp || 1) +
       record.social_media_count * (weightMap.social_media || 1.5) +
       record.gmaps_count * (weightMap.gmaps || 2) +
-      record.online_order_count * (weightMap.online_order || 2)
+      record.online_order_count * (weightMap.online_order || 2) +
+      record.late_handling_count * (weightMap.late_handling || 5)
     );
   };
 
@@ -113,7 +116,8 @@ const ComplaintForm = () => {
             !isNaN(Number(row.whatsapp_count)) &&
             !isNaN(Number(row.social_media_count)) &&
             !isNaN(Number(row.gmaps_count)) &&
-            !isNaN(Number(row.online_order_count))
+            !isNaN(Number(row.online_order_count)) &&
+            !isNaN(Number(row.late_handling_count))
           );
         });
 
@@ -140,6 +144,7 @@ const ComplaintForm = () => {
             social_media_count: Number(row.social_media_count),
             gmaps_count: Number(row.gmaps_count),
             online_order_count: Number(row.online_order_count),
+            late_handling_count: Number(row.late_handling_count),
             total_weighted_complaints,
           };
         });
@@ -187,20 +192,6 @@ const ComplaintForm = () => {
                 value={inputDate}
                 onChange={(e) => setInputDate(e.target.value)}
                 className="bg-white border-gray-200 text-gray-900"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="pic" className="text-gray-700 mb-1.5 block">
-                PIC (Person In Charge)
-              </Label>
-              <Input
-                id="pic"
-                value={pic}
-                onChange={(e) => setPic(e.target.value)}
-                placeholder="Enter PIC name"
-                className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400"
                 required
               />
             </div>

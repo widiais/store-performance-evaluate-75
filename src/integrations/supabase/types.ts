@@ -269,6 +269,7 @@ export type Database = {
           gmaps_count: number
           id: number
           input_date: string
+          late_handling_count: number
           online_order_count: number
           social_media_count: number
           store_id: number | null
@@ -281,6 +282,7 @@ export type Database = {
           gmaps_count?: number
           id?: never
           input_date: string
+          late_handling_count?: number
           online_order_count?: number
           social_media_count?: number
           store_id?: number | null
@@ -293,6 +295,7 @@ export type Database = {
           gmaps_count?: number
           id?: never
           input_date?: string
+          late_handling_count?: number
           online_order_count?: number
           social_media_count?: number
           store_id?: number | null
@@ -813,6 +816,7 @@ export type Database = {
           gmaps_count: number | null
           id: number | null
           input_date: string | null
+          late_handling_count: number | null
           online_order_count: number | null
           regional: number | null
           social_media_count: number | null
