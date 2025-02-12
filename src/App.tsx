@@ -19,6 +19,8 @@ import FinanceDataForm from "@/components/FinanceDataForm";
 import FinanceReport from "@/components/FinanceReport";
 import SetupComplain from "@/components/SetupComplain";
 import ComplaintForm from "@/components/ComplaintForm";
+import ComplaintReport from "@/components/ComplaintReport";
+import ComplaintReportDetail from "@/components/ComplaintReportDetail";
 import { ThemeProvider } from "./components/ui/theme-provider";
 import SidePanel from "@/components/SidePanel";
 import { useState } from "react";
@@ -42,6 +44,8 @@ const App = () => {
                   <Route path="/" element={<Index />} />
                   <Route path="/setup-complain" element={<SetupComplain />} />
                   <Route path="/complaint-form" element={<ComplaintForm />} />
+                  <Route path="/complaint-report" element={<ComplaintReport />} />
+                  <Route path="/complaint-report/:id" element={<ComplaintReportDetail />} />
                   <Route path="/report" element={<ChampReport />} />
                   <Route path="/report/:id" element={<ChampReportDetail />} />
                   <Route path="/cleanliness-report" element={<CleanlinessReport />} />

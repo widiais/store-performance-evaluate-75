@@ -748,6 +748,7 @@ export type Database = {
       stores: {
         Row: {
           area: number | null
+          avg_cu_per_day: number | null
           city: string
           cogs_target: number | null
           created_at: string
@@ -760,6 +761,7 @@ export type Database = {
         }
         Insert: {
           area?: number | null
+          avg_cu_per_day?: number | null
           city: string
           cogs_target?: number | null
           created_at?: string
@@ -772,6 +774,7 @@ export type Database = {
         }
         Update: {
           area?: number | null
+          avg_cu_per_day?: number | null
           city?: string
           cogs_target?: number | null
           created_at?: string
@@ -813,9 +816,11 @@ export type Database = {
       complaint_records_report: {
         Row: {
           area: number | null
+          avg_cu_per_day: number | null
           gmaps_count: number | null
           id: number | null
           input_date: string | null
+          kpi_score: number | null
           late_handling_count: number | null
           online_order_count: number | null
           regional: number | null
