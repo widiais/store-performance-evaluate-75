@@ -42,10 +42,12 @@ const ComplaintReportDetail = () => {
   const { data: detail, isLoading } = useQuery<ComplaintDetail>({
     queryKey: ['complaint-detail', id],
     queryFn: async () => {
+      if (!id) throw new Error('No ID provided');
+      
       const { data, error } = await supabase
         .from('complaint_records_report')
         .select('*')
-        .eq('id', id)
+        .eq('id', parseInt(id))
         .single();
       
       if (error) throw error;
