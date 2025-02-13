@@ -12,7 +12,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { format, endOfMonth, parse } from 'date-fns';
+import { format, endOfMonth, parse, getYear } from 'date-fns';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
@@ -32,8 +32,10 @@ import {
 } from "@/components/ui/table";
 
 const StorePerformance = () => {
+  const currentYear = getYear(new Date());
   const [selectedStores, setSelectedStores] = useState<string[]>([]);
-  const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
+  const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'MM'));
+  const [selectedYear, setSelectedYear] = useState<string>(currentYear.toString());
 
   const { data: stores } = useQuery({
     queryKey: ['stores'],
@@ -49,12 +51,12 @@ const StorePerformance = () => {
   });
 
   const { data: performanceData } = useQuery({
-    queryKey: ['champsPerformance', selectedStores, selectedMonth],
+    queryKey: ['champsPerformance', selectedStores, selectedMonth, selectedYear],
     queryFn: async () => {
       if (selectedStores.length === 0) return [];
       
-      const startDate = `${selectedMonth}-01`;
-      const monthDate = parse(selectedMonth, 'yyyy-MM', new Date());
+      const startDate = `${selectedYear}-${selectedMonth}-01`;
+      const monthDate = parse(startDate, 'yyyy-MM-dd', new Date());
       const endDate = format(endOfMonth(monthDate), 'yyyy-MM-dd');
       
       const { data, error } = await supabase
@@ -90,13 +92,32 @@ const StorePerformance = () => {
     champs_score: record.total_score
   }));
 
+  // Generate array of past 5 years for year selection
+  const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
+
+  // Array of months for month selection
+  const months = [
+    { value: '01', label: 'January' },
+    { value: '02', label: 'February' },
+    { value: '03', label: 'March' },
+    { value: '04', label: 'April' },
+    { value: '05', label: 'May' },
+    { value: '06', label: 'June' },
+    { value: '07', label: 'July' },
+    { value: '08', label: 'August' },
+    { value: '09', label: 'September' },
+    { value: '10', label: 'October' },
+    { value: '11', label: 'November' },
+    { value: '12', label: 'December' },
+  ];
+
   return (
     <div className="p-6 bg-gray-50">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-2xl font-semibold mb-6">Store Performance Review</h1>
         
         {/* Header Controls */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Store Selection */}
           <Card className="p-4">
             <h3 className="font-medium mb-4">Select Stores</h3>
@@ -122,17 +143,28 @@ const StorePerformance = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {Array.from({ length: 12 }, (_, i) => {
-                  const date = new Date(2024, i, 1);
-                  return (
-                    <SelectItem
-                      key={format(date, 'yyyy-MM')}
-                      value={format(date, 'yyyy-MM')}
-                    >
-                      {format(date, 'MMMM yyyy')}
-                    </SelectItem>
-                  );
-                })}
+                {months.map((month) => (
+                  <SelectItem key={month.value} value={month.value}>
+                    {month.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Card>
+
+          {/* Year Selection */}
+          <Card className="p-4">
+            <h3 className="font-medium mb-4">Select Year</h3>
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {years.map((year) => (
+                  <SelectItem key={year} value={year.toString()}>
+                    {year}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </Card>
@@ -176,7 +208,6 @@ const StorePerformance = () => {
                       <TableHead>Date</TableHead>
                       <TableHead>Store</TableHead>
                       <TableHead>KPI</TableHead>
-                      <TableHead>PIC</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -187,7 +218,6 @@ const StorePerformance = () => {
                         </TableCell>
                         <TableCell>{record.store_name}</TableCell>
                         <TableCell>{record.total_score?.toFixed(1)}</TableCell>
-                        <TableCell>{record.pic}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
