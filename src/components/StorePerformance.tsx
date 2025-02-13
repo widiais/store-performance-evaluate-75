@@ -3,14 +3,6 @@ import { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from "@/components/ui/button";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   LineChart,
   Line,
@@ -18,15 +10,26 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
-  BarChart,
-  Bar
 } from 'recharts';
-import { Download } from 'lucide-react';
 import { format, endOfMonth, parse } from 'date-fns';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const StorePerformance = () => {
   const [selectedStores, setSelectedStores] = useState<number[]>([]);
@@ -50,7 +53,6 @@ const StorePerformance = () => {
     queryFn: async () => {
       if (selectedStores.length === 0) return [];
       
-      // Parse the selected month and get the last day of that month
       const startDate = `${selectedMonth}-01`;
       const monthDate = parse(selectedMonth, 'yyyy-MM', new Date());
       const endDate = format(endOfMonth(monthDate), 'yyyy-MM-dd');
@@ -69,6 +71,12 @@ const StorePerformance = () => {
     enabled: selectedStores.length > 0,
   });
 
+  const calculateAverageKPI = () => {
+    if (!performanceData || performanceData.length === 0) return 0;
+    const totalKPI = performanceData.reduce((sum, record) => sum + (record.champs_score || 0), 0);
+    return (totalKPI / performanceData.length).toFixed(1);
+  };
+
   const handleStoreToggle = (storeId: number, checked: boolean) => {
     if (checked) {
       setSelectedStores([...selectedStores, storeId]);
@@ -77,199 +85,114 @@ const StorePerformance = () => {
     }
   };
 
-  const handleDownloadPDF = () => {
-    // TODO: Implement PDF download functionality
-    console.log('Downloading PDF...');
-  };
-
   return (
     <div className="p-6 bg-gray-50">
       <div className="max-w-7xl mx-auto">
-        {/* Header Section */}
-        <Card className="p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Store Selection */}
-            <div className="space-y-4">
-              <h3 className="font-medium">Select Stores</h3>
-              <div className="max-h-40 overflow-y-auto space-y-2">
-                {stores?.map((store) => (
-                  <div key={store.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`store-${store.id}`}
-                      checked={selectedStores.includes(store.id)}
-                      onCheckedChange={(checked) => handleStoreToggle(store.id, checked as boolean)}
+        <h1 className="text-2xl font-semibold mb-6">Store Performance Review</h1>
+        
+        {/* Header Controls */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* Store Selection */}
+          <Card className="p-4">
+            <h3 className="font-medium mb-4">Select Stores</h3>
+            <div className="max-h-40 overflow-y-auto space-y-2">
+              {stores?.map((store) => (
+                <div key={store.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`store-${store.id}`}
+                    checked={selectedStores.includes(store.id)}
+                    onCheckedChange={(checked) => handleStoreToggle(store.id, checked as boolean)}
+                  />
+                  <Label htmlFor={`store-${store.id}`}>{store.name}</Label>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Month Selection */}
+          <Card className="p-4">
+            <h3 className="font-medium mb-4">Select Month</h3>
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 12 }, (_, i) => {
+                  const date = new Date(2024, i, 1);
+                  return (
+                    <SelectItem
+                      key={format(date, 'yyyy-MM')}
+                      value={format(date, 'yyyy-MM')}
+                    >
+                      {format(date, 'MMMM yyyy')}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </Card>
+        </div>
+
+        {/* CHAMPS Performance Section */}
+        {selectedStores.length > 0 && (
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold mb-6">CHAMPS Performance</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Line Chart */}
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={performanceData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="date"
+                      tickFormatter={(date) => format(new Date(date), 'dd')}
                     />
-                    <Label htmlFor={`store-${store.id}`}>{store.name}</Label>
-                  </div>
-                ))}
+                    <YAxis domain={[0, 4]} ticks={[1, 2, 3, 4]} />
+                    <Tooltip 
+                      formatter={(value: number) => [value.toFixed(1), "KPI"]}
+                      labelFormatter={(label) => format(new Date(label), 'dd/MM/yy')}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="champs_score" 
+                      stroke="#8884d8" 
+                      strokeWidth={2}
+                      dot={{ fill: '#8884d8' }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* KPI Data Table */}
+              <div className="overflow-auto max-h-[300px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>KPI</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {performanceData?.map((record) => (
+                      <TableRow key={record.date}>
+                        <TableCell>
+                          {format(new Date(record.date), 'dd/MM/yy')}
+                        </TableCell>
+                        <TableCell>{record.champs_score?.toFixed(1)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             </div>
 
-            {/* Month Selection */}
-            <div>
-              <h3 className="font-medium mb-4">Select Month</h3>
-              <input
-                type="month"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md"
-              />
+            {/* Average KPI */}
+            <div className="mt-6 p-4 bg-gray-100 rounded-lg">
+              <p className="text-sm font-medium">
+                Store Average CHAMPS: {calculateAverageKPI()} (Taken: {performanceData?.length || 0})
+              </p>
             </div>
-
-            {/* Download Button */}
-            <div className="flex items-start">
-              <Button onClick={handleDownloadPDF} className="flex items-center gap-2">
-                <Download className="h-4 w-4" />
-                Download PDF
-              </Button>
-            </div>
-          </div>
-        </Card>
-
-        {selectedStores.length > 0 && (
-          <div className="space-y-6">
-            {/* Performance Metrics Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* CHAMPS Performance */}
-              <Card className="p-6">
-                <h3 className="text-lg font-medium mb-4">CHAMPS Performance</h3>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={performanceData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis domain={[0, 100]} />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="champs_score" fill="#8884d8" name="CHAMPS Score" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card>
-
-              {/* Cleanliness Performance */}
-              <Card className="p-6">
-                <h3 className="text-lg font-medium mb-4">Cleanliness Performance</h3>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={performanceData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis domain={[0, 100]} />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="cleanliness_score" fill="#82ca9d" name="Cleanliness Score" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card>
-
-              {/* Service Performance */}
-              <Card className="p-6">
-                <h3 className="text-lg font-medium mb-4">Service Performance</h3>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={performanceData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis domain={[0, 100]} />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="service_score" fill="#ffc658" name="Service Score" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card>
-
-              {/* Product Quality Performance */}
-              <Card className="p-6">
-                <h3 className="text-lg font-medium mb-4">Product Quality Performance</h3>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={performanceData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis domain={[0, 100]} />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="product_quality_score" fill="#ff7300" name="Product Quality Score" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card>
-            </div>
-
-            {/* Financial Metrics Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Sales Performance */}
-              <Card className="p-6">
-                <h3 className="text-lg font-medium mb-4">Sales Performance</h3>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={performanceData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Line type="monotone" dataKey="total_sales" stroke="#8884d8" name="Sales" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card>
-
-              {/* OPEX Performance */}
-              <Card className="p-6">
-                <h3 className="text-lg font-medium mb-4">OPEX Performance</h3>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={performanceData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Line type="monotone" dataKey="total_opex" stroke="#82ca9d" name="OPEX" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card>
-
-              {/* Productivity Performance */}
-              <Card className="p-6">
-                <h3 className="text-lg font-medium mb-4">Productivity Performance</h3>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={performanceData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Line type="monotone" dataKey="productivity_score" stroke="#ffc658" name="Productivity" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card>
-
-              {/* COGS Performance */}
-              <Card className="p-6">
-                <h3 className="text-lg font-medium mb-4">COGS Performance</h3>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={performanceData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Line type="monotone" dataKey="cogs_achieved" stroke="#ff7300" name="COGS" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card>
-            </div>
-          </div>
+          </Card>
         )}
       </div>
     </div>
