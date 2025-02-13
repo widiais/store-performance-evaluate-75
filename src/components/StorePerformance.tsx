@@ -24,7 +24,7 @@ import {
   Bar
 } from 'recharts';
 import { Download } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, endOfMonth, parse } from 'date-fns';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
@@ -50,12 +50,17 @@ const StorePerformance = () => {
     queryFn: async () => {
       if (selectedStores.length === 0) return [];
       
+      // Parse the selected month and get the last day of that month
+      const startDate = `${selectedMonth}-01`;
+      const monthDate = parse(selectedMonth, 'yyyy-MM', new Date());
+      const endDate = format(endOfMonth(monthDate), 'yyyy-MM-dd');
+      
       const { data, error } = await supabase
         .from('store_performance_metrics')
         .select('*')
         .in('store_id', selectedStores)
-        .gte('date', `${selectedMonth}-01`)
-        .lte('date', `${selectedMonth}-31`)
+        .gte('date', startDate)
+        .lte('date', endDate)
         .order('date');
       
       if (error) throw error;
