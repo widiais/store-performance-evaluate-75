@@ -258,7 +258,7 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
         <ScrollArea className="h-full py-6">
           <div className="px-3 py-2">
             <h2 className="mb-6 px-4 text-lg font-semibold tracking-tight">
-              CRS-Store
+              CRS - Performance Evaluate
             </h2>
             
             {menuSections.map((section, index) => (
