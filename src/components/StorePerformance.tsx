@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/table";
 
 const StorePerformance = () => {
-  const [selectedStores, setSelectedStores] = useState<number[]>([]);
+  const [selectedStores, setSelectedStores] = useState<string[]>([]);
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
 
   const { data: stores } = useQuery({
@@ -49,7 +49,7 @@ const StorePerformance = () => {
   });
 
   const { data: performanceData } = useQuery({
-    queryKey: ['storePerformance', selectedStores, selectedMonth],
+    queryKey: ['champsPerformance', selectedStores, selectedMonth],
     queryFn: async () => {
       if (selectedStores.length === 0) return [];
       
@@ -58,12 +58,12 @@ const StorePerformance = () => {
       const endDate = format(endOfMonth(monthDate), 'yyyy-MM-dd');
       
       const { data, error } = await supabase
-        .from('store_performance_metrics')
+        .from('champs_evaluation_report')
         .select('*')
-        .in('store_id', selectedStores)
-        .gte('date', startDate)
-        .lte('date', endDate)
-        .order('date');
+        .in('store_name', selectedStores)
+        .gte('evaluation_date', startDate)
+        .lte('evaluation_date', endDate)
+        .order('evaluation_date');
       
       if (error) throw error;
       return data || [];
@@ -73,17 +73,22 @@ const StorePerformance = () => {
 
   const calculateAverageKPI = () => {
     if (!performanceData || performanceData.length === 0) return 0;
-    const totalKPI = performanceData.reduce((sum, record) => sum + (record.champs_score || 0), 0);
+    const totalKPI = performanceData.reduce((sum, record) => sum + (record.total_score || 0), 0);
     return (totalKPI / performanceData.length).toFixed(1);
   };
 
-  const handleStoreToggle = (storeId: number, checked: boolean) => {
+  const handleStoreToggle = (storeName: string, checked: boolean) => {
     if (checked) {
-      setSelectedStores([...selectedStores, storeId]);
+      setSelectedStores([...selectedStores, storeName]);
     } else {
-      setSelectedStores(selectedStores.filter(id => id !== storeId));
+      setSelectedStores(selectedStores.filter(name => name !== storeName));
     }
   };
+
+  const formattedData = performanceData?.map(record => ({
+    ...record,
+    champs_score: record.total_score
+  }));
 
   return (
     <div className="p-6 bg-gray-50">
@@ -100,8 +105,8 @@ const StorePerformance = () => {
                 <div key={store.id} className="flex items-center space-x-2">
                   <Checkbox
                     id={`store-${store.id}`}
-                    checked={selectedStores.includes(store.id)}
-                    onCheckedChange={(checked) => handleStoreToggle(store.id, checked as boolean)}
+                    checked={selectedStores.includes(store.name)}
+                    onCheckedChange={(checked) => handleStoreToggle(store.name, checked as boolean)}
                   />
                   <Label htmlFor={`store-${store.id}`}>{store.name}</Label>
                 </div>
@@ -141,10 +146,10 @@ const StorePerformance = () => {
               {/* Line Chart */}
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={performanceData}>
+                  <LineChart data={formattedData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
-                      dataKey="date"
+                      dataKey="evaluation_date"
                       tickFormatter={(date) => format(new Date(date), 'dd')}
                     />
                     <YAxis domain={[0, 4]} ticks={[1, 2, 3, 4]} />
@@ -169,16 +174,20 @@ const StorePerformance = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Date</TableHead>
+                      <TableHead>Store</TableHead>
                       <TableHead>KPI</TableHead>
+                      <TableHead>PIC</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {performanceData?.map((record) => (
-                      <TableRow key={record.date}>
+                      <TableRow key={record.id}>
                         <TableCell>
-                          {format(new Date(record.date), 'dd/MM/yy')}
+                          {format(new Date(record.evaluation_date), 'dd/MM/yy')}
                         </TableCell>
-                        <TableCell>{record.champs_score?.toFixed(1)}</TableCell>
+                        <TableCell>{record.store_name}</TableCell>
+                        <TableCell>{record.total_score?.toFixed(1)}</TableCell>
+                        <TableCell>{record.pic}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
