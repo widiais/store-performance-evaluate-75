@@ -315,6 +315,12 @@ const StorePerformance = () => {
   const { data: complaintData = [] } = useQuery({
     queryKey: ['complaintData', selectedStores, selectedMonth, selectedYear],
     queryFn: async () => {
+      if (selectedStores.length === 0) return [];
+      
+      const startDate = `${selectedYear}-${selectedMonth}-01`;
+      const monthDate = parse(startDate, 'yyyy-MM-dd', new Date());
+      const endDate = format(endOfMonth(monthDate), 'yyyy-MM-dd');
+
       const { data, error } = await supabase
         .from('complaint_records_report')
         .select(`
@@ -331,8 +337,8 @@ const StorePerformance = () => {
           kpi_score
         `)
         .in('store_name', selectedStores.map(store => store.name))
-        .gte('input_date', `${selectedYear}-${selectedMonth}-01`)
-        .lte('input_date', `${selectedYear}-${selectedMonth}-31`);
+        .gte('input_date', startDate)
+        .lte('input_date', endDate);
       
       if (error) throw error;
       return data || [];
@@ -436,6 +442,16 @@ const StorePerformance = () => {
     { value: '11', label: 'November' },
     { value: '12', label: 'December' },
   ];
+
+  // Tambahkan fungsi calculateKPIScore
+  const calculateKPIScore = (totalWeightedComplaints: number, avgCUPerDay: number) => {
+    const percentage = (totalWeightedComplaints / (avgCUPerDay * 30)) * 100;
+    if (percentage <= 0.1) return 4;       // <= 0.1% = 4 (Sangat Baik)
+    if (percentage <= 0.3) return 3;       // <= 0.3% = 3 (Baik)
+    if (percentage <= 0.5) return 2;       // <= 0.5% = 2 (Cukup)
+    if (percentage <= 0.7) return 1;       // <= 0.7% = 1 (Kurang)
+    return 0;                              // > 0.7% = 0 (Sangat Kurang)
+  };
 
   return (
     <div className="p-6 min-h-screen bg-gray-50">
@@ -724,79 +740,135 @@ const StorePerformance = () => {
           )}
           
           {activeTab === 'complaint' && (
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-6">Customer Complaints</h2>
-              <div className="space-y-6">
-                {selectedStores.map(store => {
-                  const storeData = complaintData.find(d => d.store_name === store.name);
-                  return (
-                    <div key={store.id} className="p-4 border rounded-lg">
-                      <h3 className="font-medium mb-4">{store.name}</h3>
-                      {storeData ? (
-                        <div>
-                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-4">
-                            <div>
-                              <p className="text-sm text-gray-500">WhatsApp</p>
-                              <p className="text-lg font-medium">{storeData.whatsapp_count}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-500">Social Media</p>
-                              <p className="text-lg font-medium">{storeData.social_media_count}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-500">Google Maps</p>
-                              <p className="text-lg font-medium">{storeData.gmaps_count}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-500">Online Order</p>
-                              <p className="text-lg font-medium">{storeData.online_order_count}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-500">Late Handling</p>
-                              <p className="text-lg font-medium">{storeData.late_handling_count}</p>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
-                            <div>
-                              <p className="text-sm text-gray-500">Total Weighted Complaints</p>
-                              <p className="text-lg font-medium">{storeData.total_weighted_complaints}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-500">Average CU per Day</p>
-                              <p className="text-lg font-medium">{storeData.avg_cu_per_day}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-500">KPI Score</p>
-                              <p className={`text-lg font-medium ${
-                                storeData.kpi_score >= 3 
-                                  ? 'text-green-600' 
-                                  : storeData.kpi_score >= 2 
-                                  ? 'text-yellow-600' 
-                                  : 'text-red-600'
-                              }`}>
-                                {storeData.kpi_score}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="mt-4 pt-4 border-t">
-                            <p className="text-sm text-gray-500 mb-2">KPI Score Range:</p>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-2 text-sm">
-                              <div className="text-green-600">4 (Sangat Baik) = ≤ 0.1%</div>
-                              <div className="text-green-600">3 (Baik) = ≤ 0.3%</div>
-                              <div className="text-yellow-600">2 (Cukup) = ≤ 0.5%</div>
-                              <div className="text-red-600">1 (Kurang) = ≤ 0.7%</div>
-                              <div className="text-red-600">0 (Sangat Kurang) = {'>'}0.7%</div>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <p className="text-gray-500">No complaint data available</p>
-                      )}
-                    </div>
-                  );
-                })}
+            <div className="space-y-6">
+              {/* Month & Year Selection */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="p-4">
+                  <h3 className="font-medium mb-4">Select Month</h3>
+                  <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {months.map((month) => (
+                        <SelectItem key={month.value} value={month.value}>
+                          {month.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Card>
+
+                <Card className="p-4">
+                  <h3 className="font-medium mb-4">Select Year</h3>
+                  <Select value={selectedYear} onValueChange={setSelectedYear}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {years.map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Card>
               </div>
-            </Card>
+
+              {/* Complaint Data */}
+              <Card className="p-6">
+                <h2 className="text-xl font-semibold mb-6">Customer Complaints</h2>
+                <div className="space-y-6">
+                  {selectedStores.map(store => {
+                    const storeData = complaintData.find(d => d.store_name === store.name);
+                    const kpiScore = storeData ? calculateKPIScore(storeData.total_weighted_complaints, storeData.avg_cu_per_day) : null;
+                    const percentage = storeData ? ((storeData.total_weighted_complaints / (storeData.avg_cu_per_day * 30)) * 100) : null;
+                    
+                    return (
+                      <div key={store.id} className="p-4 border rounded-lg">
+                        <div className="flex justify-between items-center mb-4">
+                          <h3 className="font-medium text-lg">{store.name} - {store.city}</h3>
+                          {storeData && kpiScore !== null && (
+                            <Badge variant={
+                              kpiScore >= 3 ? "default" :
+                              kpiScore >= 2 ? "secondary" : "destructive"
+                            } className={
+                              kpiScore >= 3 ? "bg-green-500" :
+                              kpiScore >= 2 ? "bg-yellow-500" : ""
+                            }>
+                              KPI Score: {kpiScore} ({percentage?.toFixed(2)}%)
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        {storeData ? (
+                          <div className="space-y-6">
+                            {/* Complaint Counts */}
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                              <Card className="p-4">
+                                <p className="text-sm text-gray-500">WhatsApp</p>
+                                <p className="text-lg font-medium">{storeData.whatsapp_count || 0}</p>
+                              </Card>
+                              <Card className="p-4">
+                                <p className="text-sm text-gray-500">Social Media</p>
+                                <p className="text-lg font-medium">{storeData.social_media_count || 0}</p>
+                              </Card>
+                              <Card className="p-4">
+                                <p className="text-sm text-gray-500">Google Maps</p>
+                                <p className="text-lg font-medium">{storeData.gmaps_count || 0}</p>
+                              </Card>
+                              <Card className="p-4">
+                                <p className="text-sm text-gray-500">Online Order</p>
+                                <p className="text-lg font-medium">{storeData.online_order_count || 0}</p>
+                              </Card>
+                              <Card className="p-4">
+                                <p className="text-sm text-gray-500">Late Handling</p>
+                                <p className="text-lg font-medium">{storeData.late_handling_count || 0}</p>
+                              </Card>
+                            </div>
+
+                            {/* Summary */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <Card className="p-4">
+                                <p className="text-sm text-gray-500">Total Weighted Complaints</p>
+                                <p className="text-lg font-medium">{storeData.total_weighted_complaints || 0}</p>
+                              </Card>
+                              <Card className="p-4">
+                                <p className="text-sm text-gray-500">Average CU per Day</p>
+                                <p className="text-lg font-medium">{storeData.avg_cu_per_day || 0}</p>
+                              </Card>
+                              <Card className="p-4">
+                                <p className="text-sm text-gray-500">Complaint Percentage</p>
+                                <p className="text-lg font-medium">
+                                  {percentage?.toFixed(2)}%
+                                </p>
+                              </Card>
+                            </div>
+
+                            {/* KPI Score Guide */}
+                            <div className="bg-gray-50 p-4 rounded-lg">
+                              <p className="text-sm font-medium text-gray-700 mb-2">KPI Score Range:</p>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-2 text-sm">
+                                <div className="text-green-600">4 (Sangat Baik) = ≤ 0.1%</div>
+                                <div className="text-green-600">3 (Baik) = ≤ 0.3%</div>
+                                <div className="text-yellow-600">2 (Cukup) = ≤ 0.5%</div>
+                                <div className="text-red-600">1 (Kurang) = ≤ 0.7%</div>
+                                <div className="text-red-600">0 (Sangat Kurang) = {'>'}0.7%</div>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-center py-8 text-gray-500">
+                            Tidak ada data complaint untuk periode ini
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+            </div>
           )}
           
           {activeTab === 'audit' && (

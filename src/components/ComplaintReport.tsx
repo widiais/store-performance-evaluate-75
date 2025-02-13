@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -28,7 +27,8 @@ interface ComplaintRecord {
   store_name: string;
   regional: number;
   area: number;
-  kpi_score: number;
+  total_weighted_complaints: number;
+  avg_cu_per_day: number;
   input_date: string;
 }
 
@@ -101,6 +101,21 @@ const ComplaintReport = () => {
     };
   });
 
+  const calculateKPIScore = (totalWeightedComplaints: number, avgCUPerDay: number) => {
+    const percentage = (totalWeightedComplaints / (avgCUPerDay * 30)) * 100;
+    if (percentage <= 0.1) return 4;       // <= 0.1% = 4 (Sangat Baik)
+    if (percentage <= 0.3) return 3;       // <= 0.3% = 3 (Baik)
+    if (percentage <= 0.5) return 2;       // <= 0.5% = 2 (Cukup)
+    if (percentage <= 0.7) return 1;       // <= 0.7% = 1 (Kurang)
+    return 0;                              // > 0.7% = 0 (Sangat Kurang)
+  };
+
+  const getKPIColor = (kpiScore: number) => {
+    if (kpiScore >= 3) return 'text-green-600';
+    if (kpiScore >= 2) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -153,32 +168,35 @@ const ComplaintReport = () => {
               >
                 Store {getSortIcon('store_name')}
               </TableHead>
-              <TableHead 
-                className="cursor-pointer"
-                onClick={() => handleSort('kpi_score')}
-              >
-                KPI {getSortIcon('kpi_score')}
-              </TableHead>
+              <TableHead>KPI Score</TableHead>
               <TableHead>Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredAndSortedComplaints.map((record) => (
-              <TableRow key={record.id}>
-                <TableCell>{record.regional}</TableCell>
-                <TableCell>{record.area}</TableCell>
-                <TableCell>{record.store_name}</TableCell>
-                <TableCell>{record.kpi_score.toFixed(2)}</TableCell>
-                <TableCell>
-                  <Button
-                    variant="outline"
-                    onClick={() => navigate(`/complaint-report/${record.id}`)}
-                  >
-                    View Detail
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {filteredAndSortedComplaints.map((record) => {
+              const kpiScore = calculateKPIScore(record.total_weighted_complaints, record.avg_cu_per_day);
+              const percentage = (record.total_weighted_complaints / (record.avg_cu_per_day * 30)) * 100;
+              return (
+                <TableRow key={record.id}>
+                  <TableCell>{record.regional}</TableCell>
+                  <TableCell>{record.area}</TableCell>
+                  <TableCell>{record.store_name}</TableCell>
+                  <TableCell>
+                    <span className={getKPIColor(kpiScore)}>
+                      {kpiScore} ({percentage.toFixed(2)}%)
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate(`/complaint-report/${record.id}`)}
+                    >
+                      View Detail
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
