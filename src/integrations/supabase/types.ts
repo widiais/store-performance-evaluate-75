@@ -107,6 +107,13 @@ export type Database = {
             foreignKeyName: "champs_evaluations_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
+            referencedRelation: "store_performance_metrics"
+            referencedColumns: ["store_id"]
+          },
+          {
+            foreignKeyName: "champs_evaluations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
@@ -234,6 +241,13 @@ export type Database = {
             foreignKeyName: "cleanliness_evaluations_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
+            referencedRelation: "store_performance_metrics"
+            referencedColumns: ["store_id"]
+          },
+          {
+            foreignKeyName: "cleanliness_evaluations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
@@ -315,6 +329,13 @@ export type Database = {
             foreignKeyName: "complaint_records_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
+            referencedRelation: "store_performance_metrics"
+            referencedColumns: ["store_id"]
+          },
+          {
+            foreignKeyName: "complaint_records_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
@@ -387,6 +408,13 @@ export type Database = {
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "financial_records_report"
+            referencedColumns: ["store_id"]
+          },
+          {
+            foreignKeyName: "esp_evaluations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "store_performance_metrics"
             referencedColumns: ["store_id"]
           },
           {
@@ -486,6 +514,74 @@ export type Database = {
             foreignKeyName: "financial_records_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
+            referencedRelation: "store_performance_metrics"
+            referencedColumns: ["store_id"]
+          },
+          {
+            foreignKeyName: "financial_records_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      performance_kpis: {
+        Row: {
+          champs_score: number | null
+          cleanliness_score: number | null
+          created_at: string
+          date: string
+          id: number
+          product_quality_score: number | null
+          productivity_score: number | null
+          service_score: number | null
+          store_id: number | null
+          updated_at: string
+        }
+        Insert: {
+          champs_score?: number | null
+          cleanliness_score?: number | null
+          created_at?: string
+          date: string
+          id?: never
+          product_quality_score?: number | null
+          productivity_score?: number | null
+          service_score?: number | null
+          store_id?: number | null
+          updated_at?: string
+        }
+        Update: {
+          champs_score?: number | null
+          cleanliness_score?: number | null
+          created_at?: string
+          date?: string
+          id?: never
+          product_quality_score?: number | null
+          productivity_score?: number | null
+          service_score?: number | null
+          store_id?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_kpis_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "financial_records_report"
+            referencedColumns: ["store_id"]
+          },
+          {
+            foreignKeyName: "performance_kpis_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "store_performance_metrics"
+            referencedColumns: ["store_id"]
+          },
+          {
+            foreignKeyName: "performance_kpis_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
@@ -583,6 +679,13 @@ export type Database = {
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "financial_records_report"
+            referencedColumns: ["store_id"]
+          },
+          {
+            foreignKeyName: "product_quality_evaluations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "store_performance_metrics"
             referencedColumns: ["store_id"]
           },
           {
@@ -710,6 +813,13 @@ export type Database = {
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "financial_records_report"
+            referencedColumns: ["store_id"]
+          },
+          {
+            foreignKeyName: "service_evaluations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "store_performance_metrics"
             referencedColumns: ["store_id"]
           },
           {
@@ -884,6 +994,22 @@ export type Database = {
           store_city: string | null
           store_name: string | null
           total_score: number | null
+        }
+        Relationships: []
+      }
+      store_performance_metrics: {
+        Row: {
+          champs_score: number | null
+          cleanliness_score: number | null
+          cogs_achieved: number | null
+          date: string | null
+          product_quality_score: number | null
+          productivity_score: number | null
+          service_score: number | null
+          store_id: number | null
+          store_name: string | null
+          total_opex: number | null
+          total_sales: number | null
         }
         Relationships: []
       }
