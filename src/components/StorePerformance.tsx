@@ -22,7 +22,7 @@ import {
 } from 'recharts';
 
 const StorePerformance = () => {
-  const [selectedStore, setSelectedStore] = useState<string>('');
+  const [selectedStore, setSelectedStore] = useState<number | null>(null);
 
   const { data: stores } = useQuery({
     queryKey: ['stores'],
@@ -62,6 +62,10 @@ const StorePerformance = () => {
     opex: record.total_opex,
   }));
 
+  const handleStoreChange = (value: string) => {
+    setSelectedStore(parseInt(value));
+  };
+
   return (
     <div className="p-6 bg-gray-50">
       <div className="max-w-7xl mx-auto">
@@ -69,8 +73,8 @@ const StorePerformance = () => {
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">Store Performance</h2>
           <div className="w-[300px]">
             <Select
-              value={selectedStore}
-              onValueChange={setSelectedStore}
+              value={selectedStore?.toString() || ''}
+              onValueChange={handleStoreChange}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select a store" />
