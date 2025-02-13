@@ -8,8 +8,9 @@ import {
   Wallet,
   Menu,
   X,
-  MessageSquare
-} from "lucide-react";
+  MessageSquare,
+  TrendingUp
+} from 'lucide-react';
 import * as Tabs2 from "@radix-ui/react-tabs";
 import { useNavigate } from 'react-router-dom';
 import { Button } from "./ui/button";
@@ -57,6 +58,12 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
           label: "Dashboard",
           value: "dashboard",
           route: "/"
+        },
+        {
+          icon: TrendingUp,
+          label: "Store Performance",
+          value: "storeperformance",
+          route: "/store-performance"
         }
       ]
     },
@@ -212,7 +219,6 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
 
   return (
     <>
-      {/* Mobile Menu Button */}
       {isMobile && (
         <Button
           variant="ghost"
@@ -224,7 +230,6 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
         </Button>
       )}
 
-      {/* Sidebar */}
       <div
         className={cn(
           "fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-100 transition-transform duration-300 ease-in-out",
@@ -283,7 +288,6 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
         </div>
       </div>
 
-      {/* Overlay for mobile */}
       {isMobile && isMobileMenuOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-30"

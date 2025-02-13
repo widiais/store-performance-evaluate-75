@@ -19,6 +19,7 @@ interface Store {
   area: number;
   total_crew: number;
   avg_cu_per_day: number;
+  target_sales: number;
   created_at: string;
   updated_at: string;
 }
@@ -175,6 +176,7 @@ const SetupStore = () => {
       area: parseInt(formData.get('area') as string),
       total_crew: parseInt(formData.get('total_crew') as string),
       avg_cu_per_day: parseInt(formData.get('avg_cu_per_day') as string),
+      target_sales: parseFloat(formData.get('target_sales') as string),
     };
 
     if (isEditing && currentStore) {
@@ -236,6 +238,19 @@ const SetupStore = () => {
               id="city"
               name="city"
               defaultValue={currentStore?.city}
+              className="bg-white border-gray-200"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="target_sales">Target Sales</Label>
+            <Input
+              id="target_sales"
+              name="target_sales"
+              type="number"
+              min="0"
+              step="0.01"
+              defaultValue={currentStore?.target_sales}
               className="bg-white border-gray-200"
               required
             />
@@ -369,6 +384,9 @@ const SetupStore = () => {
                   <TableHead onClick={() => handleSort('city')} className="cursor-pointer">
                     City <ArrowUpDown className="inline h-4 w-4" />
                   </TableHead>
+                  <TableHead onClick={() => handleSort('target_sales')} className="cursor-pointer">
+                    Target Sales <ArrowUpDown className="inline h-4 w-4" />
+                  </TableHead>
                   <TableHead onClick={() => handleSort('cogs_target')} className="cursor-pointer">
                     COGS Target <ArrowUpDown className="inline h-4 w-4" />
                   </TableHead>
@@ -395,6 +413,7 @@ const SetupStore = () => {
                   <TableRow key={store.id}>
                     <TableCell className="font-medium">{store.name}</TableCell>
                     <TableCell>{store.city}</TableCell>
+                    <TableCell>{store.target_sales?.toLocaleString()}</TableCell>
                     <TableCell>{store.cogs_target}%</TableCell>
                     <TableCell>{store.opex_target}%</TableCell>
                     <TableCell>{store.regional}</TableCell>

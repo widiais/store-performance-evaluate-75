@@ -756,6 +756,7 @@ export type Database = {
           name: string
           opex_target: number | null
           regional: number | null
+          target_sales: number | null
           total_crew: number | null
           updated_at: string
         }
@@ -769,6 +770,7 @@ export type Database = {
           name: string
           opex_target?: number | null
           regional?: number | null
+          target_sales?: number | null
           total_crew?: number | null
           updated_at?: string
         }
@@ -782,6 +784,7 @@ export type Database = {
           name?: string
           opex_target?: number | null
           regional?: number | null
+          target_sales?: number | null
           total_crew?: number | null
           updated_at?: string
         }
