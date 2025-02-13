@@ -1,23 +1,22 @@
 import { useState, useEffect } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  LayoutDashboard, 
-  FileText, 
-  FolderCog,
-  ClipboardList,
-  Wallet,
-  Menu,
-  X,
-  MessageSquare,
-  TrendingUp,
-  ChevronDown,
-  ChevronRight,
-  Settings
-} from 'lucide-react';
-import * as Tabs2 from "@radix-ui/react-tabs";
-import { useNavigate } from 'react-router-dom';
-import { Button } from "./ui/button";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import {
+  LayoutDashboard,
+  Store,
+  Award,
+  ClipboardCheck,
+  Sparkles,
+  Coffee,
+  FileText,
+  ChevronDown,
+  ChevronUp,
+  Menu,
+  MessageSquare,
+  X
+} from "lucide-react";
 
 interface SidePanelProps {
   onTabChange: (value: string) => void;
@@ -37,10 +36,9 @@ interface MenuSection {
 
 const SidePanel = ({ onTabChange }: SidePanelProps) => {
   const navigate = useNavigate();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [expandedSections, setExpandedSections] = useState({
-    main: true,
     setup: true,
     forms: true,
     reports: true
@@ -48,13 +46,18 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth >= 768) {
-        setIsMobileMenuOpen(false);
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (!mobile) {
+        setSidebarOpen(true);
+      } else {
+        setSidebarOpen(false);
       }
     };
 
     window.addEventListener('resize', handleResize);
+    handleResize();
+
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
@@ -69,7 +72,7 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
           route: "/"
         },
         {
-          icon: TrendingUp,
+          icon: Store,
           label: "Store Performance",
           value: "storeperformance",
           route: "/store-performance"
@@ -80,40 +83,34 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
       title: "Setup",
       items: [
         {
-          icon: FolderCog,
+          icon: Store,
           label: "Setup Store",
           value: "setupstore",
           route: "/setup-store"
         },
         {
-          icon: FolderCog,
+          icon: Award,
           label: "Setup CHAMPS",
           value: "setupchamps",
           route: "/setup-champs"
         },
         {
-          icon: FolderCog,
-          label: "Setup Cleanliness",
-          value: "setupcleanliness",
-          route: "/setup-cleanliness"
-        },
-        {
-          icon: FolderCog,
-          label: "Setup Product Quality",
-          value: "setupproductquality",
-          route: "/setup-product-quality"
-        },
-        {
-          icon: FolderCog,
+          icon: ClipboardCheck,
           label: "Setup Service",
           value: "setupservice",
           route: "/setup-service"
         },
         {
-          icon: FolderCog,
-          label: "Setup Complain",
-          value: "setupcomplain",
-          route: "/setup-complain"
+          icon: Sparkles,
+          label: "Setup Cleanliness",
+          value: "setupcleanliness",
+          route: "/setup-cleanliness"
+        },
+        {
+          icon: Coffee,
+          label: "Setup Product Quality",
+          value: "setupproductquality",
+          route: "/setup-product-quality"
         }
       ]
     },
@@ -121,46 +118,40 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
       title: "Forms",
       items: [
         {
-          icon: ClipboardList,
+          icon: Award,
           label: "CHAMPS Form",
           value: "champsform",
           route: "/champs-form"
         },
         {
-          icon: ClipboardList,
-          label: "Cleanliness Form",
-          value: "cleanlinessform",
-          route: "/cleanliness-form"
-        },
-        {
-          icon: ClipboardList,
+          icon: ClipboardCheck,
           label: "Service Form",
           value: "serviceform",
           route: "/service-form"
         },
         {
-          icon: ClipboardList,
+          icon: Sparkles,
+          label: "Cleanliness Form",
+          value: "cleanlinessform",
+          route: "/cleanliness-form"
+        },
+        {
+          icon: Coffee,
           label: "Product Quality Form",
           value: "productqualityform",
           route: "/product-quality-form"
         },
         {
-          icon: ClipboardList,
+          icon: FileText,
           label: "ESP Form",
           value: "espform",
           route: "/esp-form"
         },
         {
-          icon: ClipboardList,
-          label: "Finance Data Form",
+          icon: FileText,
+          label: "Finance Form",
           value: "financeform",
           route: "/finance-form"
-        },
-        {
-          icon: ClipboardList,
-          label: "Complaint Form",
-          value: "complaintform",
-          route: "/complaint-form"
         }
       ]
     },
@@ -168,25 +159,25 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
       title: "Reports",
       items: [
         {
-          icon: FileText,
+          icon: Award,
           label: "CHAMPS Report",
-          value: "champreport",
+          value: "champsreport",
           route: "/report"
         },
         {
-          icon: FileText,
-          label: "Cleanliness Report",
-          value: "cleanlinessreport",
-          route: "/cleanliness-report"
-        },
-        {
-          icon: FileText,
+          icon: ClipboardCheck,
           label: "Service Report",
           value: "servicereport",
           route: "/service-report"
         },
         {
-          icon: FileText,
+          icon: Sparkles,
+          label: "Cleanliness Report",
+          value: "cleanlinessreport",
+          route: "/cleanliness-report"
+        },
+        {
+          icon: Coffee,
           label: "Product Quality Report",
           value: "productqualityreport",
           route: "/product-quality-report"
@@ -222,7 +213,7 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
       navigate(menuItem.route);
     }
     if (isMobile) {
-      setIsMobileMenuOpen(false);
+      setSidebarOpen(false);
     }
   };
 
@@ -235,84 +226,78 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
 
   return (
     <>
-      {isMobile && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="fixed top-4 left-4 z-50"
-          onClick={() => setIsMobileMenuOpen(true)}
-        >
-          <Menu className="h-6 w-6" />
-        </Button>
-      )}
-
-      <div
-        className={cn(
-          "fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-100 transition-transform duration-300 ease-in-out",
-          isMobile && !isMobileMenuOpen && "-translate-x-full",
-          !isMobile && "translate-x-0"
-        )}
+      {/* Burger Menu Button - Fixed Position */}
+      <button
+        onClick={() => setSidebarOpen(!isSidebarOpen)}
+        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-md border border-gray-200"
       >
-        <div className="h-full">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-semibold bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 bg-clip-text text-transparent">
-                CRS-Store Performance Evaluation
-              </h2>
-              {isMobile && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <X className="h-6 w-6" />
-                </Button>
-              )}
-            </div>
-            
-            <div className="flex flex-col gap-4 max-h-[calc(100vh-200px)] overflow-y-auto">
-              {menuSections.map((section) => (
-                <div key={section.title} className="flex flex-col">
-                  <button
-                    onClick={() => toggleSection(section.title as keyof typeof expandedSections)}
-                    className="flex items-center justify-between text-xs font-medium text-gray-400 uppercase px-2 mb-2 hover:text-gray-600"
-                  >
-                    <span>{section.title}</span>
-                    {expandedSections[section.title.toLowerCase() as keyof typeof expandedSections] ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4" />
-                    )}
-                  </button>
-                  
-                  <div className={cn(
-                    "flex flex-col gap-1 transition-all duration-300",
-                    !expandedSections[section.title.toLowerCase() as keyof typeof expandedSections] && "hidden"
-                  )}>
-                    {section.items.map((item) => (
-                      <button
-                        key={item.value}
-                        onClick={() => handleTabChange(item.value)}
-                        className="flex items-center gap-3 px-2 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors text-left"
-                      >
-                        <item.icon className="w-5 h-5" />
-                        <span className="font-medium">{item.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+        {isSidebarOpen ? (
+          <X className="h-6 w-6 text-gray-600" />
+        ) : (
+          <Menu className="h-6 w-6 text-gray-600" />
+        )}
+      </button>
 
-      {isMobile && isMobileMenuOpen && (
+      {/* Black Overlay */}
+      {isMobile && isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-30"
-          onClick={() => setIsMobileMenuOpen(false)}
+          className="fixed inset-0 bg-black bg-opacity-50 z-30"
+          onClick={() => setSidebarOpen(false)}
         />
       )}
+
+      {/* Sidebar */}
+      <aside
+        className={`
+          fixed top-0 left-0 z-40 h-full w-64 bg-white border-r border-gray-200
+          transform transition-transform duration-300 ease-in-out
+          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          md:translate-x-0
+        `}
+      >
+        <ScrollArea className="h-full py-6">
+          <div className="px-3 py-2">
+            <h2 className="mb-6 px-4 text-lg font-semibold tracking-tight">
+              CRS-Store
+            </h2>
+            
+            {menuSections.map((section, index) => (
+              <div key={index} className="mb-4">
+                <button
+                  onClick={() => toggleSection(section.title as keyof typeof expandedSections)}
+                  className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 rounded-lg"
+                >
+                  {section.title}
+                  {expandedSections[section.title.toLowerCase() as keyof typeof expandedSections] ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </button>
+                
+                {expandedSections[section.title.toLowerCase() as keyof typeof expandedSections] && (
+                  <div className="mt-1 space-y-1">
+                    {section.items.map((item, itemIndex) => {
+                      const Icon = item.icon;
+                      return (
+                        <Button
+                          key={itemIndex}
+                          variant="ghost"
+                          className="w-full justify-start gap-2"
+                          onClick={() => handleTabChange(item.value)}
+                        >
+                          <Icon className="h-4 w-4" />
+                          {item.label}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+      </aside>
     </>
   );
 };

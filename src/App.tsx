@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/components/ui/theme-provider";
@@ -50,7 +49,7 @@ function App() {
           <Router>
             <div className="min-h-screen flex w-full">
               <SidePanel onTabChange={setActiveTab} />
-              <div className="flex-1 pl-64">
+              <div className="flex-1 md:pl-64">
                 <Routes>
                   {/* Main */}
                   <Route path="/" element={<Index />} />

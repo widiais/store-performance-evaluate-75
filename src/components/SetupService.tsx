@@ -138,7 +138,7 @@ const SetupService = () => {
         </div>
 
         <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200 shadow-sm overflow-x-auto">
-          <div className="min-w-[640px]">
+          <div className="min-w-[640px] lg:min-w-0 lg:w-full">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -157,7 +157,7 @@ const SetupService = () => {
                         value={q.question}
                         onChange={(e) => updateQuestion(q.id, 'question', e.target.value)}
                         placeholder="Enter question here..."
-                        className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 text-sm sm:text-base"
+                        className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 text-sm sm:text-base w-full"
                       />
                     </TableCell>
                     <TableCell>
@@ -165,7 +165,7 @@ const SetupService = () => {
                         type="number"
                         value={q.points}
                         onChange={(e) => updateQuestion(q.id, 'points', parseInt(e.target.value) || 0)}
-                        className="bg-white border-gray-200 text-gray-900 text-sm sm:text-base"
+                        className="bg-white border-gray-200 text-gray-900 text-sm sm:text-base w-full"
                         min={0}
                       />
                     </TableCell>
@@ -174,6 +174,7 @@ const SetupService = () => {
                         variant="destructive"
                         size="sm"
                         onClick={() => deleteQuestion(q.id)}
+                        className="w-full sm:w-auto"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
