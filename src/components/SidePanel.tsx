@@ -9,7 +9,10 @@ import {
   Menu,
   X,
   MessageSquare,
-  TrendingUp
+  TrendingUp,
+  ChevronDown,
+  ChevronRight,
+  Settings
 } from 'lucide-react';
 import * as Tabs2 from "@radix-ui/react-tabs";
 import { useNavigate } from 'react-router-dom';
@@ -36,6 +39,12 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [expandedSections, setExpandedSections] = useState({
+    main: true,
+    setup: true,
+    forms: true,
+    reports: true
+  });
 
   useEffect(() => {
     const handleResize = () => {
@@ -217,6 +226,13 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
     }
   };
 
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section.toLowerCase()]: !prev[section.toLowerCase()]
+    }));
+  };
+
   return (
     <>
       {isMobile && (
@@ -254,36 +270,39 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
               )}
             </div>
             
-            <Tabs
-              defaultValue="dashboard" 
-              orientation="vertical" 
-              className="w-full"
-              onValueChange={handleTabChange}
-            >
-              <TabsList className="flex flex-col h-auto bg-transparent">
-                <Tabs2.List asChild>
-                  <div className="flex flex-col gap-4 max-h-[calc(100vh-200px)] overflow-y-auto">
-                    {menuSections.map((section) => (
-                      <div key={section.title} className="flex flex-col gap-1">
-                        <div className="text-xs font-medium text-gray-400 uppercase px-2 mb-2">
-                          {section.title}
-                        </div>
-                        {section.items.map((item) => (
-                          <TabsTrigger
-                            key={item.value}
-                            value={item.value}
-                            className="w-full justify-start gap-3 px-2 py-3 text-gray-700 hover:bg-gray-50 data-[state=active]:bg-gray-100 data-[state=active]:text-gray-900 rounded-lg transition-colors"
-                          >
-                            <item.icon className="w-5 h-5" />
-                            <span className="font-medium">{item.label}</span>
-                          </TabsTrigger>
-                        ))}
-                      </div>
+            <div className="flex flex-col gap-4 max-h-[calc(100vh-200px)] overflow-y-auto">
+              {menuSections.map((section) => (
+                <div key={section.title} className="flex flex-col">
+                  <button
+                    onClick={() => toggleSection(section.title as keyof typeof expandedSections)}
+                    className="flex items-center justify-between text-xs font-medium text-gray-400 uppercase px-2 mb-2 hover:text-gray-600"
+                  >
+                    <span>{section.title}</span>
+                    {expandedSections[section.title.toLowerCase() as keyof typeof expandedSections] ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4" />
+                    )}
+                  </button>
+                  
+                  <div className={cn(
+                    "flex flex-col gap-1 transition-all duration-300",
+                    !expandedSections[section.title.toLowerCase() as keyof typeof expandedSections] && "hidden"
+                  )}>
+                    {section.items.map((item) => (
+                      <button
+                        key={item.value}
+                        onClick={() => handleTabChange(item.value)}
+                        className="flex items-center gap-3 px-2 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors text-left"
+                      >
+                        <item.icon className="w-5 h-5" />
+                        <span className="font-medium">{item.label}</span>
+                      </button>
                     ))}
                   </div>
-                </Tabs2.List>
-              </TabsList>
-            </Tabs>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

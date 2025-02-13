@@ -125,79 +125,83 @@ const SetupService = () => {
   }
 
   return (
-    <div className="p-6 bg-gray-50">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-2xl font-semibold mb-2 text-gray-900">Setup Service Form</h2>
-          <div className="flex gap-4 text-gray-600">
-            <span>Total Points: {getTotalPoints()}</span>
-            <span>Last Edit: {format(lastEdit, "dd/MM/yyyy, HH:mm")}</span>
+    <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
+      <div className="w-full max-w-[calc(100vw-2rem)] sm:max-w-none overflow-hidden">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-semibold mb-2 text-gray-900">Setup Service Form</h2>
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm sm:text-base text-gray-600">
+              <span>Total Points: {getTotalPoints()}</span>
+              <span>Last Edit: {format(lastEdit, "dd/MM/yyyy, HH:mm")}</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-20 text-gray-700">No</TableHead>
-              <TableHead className="text-gray-700">Question</TableHead>
-              <TableHead className="w-32 text-gray-700">Points</TableHead>
-              <TableHead className="w-24 text-gray-700">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {localQuestions.map((q, index) => (
-              <TableRow key={q.id}>
-                <TableCell className="text-gray-900">{index + 1}</TableCell>
-                <TableCell>
-                  <Input
-                    value={q.question}
-                    onChange={(e) => updateQuestion(q.id, 'question', e.target.value)}
-                    placeholder="Enter question here..."
-                    className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Input
-                    type="number"
-                    value={q.points}
-                    onChange={(e) => updateQuestion(q.id, 'points', parseInt(e.target.value) || 0)}
-                    className="bg-white border-gray-200 text-gray-900"
-                    min={0}
-                  />
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => deleteQuestion(q.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200 shadow-sm overflow-x-auto">
+          <div className="min-w-[640px]">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-16 sm:w-20 text-gray-700">No</TableHead>
+                  <TableHead className="text-gray-700">Question</TableHead>
+                  <TableHead className="w-24 sm:w-32 text-gray-700">Points</TableHead>
+                  <TableHead className="w-20 sm:w-24 text-gray-700">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {localQuestions.map((q, index) => (
+                  <TableRow key={q.id}>
+                    <TableCell className="text-gray-900">{index + 1}</TableCell>
+                    <TableCell>
+                      <Input
+                        value={q.question}
+                        onChange={(e) => updateQuestion(q.id, 'question', e.target.value)}
+                        placeholder="Enter question here..."
+                        className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 text-sm sm:text-base"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={q.points}
+                        onChange={(e) => updateQuestion(q.id, 'points', parseInt(e.target.value) || 0)}
+                        className="bg-white border-gray-200 text-gray-900 text-sm sm:text-base"
+                        min={0}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => deleteQuestion(q.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
 
-        <div className="flex gap-2 mt-4">
-          <Button 
-            onClick={addQuestion}
-            className="bg-green-600 hover:bg-green-700 text-white"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Question
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2 mt-4">
+            <Button 
+              onClick={addQuestion}
+              className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Question
+            </Button>
 
-          <Button
-            onClick={saveChanges}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-            disabled={!hasUnsavedChanges}
-          >
-            <Save className="h-4 w-4 mr-2" />
-            Save Changes
-          </Button>
+            <Button
+              onClick={saveChanges}
+              className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
+              disabled={!hasUnsavedChanges}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Save Changes
+            </Button>
+          </div>
         </div>
       </div>
     </div>
