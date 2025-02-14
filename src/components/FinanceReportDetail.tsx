@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
@@ -10,6 +9,12 @@ import { toast } from "sonner";
 const calculateKPI = (actual: number, target: number): number => {
   if (!target) return 0;
   return Math.min((actual / target) * 4, 4);
+};
+
+const calculateOPEXKPI = (totalSales: number, actualOPEX: number, targetOPEXPercentage: number): number => {
+  if (!totalSales || !targetOPEXPercentage) return 0;
+  const actualOPEXPercentage = (actualOPEX / totalSales) * 100;
+  return Math.max(0, Math.min((targetOPEXPercentage / actualOPEXPercentage) * 4, 4));
 };
 
 const FinanceReportDetail = () => {
@@ -82,7 +87,7 @@ const FinanceReportDetail = () => {
   const salesKPI = calculateKPI(record.total_sales, record.target_sales || 0);
   const cogsKPI = calculateKPI(record.cogs_target || 0, record.cogs_achieved);
   const productivityKPI = calculateKPI(record.total_sales / (record.total_crew || 1), 30000000);
-  const opexKPI = calculateKPI(record.opex_target || 0, record.total_opex);
+  const opexKPI = calculateOPEXKPI(record.total_sales, record.total_opex, 4); // 4% is the target
 
   return (
     <div className="p-6 min-h-screen bg-gray-50">

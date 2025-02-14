@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
@@ -20,6 +19,13 @@ import { useState } from 'react';
 const calculateKPI = (actual: number, target: number): number => {
   if (!target) return 0;
   return Math.min((actual / target) * 4, 4);
+};
+
+// Updated OPEX KPI calculation
+const calculateOPEXKPI = (totalSales: number, actualOPEX: number, targetOPEXPercentage: number): number => {
+  if (!totalSales || !targetOPEXPercentage) return 0;
+  const actualOPEXPercentage = (actualOPEX / totalSales) * 100;
+  return Math.max(0, Math.min((targetOPEXPercentage / actualOPEXPercentage) * 4, 4));
 };
 
 const FinanceReport = () => {
@@ -92,9 +98,10 @@ const FinanceReport = () => {
             <TableBody>
               {filteredRecords?.map((record) => {
                 const salesKPI = calculateKPI(record.total_sales, record.target_sales || 0);
-                const cogsKPI = calculateKPI(record.cogs_target || 0, record.cogs_achieved);  // Inverted for COGS since lower is better
+                const cogsKPI = calculateKPI(record.cogs_target || 0, record.cogs_achieved);
                 const productivityKPI = calculateKPI(record.total_sales / (record.total_crew || 1), 30000000);
-                const opexKPI = calculateKPI(record.opex_target || 0, record.total_opex);  // Inverted for OPEX since lower is better
+                // Updated OPEX KPI calculation
+                const opexKPI = calculateOPEXKPI(record.total_sales, record.total_opex, 4); // 4% is the target
 
                 return (
                   <TableRow key={record.id} className="hover:bg-gray-50">
