@@ -16,14 +16,17 @@ const FinanceReportDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  
+  // Convert id to number
+  const numericId = id ? parseInt(id) : 0;
 
   const { data: record, isLoading } = useQuery({
-    queryKey: ['finance-record', id],
+    queryKey: ['finance-record', numericId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('financial_records_report')
         .select('*')
-        .eq('id', id)
+        .eq('id', numericId)
         .single();
       
       if (error) throw error;
@@ -36,7 +39,7 @@ const FinanceReportDetail = () => {
       const { error } = await supabase
         .from('financial_records')
         .update({ deleted_at: new Date().toISOString() })
-        .eq('id', id);
+        .eq('id', numericId);
       
       if (error) throw error;
     },
