@@ -1,19 +1,9 @@
+
 import { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
 import { format, endOfMonth, parse, getYear } from 'date-fns';
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -29,23 +19,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from '@/components/ui/button';
-import { Check, ChevronsUpDown, Search, X } from "lucide-react";
-import { cn } from "@/lib/utils";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Search, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import { Line as ChartLine } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -99,18 +74,17 @@ interface FinancialRecord {
   total_crew: number;
 }
 
-// Array warna untuk line chart
 const lineColors = [
-  'rgb(99, 102, 241)', // Indigo
-  'rgb(236, 72, 153)', // Pink
-  'rgb(34, 197, 94)', // Green
-  'rgb(249, 115, 22)', // Orange
-  'rgb(168, 85, 247)', // Purple
-  'rgb(234, 179, 8)', // Yellow
-  'rgb(14, 165, 233)', // Sky
-  'rgb(239, 68, 68)', // Red
-  'rgb(20, 184, 166)', // Teal
-  'rgb(139, 92, 246)', // Violet
+  'rgb(99, 102, 241)',
+  'rgb(236, 72, 153)',
+  'rgb(34, 197, 94)',
+  'rgb(249, 115, 22)',
+  'rgb(168, 85, 247)',
+  'rgb(234, 179, 8)',
+  'rgb(14, 165, 233)',
+  'rgb(239, 68, 68)',
+  'rgb(20, 184, 166)',
+  'rgb(139, 92, 246)',
 ];
 
 interface StoreSelectProps {
@@ -160,7 +134,6 @@ const StoreSelect = ({ selectedStores, onStoreSelect, onRemoveStore }: StoreSele
         />
       </div>
 
-      {/* Selected Stores */}
       {selectedStores.length > 0 && (
         <div className="flex flex-wrap gap-2 mt-2">
           {selectedStores.map((store) => (
@@ -182,7 +155,6 @@ const StoreSelect = ({ selectedStores, onStoreSelect, onRemoveStore }: StoreSele
         </div>
       )}
 
-      {/* Dropdown */}
       {showDropdown && searchTerm && (
         <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg">
           <ScrollArea className="h-[200px]">
@@ -217,150 +189,16 @@ const StorePerformance = () => {
   const [selectedYear, setSelectedYear] = useState<string>(currentYear.toString());
   const [activeTab, setActiveTab] = useState('operational');
 
-  const { data: stores } = useQuery({
-    queryKey: ['stores'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('stores')
-        .select('id, name, city')
-        .order('name');
-      
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
-  const calculateAverageKPI = (data: EvaluationRecord[]) => {
-    if (!data || data.length === 0) return 0;
-    const totalKPI = data.reduce((sum, record) => sum + (record.total_score || 0), 0);
-    return (totalKPI / data.length).toFixed(1);
+  const calculateKPI = (actual: number, target: number): number => {
+    if (!target) return 0;
+    return Math.min((actual / target) * 4, 4);
   };
 
-  const { data: performanceData = [] } = useQuery<EvaluationRecord[]>({
-    queryKey: ['champsPerformance', selectedStores.map(s => s.id), selectedMonth, selectedYear],
-    queryFn: async () => {
-      if (selectedStores.length === 0) return [];
-      
-      const startDate = `${selectedYear}-${selectedMonth}-01`;
-      const monthDate = parse(startDate, 'yyyy-MM-dd', new Date());
-      const endDate = format(endOfMonth(monthDate), 'yyyy-MM-dd');
-      
-      const { data, error } = await supabase
-        .from('champs_evaluation_report')
-        .select('id, store_name, evaluation_date, total_score')
-        .in('store_name', selectedStores.map(s => s.name))
-        .gte('evaluation_date', startDate)
-        .lte('evaluation_date', endDate)
-        .order('evaluation_date');
-      
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: selectedStores.length > 0,
-  });
-
-  const { data: cleanlinessData = [] } = useQuery<EvaluationRecord[]>({
-    queryKey: ['cleanlinessPerformance', selectedStores.map(s => s.id), selectedMonth, selectedYear],
-    queryFn: async () => {
-      if (selectedStores.length === 0) return [];
-      
-      const startDate = `${selectedYear}-${selectedMonth}-01`;
-      const monthDate = parse(startDate, 'yyyy-MM-dd', new Date());
-      const endDate = format(endOfMonth(monthDate), 'yyyy-MM-dd');
-      
-      const { data, error } = await supabase
-        .from('cleanliness_evaluation_report')
-        .select('id, store_name, evaluation_date, total_score')
-        .in('store_name', selectedStores.map(s => s.name))
-        .gte('evaluation_date', startDate)
-        .lte('evaluation_date', endDate)
-        .order('evaluation_date');
-      
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: selectedStores.length > 0,
-  });
-
-  const { data: serviceData = [] } = useQuery<EvaluationRecord[]>({
-    queryKey: ['servicePerformance', selectedStores.map(s => s.id), selectedMonth, selectedYear],
-    queryFn: async () => {
-      if (selectedStores.length === 0) return [];
-      
-      const startDate = `${selectedYear}-${selectedMonth}-01`;
-      const monthDate = parse(startDate, 'yyyy-MM-dd', new Date());
-      const endDate = format(endOfMonth(monthDate), 'yyyy-MM-dd');
-      
-      const { data, error } = await supabase
-        .from('service_evaluation_report')
-        .select('id, store_name, evaluation_date, total_score')
-        .in('store_name', selectedStores.map(s => s.name))
-        .gte('evaluation_date', startDate)
-        .lte('evaluation_date', endDate)
-        .order('evaluation_date');
-      
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: selectedStores.length > 0,
-  });
-
-  const { data: productQualityData = [] } = useQuery<EvaluationRecord[]>({
-    queryKey: ['productQualityPerformance', selectedStores.map(s => s.id), selectedMonth, selectedYear],
-    queryFn: async () => {
-      if (selectedStores.length === 0) return [];
-      
-      const startDate = `${selectedYear}-${selectedMonth}-01`;
-      const monthDate = parse(startDate, 'yyyy-MM-dd', new Date());
-      const endDate = format(endOfMonth(monthDate), 'yyyy-MM-dd');
-      
-      const { data, error } = await supabase
-        .from('product_quality_evaluation_report')
-        .select('id, store_name, evaluation_date, total_score')
-        .in('store_name', selectedStores.map(s => s.name))
-        .gte('evaluation_date', startDate)
-        .lte('evaluation_date', endDate)
-        .order('evaluation_date');
-      
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: selectedStores.length > 0,
-  });
-
-  const { data: complaintData = [] } = useQuery({
-    queryKey: ['complaintData', selectedStores, selectedMonth, selectedYear],
-    queryFn: async () => {
-      if (selectedStores.length === 0) return [];
-      
-      const startDate = `${selectedYear}-${selectedMonth}-01`;
-      const monthDate = parse(startDate, 'yyyy-MM-dd', new Date());
-      const endDate = format(endOfMonth(monthDate), 'yyyy-MM-dd');
-
-      const { data, error } = await supabase
-        .from('complaint_records_report')
-        .select(`
-          id,
-          store_name,
-          input_date,
-          whatsapp_count,
-          social_media_count,
-          gmaps_count,
-          online_order_count,
-          late_handling_count,
-          total_weighted_complaints,
-          avg_cu_per_day,
-          kpi_score
-        `)
-        .in('store_name', selectedStores.map(store => store.name))
-        .gte('input_date', startDate)
-        .lte('input_date', endDate);
-      
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: selectedStores.length > 0 && !!selectedMonth && !!selectedYear,
-  });
+  const calculateOPEXKPI = (totalSales: number, actualOPEX: number, targetOPEXPercentage: number): number => {
+    if (!totalSales || !targetOPEXPercentage) return 0;
+    const actualOPEXPercentage = (actualOPEX / totalSales) * 100;
+    return Math.max(0, Math.min((targetOPEXPercentage / actualOPEXPercentage) * 4, 4));
+  };
 
   const { data: financialData } = useQuery<FinancialRecord[]>({
     queryKey: ['financial-data', selectedStores.map(s => s.id), selectedMonth, selectedYear],
@@ -402,100 +240,6 @@ const StorePerformance = () => {
 
   const removeStore = (storeId: number) => {
     setSelectedStores(prev => prev.filter(s => s.id !== storeId));
-  };
-
-  const calculateKPI = (actual: number, target: number): number => {
-    if (!target) return 0;
-    return Math.min((actual / target) * 4, 4);
-  };
-
-  const calculateOPEXKPI = (totalSales: number, actualOPEX: number, targetOPEXPercentage: number): number => {
-    if (!totalSales || !targetOPEXPercentage) return 0;
-    const actualOPEXPercentage = (actualOPEX / totalSales) * 100;
-    return Math.max(0, Math.min((targetOPEXPercentage / actualOPEXPercentage) * 4, 4));
-  };
-
-  const formatChartData = (data: EvaluationRecord[], title: string) => {
-    if (!data || !selectedStores.length) return null;
-
-    const formattedData = data.map(record => ({
-      date: format(new Date(record.evaluation_date), 'dd/MM/yy'),
-      store_name: record.store_name,
-      total_score: record.total_score
-    }));
-
-    const datasets = selectedStores.map((store, index) => {
-      const storeData = formattedData
-        .filter(record => record.store_name === store.name)
-        .map(record => ({
-          date: record.date,
-          value: record.total_score
-        }));
-
-      return {
-        label: `${store.name} - ${store.city}`,
-        data: storeData,
-        borderColor: lineColors[index % lineColors.length],
-        backgroundColor: lineColors[index % lineColors.length],
-        tension: 0.4,
-        parsing: {
-          xAxisKey: 'date',
-          yAxisKey: 'value'
-        }
-      };
-    });
-
-    return {
-      datasets,
-      options: {
-        responsive: true,
-        plugins: {
-          legend: {
-            position: 'top' as const,
-          },
-          title: {
-            display: true,
-            text: title
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            max: 4
-          }
-        }
-      }
-    };
-  };
-
-  const champsChartData = formatChartData(performanceData, 'CHAMPS Performance');
-  const cleanlinessChartData = formatChartData(cleanlinessData, 'Cleanliness Performance');
-  const serviceChartData = formatChartData(serviceData, 'Service Performance');
-  const productQualityChartData = formatChartData(productQualityData, 'Product Quality Performance');
-
-  const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
-  const months = [
-    { value: '01', label: 'January' },
-    { value: '02', label: 'February' },
-    { value: '03', label: 'March' },
-    { value: '04', label: 'April' },
-    { value: '05', label: 'May' },
-    { value: '06', label: 'June' },
-    { value: '07', label: 'July' },
-    { value: '08', label: 'August' },
-    { value: '09', label: 'September' },
-    { value: '10', label: 'October' },
-    { value: '11', label: 'November' },
-    { value: '12', label: 'December' },
-  ];
-
-  const calculateKPIScore = (totalWeightedComplaints: number, avgCUPerDay: number) => {
-    const percentage = (totalWeightedComplaints / (avgCUPerDay * 30)) * 100;
-    if (percentage <= 0.1) return 4;       // <= 0.1% = 4 (Sangat Baik)
-    if (percentage <= 0.3) return 3;       // <= 0.3% = 3 (Baik)
-    if (percentage <= 0.5) return 2;       // <= 0.5% = 2 (Cukup)
-    if (percentage <= 0.7) return 1;       // <= 0.7% = 1 (Kurang)
-    return 0;                              // > 0.7% = 0 (Sangat Kurang)
   };
 
   const renderFinancialCard = (storeData: FinancialRecord, store: Store) => {
@@ -563,6 +307,22 @@ const StorePerformance = () => {
     );
   };
 
+  const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
+  const months = [
+    { value: '01', label: 'January' },
+    { value: '02', label: 'February' },
+    { value: '03', label: 'March' },
+    { value: '04', label: 'April' },
+    { value: '05', label: 'May' },
+    { value: '06', label: 'June' },
+    { value: '07', label: 'July' },
+    { value: '08', label: 'August' },
+    { value: '09', label: 'September' },
+    { value: '10', label: 'October' },
+    { value: '11', label: 'November' },
+    { value: '12', label: 'December' },
+  ];
+
   return (
     <div className="p-6 min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -613,7 +373,7 @@ const StorePerformance = () => {
             </button>
           </div>
 
-          {/* Store Selection and Controls */}
+          {/* Store Selection */}
           <Card className="p-6">
             <StoreSelect
               selectedStores={selectedStores}
@@ -622,12 +382,11 @@ const StorePerformance = () => {
             />
           </Card>
 
-          {/* Content based on active tab */}
-          {activeTab === 'operational' && (
-            <>
-              {/* Header Controls */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                {/* Month Selection */}
+          {/* Financial Performance Tab */}
+          {activeTab === 'financial' && (
+            <div className="space-y-6">
+              {/* Month & Year Selection */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card className="p-4">
                   <h3 className="font-medium mb-4">Select Month</h3>
                   <Select value={selectedMonth} onValueChange={setSelectedMonth}>
@@ -644,7 +403,6 @@ const StorePerformance = () => {
                   </Select>
                 </Card>
 
-                {/* Year Selection */}
                 <Card className="p-4">
                   <h3 className="font-medium mb-4">Select Year</h3>
                   <Select value={selectedYear} onValueChange={setSelectedYear}>
@@ -662,185 +420,38 @@ const StorePerformance = () => {
                 </Card>
               </div>
 
-              {selectedStores.length > 0 && (
-                <>
-                  {/* CHAMPS Performance */}
-                  <Card className="p-6 mb-6">
-                    <h2 className="text-xl font-semibold mb-6">CHAMPS Performance</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="h-[300px]">
-                        {champsChartData ? (
-                          <ChartLine data={champsChartData} options={champsChartData.options} />
-                        ) : (
-                          <div className="flex items-center justify-center h-64 text-gray-500">
-                            Pilih store untuk melihat data
+              {/* Financial Performance Data */}
+              <Card className="p-6">
+                <h2 className="text-xl font-semibold mb-6">Financial Performance</h2>
+                {selectedStores.length > 0 ? (
+                  <div className="space-y-6">
+                    {selectedStores.map(store => {
+                      const storeData = financialData?.find(d => d.store_name === store.name);
+                      
+                      if (!storeData) {
+                        return (
+                          <div key={store.id} className="p-4 border rounded-lg">
+                            <h3 className="font-medium text-lg">{store.name} - {store.city}</h3>
+                            <p className="text-gray-500 mt-2">No financial data available for this period</p>
                           </div>
-                        )}
-                      </div>
-                      <div className="overflow-auto max-h-[300px]">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Date</TableHead>
-                              <TableHead>Store</TableHead>
-                              <TableHead>KPI</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {performanceData?.map((record) => (
-                              <TableRow key={record.id}>
-                                <TableCell>
-                                  {format(new Date(record.evaluation_date), 'dd/MM/yy')}
-                                </TableCell>
-                                <TableCell>{record.store_name}</TableCell>
-                                <TableCell>{record.total_score?.toFixed(1)}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </div>
-                    <div className="mt-6 p-4 bg-gray-100 rounded-lg">
-                      <p className="text-sm font-medium">
-                        Store Average CHAMPS: {calculateAverageKPI(performanceData)} (Taken: {performanceData.length})
-                      </p>
-                    </div>
-                  </Card>
+                        );
+                      }
 
-                  {/* Cleanliness Performance */}
-                  <Card className="p-6 mb-6">
-                    <h2 className="text-xl font-semibold mb-6">Cleanliness Performance</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="h-[300px]">
-                        {cleanlinessChartData ? (
-                          <ChartLine data={cleanlinessChartData} options={cleanlinessChartData.options} />
-                        ) : (
-                          <div className="flex items-center justify-center h-64 text-gray-500">
-                            Pilih store untuk melihat data
-                          </div>
-                        )}
-                      </div>
-                      <div className="overflow-auto max-h-[300px]">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Date</TableHead>
-                              <TableHead>Store</TableHead>
-                              <TableHead>KPI</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {cleanlinessData?.map((record) => (
-                              <TableRow key={record.id}>
-                                <TableCell>
-                                  {format(new Date(record.evaluation_date), 'dd/MM/yy')}
-                                </TableCell>
-                                <TableCell>{record.store_name}</TableCell>
-                                <TableCell>{record.total_score?.toFixed(1)}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </div>
-                    <div className="mt-6 p-4 bg-gray-100 rounded-lg">
-                      <p className="text-sm font-medium">
-                        Store Average Cleanliness: {calculateAverageKPI(cleanlinessData)} (Taken: {cleanlinessData.length})
-                      </p>
-                    </div>
-                  </Card>
-
-                  {/* Service Performance */}
-                  <Card className="p-6 mb-6">
-                    <h2 className="text-xl font-semibold mb-6">Service Performance</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="h-[300px]">
-                        {serviceChartData ? (
-                          <ChartLine data={serviceChartData} options={serviceChartData.options} />
-                        ) : (
-                          <div className="flex items-center justify-center h-64 text-gray-500">
-                            Pilih store untuk melihat data
-                          </div>
-                        )}
-                      </div>
-                      <div className="overflow-auto max-h-[300px]">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Date</TableHead>
-                              <TableHead>Store</TableHead>
-                              <TableHead>KPI</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {serviceData?.map((record) => (
-                              <TableRow key={record.id}>
-                                <TableCell>
-                                  {format(new Date(record.evaluation_date), 'dd/MM/yy')}
-                                </TableCell>
-                                <TableCell>{record.store_name}</TableCell>
-                                <TableCell>{record.total_score?.toFixed(1)}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </div>
-                    <div className="mt-6 p-4 bg-gray-100 rounded-lg">
-                      <p className="text-sm font-medium">
-                        Store Average Service: {calculateAverageKPI(serviceData)} (Taken: {serviceData.length})
-                      </p>
-                    </div>
-                  </Card>
-
-                  {/* Product Quality Performance */}
-                  <Card className="p-6">
-                    <h2 className="text-xl font-semibold mb-6">Product Quality Performance</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="h-[300px]">
-                        {productQualityChartData ? (
-                          <ChartLine data={productQualityChartData} options={productQualityChartData.options} />
-                        ) : (
-                          <div className="flex items-center justify-center h-64 text-gray-500">
-                            Pilih store untuk melihat data
-                          </div>
-                        )}
-                      </div>
-                      <div className="overflow-auto max-h-[300px]">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Date</TableHead>
-                              <TableHead>Store</TableHead>
-                              <TableHead>KPI</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {productQualityData?.map((record) => (
-                              <TableRow key={record.id}>
-                                <TableCell>
-                                  {format(new Date(record.evaluation_date), 'dd/MM/yy')}
-                                </TableCell>
-                                <TableCell>{record.store_name}</TableCell>
-                                <TableCell>{record.total_score?.toFixed(1)}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </div>
-                    <div className="mt-6 p-4 bg-gray-100 rounded-lg">
-                      <p className="text-sm font-medium">
-                        Store Average Product Quality: {calculateAverageKPI(productQualityData)} (Taken: {productQualityData.length})
-                      </p>
-                    </div>
-                  </Card>
-                </>
-              )}
-            </>
+                      return renderFinancialCard(storeData, store);
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    Select one or more stores to view financial performance
+                  </div>
+                )}
+              </Card>
+            </div>
           )}
-          
-          {activeTab === 'financial' && (
-            <div className="space-y-6">
-              {/* Month & Year Selection */}
-              <div className="grid grid-cols-
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default StorePerformance;
