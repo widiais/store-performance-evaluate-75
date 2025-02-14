@@ -100,13 +100,6 @@ export type Database = {
             foreignKeyName: "champs_evaluations_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
-            referencedRelation: "financial_records_report"
-            referencedColumns: ["store_id"]
-          },
-          {
-            foreignKeyName: "champs_evaluations_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
             referencedRelation: "store_performance_metrics"
             referencedColumns: ["store_id"]
           },
@@ -234,13 +227,6 @@ export type Database = {
             foreignKeyName: "cleanliness_evaluations_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
-            referencedRelation: "financial_records_report"
-            referencedColumns: ["store_id"]
-          },
-          {
-            foreignKeyName: "cleanliness_evaluations_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
             referencedRelation: "store_performance_metrics"
             referencedColumns: ["store_id"]
           },
@@ -318,13 +304,6 @@ export type Database = {
           whatsapp_count?: number
         }
         Relationships: [
-          {
-            foreignKeyName: "complaint_records_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
-            referencedRelation: "financial_records_report"
-            referencedColumns: ["store_id"]
-          },
           {
             foreignKeyName: "complaint_records_store_id_fkey"
             columns: ["store_id"]
@@ -407,13 +386,6 @@ export type Database = {
             foreignKeyName: "esp_evaluations_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
-            referencedRelation: "financial_records_report"
-            referencedColumns: ["store_id"]
-          },
-          {
-            foreignKeyName: "esp_evaluations_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
             referencedRelation: "store_performance_metrics"
             referencedColumns: ["store_id"]
           },
@@ -472,6 +444,7 @@ export type Database = {
         Row: {
           cogs_achieved: number
           created_at: string
+          deleted_at: string | null
           id: number
           input_date: string
           pic: string
@@ -483,6 +456,7 @@ export type Database = {
         Insert: {
           cogs_achieved: number
           created_at?: string
+          deleted_at?: string | null
           id?: number
           input_date: string
           pic: string
@@ -494,6 +468,7 @@ export type Database = {
         Update: {
           cogs_achieved?: number
           created_at?: string
+          deleted_at?: string | null
           id?: number
           input_date?: string
           pic?: string
@@ -503,13 +478,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "financial_records_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
-            referencedRelation: "financial_records_report"
-            referencedColumns: ["store_id"]
-          },
           {
             foreignKeyName: "financial_records_store_id_fkey"
             columns: ["store_id"]
@@ -564,13 +532,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "performance_kpis_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
-            referencedRelation: "financial_records_report"
-            referencedColumns: ["store_id"]
-          },
           {
             foreignKeyName: "performance_kpis_store_id_fkey"
             columns: ["store_id"]
@@ -674,13 +635,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "product_quality_evaluations_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
-            referencedRelation: "financial_records_report"
-            referencedColumns: ["store_id"]
-          },
           {
             foreignKeyName: "product_quality_evaluations_store_id_fkey"
             columns: ["store_id"]
@@ -808,13 +762,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "service_evaluations_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
-            referencedRelation: "financial_records_report"
-            referencedColumns: ["store_id"]
-          },
           {
             foreignKeyName: "service_evaluations_store_id_fkey"
             columns: ["store_id"]
@@ -960,14 +907,18 @@ export type Database = {
       }
       financial_records_report: {
         Row: {
+          area: number | null
           cogs_achieved: number | null
           cogs_target: number | null
           id: number | null
           input_date: string | null
+          opex_target: number | null
           pic: string | null
+          regional: number | null
           store_city: string | null
-          store_id: number | null
           store_name: string | null
+          target_sales: number | null
+          total_crew: number | null
           total_opex: number | null
           total_sales: number | null
         }
