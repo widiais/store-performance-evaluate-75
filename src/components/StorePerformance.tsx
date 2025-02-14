@@ -311,7 +311,6 @@ const StorePerformance = () => {
     enabled: selectedStores.length > 0,
   });
 
-  // Query untuk data Complaint
   const { data: complaintData = [] } = useQuery({
     queryKey: ['complaintData', selectedStores, selectedMonth, selectedYear],
     queryFn: async () => {
@@ -346,6 +345,21 @@ const StorePerformance = () => {
     enabled: selectedStores.length > 0 && !!selectedMonth && !!selectedYear,
   });
 
+  const { data: financialData } = useQuery({
+    queryKey: ['store-financial-data', storeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('financial_records')
+        .select('*, stores(name, target_sales, cogs_target, opex_target, total_crew)')
+        .eq('store_id', storeId)
+        .order('input_date', { ascending: false })
+        .limit(12);
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   const handleStoreSelect = (store: Store) => {
     setSelectedStores(prev => {
       const isSelected = prev.some(s => s.id === store.id);
@@ -365,7 +379,17 @@ const StorePerformance = () => {
     setSelectedStores(prev => prev.filter(s => s.id !== storeId));
   };
 
-  // Fungsi untuk memformat data chart
+  const calculateKPI = (actual: number, target: number): number => {
+    if (!target) return 0;
+    return Math.min((actual / target) * 4, 4);
+  };
+
+  const calculateOPEXKPI = (totalSales: number, actualOPEX: number, targetOPEXPercentage: number): number => {
+    if (!totalSales || !targetOPEXPercentage) return 0;
+    const actualOPEXPercentage = (actualOPEX / totalSales) * 100;
+    return Math.max(0, Math.min((targetOPEXPercentage / actualOPEXPercentage) * 4, 4));
+  };
+
   const formatChartData = (data: EvaluationRecord[], title: string) => {
     if (!data || !selectedStores.length) return null;
 
@@ -424,10 +448,7 @@ const StorePerformance = () => {
   const serviceChartData = formatChartData(serviceData, 'Service Performance');
   const productQualityChartData = formatChartData(productQualityData, 'Product Quality Performance');
 
-  // Generate array of past 5 years for year selection
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
-
-  // Array of months for month selection
   const months = [
     { value: '01', label: 'January' },
     { value: '02', label: 'February' },
@@ -443,7 +464,6 @@ const StorePerformance = () => {
     { value: '12', label: 'December' },
   ];
 
-  // Tambahkan fungsi calculateKPIScore
   const calculateKPIScore = (totalWeightedComplaints: number, avgCUPerDay: number) => {
     const percentage = (totalWeightedComplaints / (avgCUPerDay * 30)) * 100;
     if (percentage <= 0.1) return 4;       // <= 0.1% = 4 (Sangat Baik)
