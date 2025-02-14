@@ -1,3 +1,4 @@
+<lov-code>
 import { useState, useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { useQuery } from '@tanstack/react-query';
@@ -346,18 +347,26 @@ const StorePerformance = () => {
   });
 
   const { data: financialData } = useQuery({
-    queryKey: ['store-financial-data', storeId],
+    queryKey: ['financial-data', selectedStores.map(s => s.id), selectedMonth, selectedYear],
     queryFn: async () => {
+      if (selectedStores.length === 0) return [];
+      
+      const startDate = `${selectedYear}-${selectedMonth}-01`;
+      const monthDate = parse(startDate, 'yyyy-MM-dd', new Date());
+      const endDate = format(endOfMonth(monthDate), 'yyyy-MM-dd');
+      
       const { data, error } = await supabase
-        .from('financial_records')
+        .from('financial_records_report')
         .select('*, stores(name, target_sales, cogs_target, opex_target, total_crew)')
-        .eq('store_id', storeId)
-        .order('input_date', { ascending: false })
-        .limit(12);
-
+        .in('store_name', selectedStores.map(s => s.name))
+        .gte('input_date', startDate)
+        .lte('input_date', endDate)
+        .order('input_date');
+      
       if (error) throw error;
       return data || [];
     },
+    enabled: selectedStores.length > 0,
   });
 
   const handleStoreSelect = (store: Store) => {
@@ -751,15 +760,6 @@ const StorePerformance = () => {
           )}
           
           {activeTab === 'financial' && (
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-6">Financial Performance</h2>
-              <div className="flex items-center justify-center h-64 text-gray-500">
-                Coming Soon: Financial Performance Data
-              </div>
-            </Card>
-          )}
-          
-          {activeTab === 'complaint' && (
             <div className="space-y-6">
               {/* Month & Year Selection */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -796,113 +796,58 @@ const StorePerformance = () => {
                 </Card>
               </div>
 
-              {/* Complaint Data */}
+              {/* Financial Performance Data */}
               <Card className="p-6">
-                <h2 className="text-xl font-semibold mb-6">Customer Complaints</h2>
-                <div className="space-y-6">
-                  {selectedStores.map(store => {
-                    const storeData = complaintData.find(d => d.store_name === store.name);
-                    const kpiScore = storeData ? calculateKPIScore(storeData.total_weighted_complaints, storeData.avg_cu_per_day) : null;
-                    const percentage = storeData ? ((storeData.total_weighted_complaints / (storeData.avg_cu_per_day * 30)) * 100) : null;
-                    
-                    return (
-                      <div key={store.id} className="p-4 border rounded-lg">
-                        <div className="flex justify-between items-center mb-4">
-                          <h3 className="font-medium text-lg">{store.name} - {store.city}</h3>
-                          {storeData && kpiScore !== null && (
-                            <Badge variant={
-                              kpiScore >= 3 ? "default" :
-                              kpiScore >= 2 ? "secondary" : "destructive"
-                            } className={
-                              kpiScore >= 3 ? "bg-green-500" :
-                              kpiScore >= 2 ? "bg-yellow-500" : ""
-                            }>
-                              KPI Score: {kpiScore} ({percentage?.toFixed(2)}%)
-                            </Badge>
-                          )}
-                        </div>
-                        
-                        {storeData ? (
-                          <div className="space-y-6">
-                            {/* Complaint Counts */}
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                              <Card className="p-4">
-                                <p className="text-sm text-gray-500">WhatsApp</p>
-                                <p className="text-lg font-medium">{storeData.whatsapp_count || 0}</p>
-                              </Card>
-                              <Card className="p-4">
-                                <p className="text-sm text-gray-500">Social Media</p>
-                                <p className="text-lg font-medium">{storeData.social_media_count || 0}</p>
-                              </Card>
-                              <Card className="p-4">
-                                <p className="text-sm text-gray-500">Google Maps</p>
-                                <p className="text-lg font-medium">{storeData.gmaps_count || 0}</p>
-                              </Card>
-                              <Card className="p-4">
-                                <p className="text-sm text-gray-500">Online Order</p>
-                                <p className="text-lg font-medium">{storeData.online_order_count || 0}</p>
-                              </Card>
-                              <Card className="p-4">
-                                <p className="text-sm text-gray-500">Late Handling</p>
-                                <p className="text-lg font-medium">{storeData.late_handling_count || 0}</p>
-                              </Card>
-                            </div>
-
-                            {/* Summary */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                              <Card className="p-4">
-                                <p className="text-sm text-gray-500">Total Weighted Complaints</p>
-                                <p className="text-lg font-medium">{storeData.total_weighted_complaints || 0}</p>
-                              </Card>
-                              <Card className="p-4">
-                                <p className="text-sm text-gray-500">Average CU per Day</p>
-                                <p className="text-lg font-medium">{storeData.avg_cu_per_day || 0}</p>
-                              </Card>
-                              <Card className="p-4">
-                                <p className="text-sm text-gray-500">Complaint Percentage</p>
-                                <p className="text-lg font-medium">
-                                  {percentage?.toFixed(2)}%
-                                </p>
-                              </Card>
-                            </div>
-
-                            {/* KPI Score Guide */}
-                            <div className="bg-gray-50 p-4 rounded-lg">
-                              <p className="text-sm font-medium text-gray-700 mb-2">KPI Score Range:</p>
-                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-2 text-sm">
-                                <div className="text-green-600">4 (Sangat Baik) = ≤ 0.1%</div>
-                                <div className="text-green-600">3 (Baik) = ≤ 0.3%</div>
-                                <div className="text-yellow-600">2 (Cukup) = ≤ 0.5%</div>
-                                <div className="text-red-600">1 (Kurang) = ≤ 0.7%</div>
-                                <div className="text-red-600">0 (Sangat Kurang) = {'>'}0.7%</div>
-                              </div>
-                            </div>
+                <h2 className="text-xl font-semibold mb-6">Financial Performance</h2>
+                {selectedStores.length > 0 ? (
+                  <div className="space-y-6">
+                    {selectedStores.map(store => {
+                      const storeData = financialData?.find(d => d.store_name === store.name);
+                      
+                      if (!storeData) {
+                        return (
+                          <div key={store.id} className="p-4 border rounded-lg">
+                            <h3 className="font-medium text-lg">{store.name} - {store.city}</h3>
+                            <p className="text-gray-500 mt-2">No financial data available for this period</p>
                           </div>
-                        ) : (
-                          <div className="text-center py-8 text-gray-500">
-                            Tidak ada data complaint untuk periode ini
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
-            </div>
-          )}
-          
-          {activeTab === 'audit' && (
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-6">Audit Performance</h2>
-              <div className="flex items-center justify-center h-64 text-gray-500">
-                Coming Soon: Audit Performance Data
-              </div>
-            </Card>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
+                        );
+                      }
 
-export default StorePerformance;
+                      const salesKPI = calculateKPI(storeData.total_sales || 0, storeData.target_sales || 0);
+                      const cogsKPI = calculateKPI(storeData.cogs_target || 0, storeData.cogs_achieved || 0);
+                      const productivityKPI = calculateKPI((storeData.total_sales || 0) / (storeData.total_crew || 1), 30000000);
+                      const opexKPI = calculateOPEXKPI(storeData.total_sales || 0, storeData.total_opex || 0, 4);
+
+                      return (
+                        <div key={store.id} className="p-4 border rounded-lg">
+                          <div className="flex justify-between items-center mb-4">
+                            <h3 className="font-medium text-lg">{store.name} - {store.city}</h3>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <Card className="p-4">
+                              <p className="text-sm text-gray-500">Sales KPI</p>
+                              <p className={`text-lg font-medium ${
+                                salesKPI >= 3 ? 'text-green-600' : 
+                                salesKPI >= 2 ? 'text-yellow-600' : 
+                                'text-red-600'
+                              }`}>{salesKPI.toFixed(2)}</p>
+                              <p className="text-sm text-gray-500 mt-1">
+                                {storeData.total_sales?.toLocaleString()} / {storeData.target_sales?.toLocaleString()}
+                              </p>
+                            </Card>
+
+                            <Card className="p-4">
+                              <p className="text-sm text-gray-500">COGS KPI</p>
+                              <p className={`text-lg font-medium ${
+                                cogsKPI >= 3 ? 'text-green-600' : 
+                                cogsKPI >= 2 ? 'text-yellow-600' : 
+                                'text-red-600'
+                              }`}>{cogsKPI.toFixed(2)}</p>
+                              <p className="text-sm text-gray-500 mt-1">
+                                {storeData.cogs_achieved?.toLocaleString()} / {storeData.cogs_target?.toLocaleString()}
+                              </p>
+                            </Card>
+
+                            <Card className="p-4">
+                              <p className="text-sm text-gray-500">OPEX
