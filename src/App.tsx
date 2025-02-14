@@ -34,6 +34,7 @@ import ComplaintForm from "./components/ComplaintForm";
 import ComplaintReport from "./components/ComplaintReport";
 import ComplaintReportDetail from "./components/ComplaintReportDetail";
 import StorePerformance from "./components/StorePerformance";
+import FinanceReportDetail from "./components/FinanceReportDetail";
 
 const queryClient = new QueryClient();
 
@@ -84,6 +85,7 @@ function App() {
                   <Route path="/esp-report" element={<EspReport />} />
                   <Route path="/esp-report/:id" element={<EspReportDetail />} />
                   <Route path="/finance-report" element={<FinanceReport />} />
+                  <Route path="/finance-report/:id" element={<FinanceReportDetail />} />
                   <Route path="/complaint-report" element={<ComplaintReport />} />  
                   <Route path="/complaint-report/:id" element={<ComplaintReportDetail />} />
                 </Routes>
