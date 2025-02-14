@@ -1,5 +1,5 @@
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -11,57 +11,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from 'react';
-import { toast } from "sonner";
 
-// KPI calculation functions
-const calculateSalesKPI = (achievedSales: number, targetSales: number): number => {
-  const percentage = (achievedSales / targetSales) * 100;
-  if (percentage >= 100) return 4;
-  if (percentage >= 90) return 3;
-  if (percentage >= 80) return 2;
-  if (percentage >= 70) return 1;
-  return 0;
-};
-
-const calculateCOGSKPI = (achievedCOGS: number, targetCOGS: number): number => {
-  // Lower COGS is better (achieved <= target)
-  if (achievedCOGS <= targetCOGS) return 4;
-  const difference = achievedCOGS - targetCOGS;
-  if (difference <= 2) return 3;
-  if (difference <= 4) return 2;
-  if (difference <= 6) return 1;
-  return 0;
-};
-
-const calculateProductivityKPI = (totalSales: number, totalCrew: number): number => {
-  const salesPerPerson = totalSales / totalCrew;
-  const target = 30000000; // 30M per person
-  const ratio = salesPerPerson / target;
-  if (ratio >= 1) return 4;
-  if (ratio >= 0.9) return 3;
-  if (ratio >= 0.8) return 2;
-  if (ratio >= 0.7) return 1;
-  return 0;
-};
-
-const calculateOPEXKPI = (totalOPEX: number, targetOPEX: number): number => {
-  // Lower OPEX is better (achieved <= target)
-  const percentage = (totalOPEX / targetOPEX) * 100;
-  if (percentage <= 100) return 4;
-  if (percentage <= 105) return 3;
-  if (percentage <= 110) return 2;
-  if (percentage <= 115) return 1;
-  return 0;
+// Updated KPI calculation function using the formula: min((actual/target) * 4, 4)
+const calculateKPI = (actual: number, target: number): number => {
+  if (!target) return 0;
+  return Math.min((actual / target) * 4, 4);
 };
 
 const FinanceReport = () => {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
 
   const { data: records, isLoading } = useQuery({
@@ -74,25 +36,6 @@ const FinanceReport = () => {
       
       if (error) throw error;
       return data || [];
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const { error } = await supabase
-        .from('financial_records')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('id', id);
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['finance-records'] });
-      toast.success('Record deleted successfully');
-    },
-    onError: (error) => {
-      toast.error('Failed to delete record');
-      console.error('Delete error:', error);
     },
   });
 
@@ -110,12 +53,6 @@ const FinanceReport = () => {
     record.regional?.toString().includes(searchTerm) ||
     record.area?.toString().includes(searchTerm)
   );
-
-  const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this record?')) {
-      deleteMutation.mutate(id);
-    }
-  };
 
   return (
     <div className="p-6 min-h-screen bg-gray-50">
@@ -154,10 +91,10 @@ const FinanceReport = () => {
             </TableHeader>
             <TableBody>
               {filteredRecords?.map((record) => {
-                const salesKPI = calculateSalesKPI(record.total_sales, record.target_sales || 0);
-                const cogsKPI = calculateCOGSKPI(record.cogs_achieved, record.cogs_target || 0);
-                const productivityKPI = calculateProductivityKPI(record.total_sales, record.total_crew || 1);
-                const opexKPI = calculateOPEXKPI(record.total_opex, record.opex_target || 0);
+                const salesKPI = calculateKPI(record.total_sales, record.target_sales || 0);
+                const cogsKPI = calculateKPI(record.cogs_target || 0, record.cogs_achieved);  // Inverted for COGS since lower is better
+                const productivityKPI = calculateKPI(record.total_sales / (record.total_crew || 1), 30000000);
+                const opexKPI = calculateKPI(record.opex_target || 0, record.total_opex);  // Inverted for OPEX since lower is better
 
                 return (
                   <TableRow key={record.id} className="hover:bg-gray-50">
@@ -170,41 +107,32 @@ const FinanceReport = () => {
                     <TableCell className="text-gray-900">{record.area}</TableCell>
                     <TableCell className="text-center">
                       <span className={cogsKPI >= 3 ? 'text-green-600' : cogsKPI >= 2 ? 'text-yellow-600' : 'text-red-600'}>
-                        {cogsKPI.toFixed(1)}
+                        {cogsKPI.toFixed(2)}
                       </span>
                     </TableCell>
                     <TableCell className="text-center">
                       <span className={salesKPI >= 3 ? 'text-green-600' : salesKPI >= 2 ? 'text-yellow-600' : 'text-red-600'}>
-                        {salesKPI.toFixed(1)}
+                        {salesKPI.toFixed(2)}
                       </span>
                     </TableCell>
                     <TableCell className="text-center">
                       <span className={productivityKPI >= 3 ? 'text-green-600' : productivityKPI >= 2 ? 'text-yellow-600' : 'text-red-600'}>
-                        {productivityKPI.toFixed(1)}
+                        {productivityKPI.toFixed(2)}
                       </span>
                     </TableCell>
                     <TableCell className="text-center">
                       <span className={opexKPI >= 3 ? 'text-green-600' : opexKPI >= 2 ? 'text-yellow-600' : 'text-red-600'}>
-                        {opexKPI.toFixed(1)}
+                        {opexKPI.toFixed(2)}
                       </span>
                     </TableCell>
                     <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate(`/finance-report/${record.id}`)}
-                        >
-                          View Detail
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDelete(record.id)}
-                        >
-                          Delete
-                        </Button>
-                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/finance-report/${record.id}`)}
+                      >
+                        View Detail
+                      </Button>
                     </TableCell>
                   </TableRow>
                 );
