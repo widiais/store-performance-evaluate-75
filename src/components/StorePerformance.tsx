@@ -1,5 +1,4 @@
-<lov-code>
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -74,6 +73,10 @@ interface Store {
   id: number;
   name: string;
   city: string;
+  target_sales?: number;
+  cogs_target?: number;
+  opex_target?: number;
+  total_crew?: number;
 }
 
 interface EvaluationRecord {
@@ -81,6 +84,19 @@ interface EvaluationRecord {
   store_name: string;
   evaluation_date: string;
   total_score: number;
+}
+
+interface FinancialRecord {
+  id: number;
+  store_name: string;
+  input_date: string;
+  total_sales: number;
+  total_opex: number;
+  cogs_achieved: number;
+  target_sales: number;
+  cogs_target: number;
+  opex_target: number;
+  total_crew: number;
 }
 
 // Array warna untuk line chart
@@ -346,7 +362,7 @@ const StorePerformance = () => {
     enabled: selectedStores.length > 0 && !!selectedMonth && !!selectedYear,
   });
 
-  const { data: financialData } = useQuery({
+  const { data: financialData } = useQuery<FinancialRecord[]>({
     queryKey: ['financial-data', selectedStores.map(s => s.id), selectedMonth, selectedYear],
     queryFn: async () => {
       if (selectedStores.length === 0) return [];
@@ -357,7 +373,7 @@ const StorePerformance = () => {
       
       const { data, error } = await supabase
         .from('financial_records_report')
-        .select('*, stores(name, target_sales, cogs_target, opex_target, total_crew)')
+        .select('*')
         .in('store_name', selectedStores.map(s => s.name))
         .gte('input_date', startDate)
         .lte('input_date', endDate)
@@ -850,4 +866,281 @@ const StorePerformance = () => {
                             </Card>
 
                             <Card className="p-4">
-                              <p className="text-sm text-gray-500">OPEX
+                              <p className="text-sm text-gray-500">OPEX KPI</p>
+                              <p className={`text-lg font-medium ${
+                                opexKPI >= 3 ? 'text-green-600' : 
+                                opexKPI >= 2 ? 'text-yellow-600' : 
+                                'text-red-600'
+                              }`}>{opexKPI.toFixed(2)}</p>
+                              <p className="text-sm text-gray-500 mt-1">
+                                {storeData.total_opex?.toLocaleString()} ({((storeData.total_opex / storeData.total_sales) * 100).toFixed(1)}%)
+                              </p>
+                            </Card>
+
+                            <Card className="p-4">
+                              <p className="text-sm text-gray-500">Productivity KPI</p>
+                              <p className={`text-lg font-medium ${
+                                productivityKPI >= 3 ? 'text-green-600' : 
+                                productivityKPI >= 2 ? 'text-yellow-600' : 
+                                'text-red-600'
+                              }`}>{productivityKPI.toFixed(2)}</p>
+                              <p className="text-sm text-gray-500 mt-1">
+                                {((storeData.total_sales / (storeData.total_crew || 1))).toLocaleString()} / crew
+                              </p>
+                            </Card>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    Select one or more stores to view financial performance
+                  </div>
+                )}
+              </Card>
+            </div>
+          )}
+          
+          {activeTab === 'complaint' && (
+            <div className="space-y-6">
+              {/* Month & Year Selection */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="p-4">
+                  <h3 className="font-medium mb-4">Select Month</h3>
+                  <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {months.map((month) => (
+                        <SelectItem key={month.value} value={month.value}>
+                          {month.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Card>
+
+                <Card className="p-4">
+                  <h3 className="font-medium mb-4">Select Year</h3>
+                  <Select value={selectedYear} onValueChange={setSelectedYear}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {years.map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Card>
+              </div>
+
+              {/* Complaint Data */}
+              <Card className="p-6">
+                <h2 className="text-xl font-semibold mb-6">Customer Complain</h2>
+                {selectedStores.length > 0 ? (
+                  <div className="space-y-6">
+                    {selectedStores.map(store => {
+                      const storeData = complaintData?.find(d => d.store_name === store.name);
+                      
+                      if (!storeData) {
+                        return (
+                          <div key={store.id} className="p-4 border rounded-lg">
+                            <h3 className="font-medium text-lg">{store.name} - {store.city}</h3>
+                            <p className="text-gray-500 mt-2">No complaint data available for this period</p>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div key={store.id} className="p-4 border rounded-lg">
+                          <div className="flex justify-between items-center mb-4">
+                            <h3 className="font-medium text-lg">{store.name} - {store.city}</h3>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <Card className="p-4">
+                              <p className="text-sm text-gray-500">WhatsApp Count</p>
+                              <p className="text-lg font-medium">{storeData.whatsapp_count}</p>
+                            </Card>
+
+                            <Card className="p-4">
+                              <p className="text-sm text-gray-500">Social Media Count</p>
+                              <p className="text-lg font-medium">{storeData.social_media_count}</p>
+                            </Card>
+
+                            <Card className="p-4">
+                              <p className="text-sm text-gray-500">GMaps Count</p>
+                              <p className="text-lg font-medium">{storeData.gmaps_count}</p>
+                            </Card>
+
+                            <Card className="p-4">
+                              <p className="text-sm text-gray-500">Online Order Count</p>
+                              <p className="text-lg font-medium">{storeData.online_order_count}</p>
+                            </Card>
+
+                            <Card className="p-4">
+                              <p className="text-sm text-gray-500">Late Handling Count</p>
+                              <p className="text-lg font-medium">{storeData.late_handling_count}</p>
+                            </Card>
+
+                            <Card className="p-4">
+                              <p className="text-sm text-gray-500">Total Weighted Complaints</p>
+                              <p className="text-lg font-medium">{storeData.total_weighted_complaints}</p>
+                            </Card>
+
+                            <Card className="p-4">
+                              <p className="text-sm text-gray-500">Average CU Per Day</p>
+                              <p className="text-lg font-medium">{storeData.avg_cu_per_day}</p>
+                            </Card>
+
+                            <Card className="p-4">
+                              <p className="text-sm text-gray-500">KPI Score</p>
+                              <p className="text-lg font-medium">{storeData.kpi_score}</p>
+                            </Card>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    Select one or more stores to view complaint data
+                  </div>
+                )}
+              </Card>
+            </div>
+          )}
+          
+          {activeTab === 'audit' && (
+            <div className="space-y-6">
+              {/* Month & Year Selection */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="p-4">
+                  <h3 className="font-medium mb-4">Select Month</h3>
+                  <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {months.map((month) => (
+                        <SelectItem key={month.value} value={month.value}>
+                          {month.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Card>
+
+                <Card className="p-4">
+                  <h3 className="font-medium mb-4">Select Year</h3>
+                  <Select value={selectedYear} onValueChange={setSelectedYear}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {years.map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Card>
+              </div>
+
+              {/* Audit Data */}
+              <Card className="p-6">
+                <h2 className="text-xl font-semibold mb-6">Audit</h2>
+                {selectedStores.length > 0 ? (
+                  <div className="space-y-6">
+                    {selectedStores.map(store => {
+                      const storeData = financialData?.find(d => d.store_name === store.name);
+                      
+                      if (!storeData) {
+                        return (
+                          <div key={store.id} className="p-4 border rounded-lg">
+                            <h3 className="font-medium text-lg">{store.name} - {store.city}</h3>
+                            <p className="text-gray-500 mt-2">No audit data available for this period</p>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div key={store.id} className="p-4 border rounded-lg">
+                          <div className="flex justify-between items-center mb-4">
+                            <h3 className="font-medium text-lg">{store.name} - {store.city}</h3>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <Card className="p-4">
+                              <p className="text-sm text-gray-500">Sales KPI</p>
+                              <p className={`text-lg font-medium ${
+                                salesKPI >= 3 ? 'text-green-600' : 
+                                salesKPI >= 2 ? 'text-yellow-600' : 
+                                'text-red-600'
+                              }`}>{salesKPI.toFixed(2)}</p>
+                              <p className="text-sm text-gray-500 mt-1">
+                                {storeData.total_sales?.toLocaleString()} / {storeData.target_sales?.toLocaleString()}
+                              </p>
+                            </Card>
+
+                            <Card className="p-4">
+                              <p className="text-sm text-gray-500">COGS KPI</p>
+                              <p className={`text-lg font-medium ${
+                                cogsKPI >= 3 ? 'text-green-600' : 
+                                cogsKPI >= 2 ? 'text-yellow-600' : 
+                                'text-red-600'
+                              }`}>{cogsKPI.toFixed(2)}</p>
+                              <p className="text-sm text-gray-500 mt-1">
+                                {storeData.cogs_achieved?.toLocaleString()} / {storeData.cogs_target?.toLocaleString()}
+                              </p>
+                            </Card>
+
+                            <Card className="p-4">
+                              <p className="text-sm text-gray-500">OPEX KPI</p>
+                              <p className={`text-lg font-medium ${
+                                opexKPI >= 3 ? 'text-green-600' : 
+                                opexKPI >= 2 ? 'text-yellow-600' : 
+                                'text-red-600'
+                              }`}>{opexKPI.toFixed(2)}</p>
+                              <p className="text-sm text-gray-500 mt-1">
+                                {storeData.total_opex?.toLocaleString()} ({((storeData.total_opex / storeData.total_sales) * 100).toFixed(1)}%)
+                              </p>
+                            </Card>
+
+                            <Card className="p-4">
+                              <p className="text-sm text-gray-500">Productivity KPI</p>
+                              <p className={`text-lg font-medium ${
+                                productivityKPI >= 3 ? 'text-green-600' : 
+                                productivityKPI >= 2 ? 'text-yellow-600' : 
+                                'text-red-600'
+                              }`}>{productivityKPI.toFixed(2)}</p>
+                              <p className="text-sm text-gray-500 mt-1">
+                                {((storeData.total_sales / (storeData.total_crew || 1))).toLocaleString()} / crew
+                              </p>
+                            </Card>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    Select one or more stores to view audit data
+                  </div>
+                )}
+              </Card>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default StorePerformance;
