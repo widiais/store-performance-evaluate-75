@@ -1,4 +1,3 @@
-
 export interface Store {
   id: number;
   name: string;
@@ -66,4 +65,15 @@ export interface EspRecord {
   pic: string | null;
   status: string | null;
   findings: string[];
+}
+
+export interface ActiveSanction {
+  id: number;
+  employee_name: string;
+  sanction_type: string;
+  sanction_date: string;
+  violation_details: string;
+  submitted_by: string;
+  store_id: number;
+  is_active: boolean;
 }

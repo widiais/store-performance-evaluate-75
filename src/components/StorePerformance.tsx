@@ -1,4 +1,4 @@
-
+<lov-code>
 import { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { useQuery } from '@tanstack/react-query';
@@ -48,6 +48,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { FileDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 ChartJS.register(
   CategoryScale,
@@ -563,7 +564,7 @@ const StorePerformance = () => {
                     : 'text-gray-500'
                 }`}
               >
-                Sanction KPI
+                Sanction Performance
               </button>
             </div>
 
@@ -635,58 +636,108 @@ const StorePerformance = () => {
           </div>
 
           {activeTab === 'operational' && (
-            <div className="space-y-4">
-              <Card>
-                {champsChartData ? (
-                  <ChartLine data={champsChartData.data} options={champsChartData.options} />
-                ) : (
-                  <p className="p-4">No CHAMPS data available for the selected stores and period.</p>
-                )}
-                {selectedStores.length > 0 && (
-                  <div className="p-4">
-                    Average CHAMPS KPI: <Badge>{calculateAverageKPI(performanceData)}</Badge>
-                  </div>
-                )}
-              </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <Card>
+                  {champsChartData ? (
+                    <ChartLine data={champsChartData.data} options={champsChartData.options} />
+                  ) : (
+                    <p className="p-4">No CHAMPS data available for the selected stores and period.</p>
+                  )}
+                </Card>
 
-              <Card>
-                {cleanlinessChartData ? (
-                  <ChartLine data={cleanlinessChartData.data} options={cleanlinessChartData.options} />
-                ) : (
-                  <p className="p-4">No Cleanliness data available for the selected stores and period.</p>
-                )}
-                 {selectedStores.length > 0 && (
-                  <div className="p-4">
-                    Average Cleanliness KPI: <Badge>{calculateAverageKPI(cleanlinessData)}</Badge>
-                  </div>
-                )}
-              </Card>
+                <Card>
+                  {cleanlinessChartData ? (
+                    <ChartLine data={cleanlinessChartData.data} options={cleanlinessChartData.options} />
+                  ) : (
+                    <p className="p-4">No Cleanliness data available for the selected stores and period.</p>
+                  )}
+                </Card>
 
-              <Card>
-                {serviceChartData ? (
-                  <ChartLine data={serviceChartData.data} options={serviceChartData.options} />
-                ) : (
-                  <p className="p-4">No Service data available for the selected stores and period.</p>
-                )}
-                {selectedStores.length > 0 && (
-                  <div className="p-4">
-                    Average Service KPI: <Badge>{calculateAverageKPI(serviceData)}</Badge>
-                  </div>
-                )}
-              </Card>
+                <Card>
+                  {serviceChartData ? (
+                    <ChartLine data={serviceChartData.data} options={serviceChartData.options} />
+                  ) : (
+                    <p className="p-4">No Service data available for the selected stores and period.</p>
+                  )}
+                </Card>
 
-              <Card>
-                {productQualityChartData ? (
-                  <ChartLine data={productQualityChartData.data} options={productQualityChartData.options} />
-                ) : (
-                  <p className="p-4">No Product Quality data available for the selected stores and period.</p>
-                )}
-                {selectedStores.length > 0 && (
-                  <div className="p-4">
-                    Average Product Quality KPI: <Badge>{calculateAverageKPI(productQualityData)}</Badge>
+                <Card>
+                  {productQualityChartData ? (
+                    <ChartLine data={productQualityChartData.data} options={productQualityChartData.options} />
+                  ) : (
+                    <p className="p-4">No Product Quality data available for the selected stores and period.</p>
+                  )}
+                </Card>
+              </div>
+
+              <div className="space-y-4">
+                <Card className="p-4">
+                  <h3 className="font-medium text-lg mb-4">Performance Data</h3>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Store</TableHead>
+                        <TableHead>CHAMPS</TableHead>
+                        <TableHead>Cleanliness</TableHead>
+                        <TableHead>Service</TableHead>
+                        <TableHead>Product Quality</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {selectedStores.map(store => {
+                        const champsScore = performanceData
+                          .filter(d => d.store_name === store.name)
+                          .reduce((sum, curr) => sum + (curr.total_score || 0), 0) / (performanceData.filter(d => d.store_name === store.name).length || 1);
+                        
+                        const cleanlinessScore = cleanlinessData
+                          .filter(d => d.store_name === store.name)
+                          .reduce((sum, curr) => sum + (curr.total_score || 0), 0) / (cleanlinessData.filter(d => d.store_name === store.name).length || 1);
+                        
+                        const serviceScore = serviceData
+                          .filter(d => d.store_name === store.name)
+                          .reduce((sum, curr) => sum + (curr.total_score || 0), 0) / (serviceData.filter(d => d.store_name === store.name).length || 1);
+                        
+                        const productQualityScore = productQualityData
+                          .filter(d => d.store_name === store.name)
+                          .reduce((sum, curr) => sum + (curr.total_score || 0), 0) / (productQualityData.filter(d => d.store_name === store.name).length || 1);
+
+                        return (
+                          <TableRow key={store.id}>
+                            <TableCell className="font-medium">{store.name}</TableCell>
+                            <TableCell>{champsScore.toFixed(2)}</TableCell>
+                            <TableCell>{cleanlinessScore.toFixed(2)}</TableCell>
+                            <TableCell>{serviceScore.toFixed(2)}</TableCell>
+                            <TableCell>{productQualityScore.toFixed(2)}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </Card>
+
+                <Card className="p-4">
+                  <h3 className="font-medium text-lg mb-4">Average Scores</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500">Average CHAMPS KPI</p>
+                      <p className="text-xl font-medium">{calculateAverageKPI(performanceData)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Average Cleanliness KPI</p>
+                      <p className="text-xl font-medium">{calculateAverageKPI(cleanlinessData)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Average Service KPI</p>
+                      <p className="text-xl font-medium">{calculateAverageKPI(serviceData)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Average Product Quality KPI</p>
+                      <p className="text-xl font-medium">{calculateAverageKPI(productQualityData)}</p>
+                    </div>
                   </div>
-                )}
-              </Card>
+                </Card>
+              </div>
             </div>
           )}
 
@@ -728,82 +779,3 @@ const StorePerformance = () => {
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="p-4 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-500">Total Complaints</p>
-                        <p className="text-xl font-medium">{storeData.total_weighted_complaints}</p>
-                      </div>
-
-                      <div className="p-4 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-500">Average CU per Day</p>
-                        <p className="text-xl font-medium">{storeData.avg_cu_per_day}</p>
-                      </div>
-
-                      <div className="p-4 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-500">KPI Score</p>
-                        <p className={`text-xl font-medium ${
-                          kpiScore >= 3 ? 'text-green-600' :
-                          kpiScore >= 2 ? 'text-yellow-600' :
-                          'text-red-600'
-                        }`}>
-                          {kpiScore}
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-
-          {activeTab === 'audit' && (
-            <div className="grid grid-cols-1 gap-4">
-              {selectedStores.map(store => {
-                const storeData = espData.find(data => data.store_name === store.name);
-                if (!storeData) {
-                  return (
-                    <Card key={store.id} className="p-6">
-                      <h3 className="font-medium text-lg mb-4">{store.name} - {store.city}</h3>
-                      <p className="text-gray-500">No ESP data available for this store and period.</p>
-                    </Card>
-                  );
-                }
-
-                return (
-                  <Card key={store.id} className="p-6">
-                    <h3 className="font-medium text-lg mb-4">{store.name} - {store.city}</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="p-4 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-500">Total Score</p>
-                        <p className="text-xl font-medium">{storeData.total_score}</p>
-                      </div>
-
-                      <div className="p-4 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-500">Final Score</p>
-                        <p className="text-xl font-medium">{storeData.final_score}</p>
-                      </div>
-
-                      <div className="p-4 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-500">KPI Score</p>
-                        <p className="text-xl font-medium">{storeData.kpi_score}</p>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-
-          {activeTab === 'sanction' && (
-            <div className="grid grid-cols-1 gap-4">
-              {selectedStores.map(store => (
-                <SanctionKPI key={store.id} store={store} selectedMonth={selectedMonth} selectedYear={selectedYear} />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default StorePerformance;
