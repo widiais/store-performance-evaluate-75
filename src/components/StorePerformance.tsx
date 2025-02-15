@@ -69,6 +69,7 @@ interface EvaluationRecord {
 interface FinancialRecord {
   id: number;
   store_name: string;
+  store_city: string;
   input_date: string;
   total_sales: number;
   total_opex: number;
@@ -79,30 +80,29 @@ interface FinancialRecord {
   total_crew: number;
 }
 
-interface EspFinding {
-  finding: string;
-}
-
-interface EspEvaluation {
+interface ComplaintRecord {
   id: number;
   store_name: string;
-  store_city: string;
-  evaluation_date: string;
-  total_score: number;
-  final_score: number;
+  input_date: string;
+  whatsapp_count: number;
+  social_media_count: number;
+  gmaps_count: number;
+  online_order_count: number;
+  late_handling_count: number;
+  total_weighted_complaints: number;
+  avg_cu_per_day: number;
   kpi_score: number;
-  esp_findings: EspFinding[];
 }
 
-interface EspData {
-  id: number;
+interface SanctionKPI {
+  store_id: number;
   store_name: string;
   store_city: string;
-  evaluation_date: string;
-  total_score: number;
-  final_score: number;
+  total_employees: number;
+  active_peringatan: number;
+  active_sp1: number;
+  active_sp2: number;
   kpi_score: number;
-  findings: string[];
 }
 
 const lineColors = [
@@ -232,7 +232,7 @@ const StorePerformance = () => {
     return Math.max(0, Math.min((targetOPEXPercentage / actualOPEXPercentage) * 4, 4));
   };
 
-  const { data: financialData = [] } = useQuery({
+  const { data: financialData = [] } = useQuery<FinancialRecord[]>({
     queryKey: ['financial-data', selectedStores.map(s => s.id), selectedMonth, selectedYear],
     queryFn: async () => {
       if (selectedStores.length === 0) return [];
@@ -252,7 +252,7 @@ const StorePerformance = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: selectedStores.length > 0 && !!selectedMonth && !!selectedYear
+    enabled: Boolean(selectedStores.length > 0 && selectedMonth && selectedYear)
   });
 
   const { data: performanceData = [] } = useQuery<EvaluationRecord[]>({
@@ -275,7 +275,7 @@ const StorePerformance = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: selectedStores.length > 0 && !!selectedMonth && !!selectedYear
+    enabled: Boolean(selectedStores.length > 0 && selectedMonth && selectedYear)
   });
 
   const { data: cleanlinessData = [] } = useQuery<EvaluationRecord[]>({
@@ -298,7 +298,7 @@ const StorePerformance = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: selectedStores.length > 0 && !!selectedMonth && !!selectedYear
+    enabled: Boolean(selectedStores.length > 0 && selectedMonth && selectedYear)
   });
 
   const { data: serviceData = [] } = useQuery<EvaluationRecord[]>({
@@ -321,7 +321,7 @@ const StorePerformance = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: selectedStores.length > 0 && !!selectedMonth && !!selectedYear
+    enabled: Boolean(selectedStores.length > 0 && selectedMonth && selectedYear)
   });
 
   const { data: productQualityData = [] } = useQuery<EvaluationRecord[]>({
@@ -344,11 +344,11 @@ const StorePerformance = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: selectedStores.length > 0 && !!selectedMonth && !!selectedYear
+    enabled: Boolean(selectedStores.length > 0 && selectedMonth && selectedYear)
   });
 
-  const { data: complaintData = [] } = useQuery({
-    queryKey: ['complaintData', selectedStores, selectedMonth, selectedYear],
+  const { data: complaintData = [] } = useQuery<ComplaintRecord[]>({
+    queryKey: ['complaintData', selectedStores.map(s => s.id), selectedMonth, selectedYear],
     queryFn: async () => {
       if (selectedStores.length === 0) return [];
       
@@ -378,7 +378,7 @@ const StorePerformance = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: selectedStores.length > 0 && !!selectedMonth && !!selectedYear
+    enabled: Boolean(selectedStores.length > 0 && selectedMonth && selectedYear)
   });
 
   const calculateAverageKPI = (data: EvaluationRecord[]) => {
@@ -554,62 +554,69 @@ const StorePerformance = () => {
     { value: '12', label: 'December' },
   ];
 
-  const { data: espData } = useQuery<EspData[]>({
-    queryKey: ['esp-data', selectedStores.map(s => s.id), selectedMonth, selectedYear],
-    queryFn: async () => {
-      if (selectedStores.length === 0) return [];
+  const renderSanctionKPI = (store: Store) => {
+    const { data: sanctionKPI } = useQuery<SanctionKPI>({
+      queryKey: ['sanctionKPI', store.id, selectedMonth, selectedYear],
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from('employee_sanctions_kpi')
+          .select('*')
+          .eq('store_id', store.id)
+          .single();
 
-      const startDate = `${selectedYear}-${selectedMonth}-01`;
-      const monthDate = parse(startDate, 'yyyy-MM-dd', new Date());
-      const endDate = format(endOfMonth(monthDate), 'yyyy-MM-dd');
+        if (error) throw error;
+        return data;
+      },
+      enabled: Boolean(store.id && selectedMonth && selectedYear)
+    });
 
-      const { data: evaluations, error: evalError } = await supabase
-        .from('esp_evaluation_report')
-        .select(`
-          id,
-          store_name,
-          store_city,
-          evaluation_date,
-          total_score,
-          final_score,
-          kpi_score,
-          esp_findings (
-            finding
-          )
-        `)
-        .in('store_name', selectedStores.map(store => store.name))
-        .gte('evaluation_date', startDate)
-        .lte('evaluation_date', endDate)
-        .order('evaluation_date', { ascending: false });
-
-      if (evalError) throw evalError;
-      if (!evaluations) return [];
-
-      return evaluations.map(evaluation => ({
-        id: evaluation.id,
-        store_name: evaluation.store_name,
-        store_city: evaluation.store_city,
-        evaluation_date: evaluation.evaluation_date,
-        total_score: evaluation.total_score,
-        final_score: evaluation.final_score,
-        kpi_score: evaluation.kpi_score,
-        findings: evaluation.esp_findings?.map(f => f.finding) || []
-      }));
-    },
-    enabled: selectedStores.length > 0
-  });
-
-  const getSanctionColor = (type: string) => {
-    switch (type) {
-      case 'Peringatan Tertulis':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'SP1':
-        return 'bg-orange-100 text-orange-800';
-      case 'SP2':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+    if (!sanctionKPI) {
+      return (
+        <Card key={store.id} className="p-6">
+          <h3 className="font-medium text-lg mb-4">{store.name} - {store.city}</h3>
+          <p className="text-gray-500">No sanction data available</p>
+        </Card>
+      );
     }
+
+    return (
+      <Card key={store.id} className="p-6">
+        <h3 className="font-medium text-lg mb-4">{store.name} - {store.city}</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-500">Total Employees</p>
+            <p className="text-xl font-medium">{sanctionKPI.total_employees}</p>
+          </div>
+
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-500">Active Warnings</p>
+            <p className="text-xl font-medium text-yellow-600">{sanctionKPI.active_peringatan}</p>
+          </div>
+
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-500">Active SP1</p>
+            <p className="text-xl font-medium text-orange-600">{sanctionKPI.active_sp1}</p>
+          </div>
+
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-500">Active SP2</p>
+            <p className="text-xl font-medium text-red-600">{sanctionKPI.active_sp2}</p>
+          </div>
+
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-500">KPI Score</p>
+            <p className={`text-xl font-medium ${
+              sanctionKPI.kpi_score >= 3 ? 'text-green-600' :
+              sanctionKPI.kpi_score >= 2 ? 'text-yellow-600' :
+              'text-red-600'
+            }`}>
+              {sanctionKPI.kpi_score}
+            </p>
+          </div>
+        </div>
+      </Card>
+    );
   };
 
   return (
@@ -1141,69 +1148,7 @@ const StorePerformance = () => {
 
               {selectedStores.length > 0 ? (
                 <div className="space-y-6">
-                  {selectedStores.map(store => {
-                    const { data: sanctionKPI } = useQuery({
-                      queryKey: ['sanctionKPI', store.id, selectedMonth, selectedYear],
-                      queryFn: async () => {
-                        const { data, error } = await supabase
-                          .from('employee_sanctions_kpi')
-                          .select('*')
-                          .eq('store_id', store.id)
-                          .single();
-
-                        if (error) throw error;
-                        return data;
-                      }
-                    });
-
-                    if (!sanctionKPI) {
-                      return (
-                        <Card key={store.id} className="p-6">
-                          <h3 className="font-medium text-lg mb-4">{store.name} - {store.city}</h3>
-                          <p className="text-gray-500">No sanction data available</p>
-                        </Card>
-                      );
-                    }
-
-                    return (
-                      <Card key={store.id} className="p-6">
-                        <h3 className="font-medium text-lg mb-4">{store.name} - {store.city}</h3>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                          <div className="p-4 bg-gray-50 rounded-lg">
-                            <p className="text-sm text-gray-500">Total Employees</p>
-                            <p className="text-xl font-medium">{sanctionKPI.total_employees}</p>
-                          </div>
-
-                          <div className="p-4 bg-gray-50 rounded-lg">
-                            <p className="text-sm text-gray-500">Active Warnings</p>
-                            <p className="text-xl font-medium text-yellow-600">{sanctionKPI.active_peringatan}</p>
-                          </div>
-
-                          <div className="p-4 bg-gray-50 rounded-lg">
-                            <p className="text-sm text-gray-500">Active SP1</p>
-                            <p className="text-xl font-medium text-orange-600">{sanctionKPI.active_sp1}</p>
-                          </div>
-
-                          <div className="p-4 bg-gray-50 rounded-lg">
-                            <p className="text-sm text-gray-500">Active SP2</p>
-                            <p className="text-xl font-medium text-red-600">{sanctionKPI.active_sp2}</p>
-                          </div>
-
-                          <div className="p-4 bg-gray-50 rounded-lg">
-                            <p className="text-sm text-gray-500">KPI Score</p>
-                            <p className={`text-xl font-medium ${
-                              sanctionKPI.kpi_score >= 3 ? 'text-green-600' :
-                              sanctionKPI.kpi_score >= 2 ? 'text-yellow-600' :
-                              'text-red-600'
-                            }`}>
-                              {sanctionKPI.kpi_score}
-                            </p>
-                          </div>
-                        </div>
-                      </Card>
-                    );
-                  })}
+                  {selectedStores.map(store => renderSanctionKPI(store))}
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">
