@@ -1,4 +1,3 @@
-<lov-code>
 import { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { useQuery } from '@tanstack/react-query';
@@ -11,21 +10,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Line as ChartLine } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip as ChartTooltip,
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
   Legend,
-  ChartData,
-  Point,
-  TimeScale
-} from 'chart.js';
-import 'chartjs-adapter-date-fns';
+  ResponsiveContainer 
+} from 'recharts';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import StorePerformancePDF from './StorePerformancePDF';
 import { useNavigate } from 'react-router-dom';
@@ -42,7 +36,7 @@ import {
 import { 
   calculateKPI, 
   calculateOPEXKPI, 
-  calculateComplaintKPIScore,
+  calculateComplaintKPIScore, 
   lineColors 
 } from './store-performance/utils';
 import { Button } from "@/components/ui/button";
@@ -50,23 +44,19 @@ import { FileDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  ChartTooltip,
-  Legend,
-  TimeScale  // Register TimeScale
-);
+type TabType = 'operational' | 'financial' | 'complaint' | 'audit';
+
+interface ChartDataPoint {
+  date: string;
+  [key: string]: number | string | null;
+}
 
 const StorePerformance = () => {
   const currentYear = getYear(new Date());
   const [selectedStores, setSelectedStores] = useState<Store[]>([]);
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'MM'));
   const [selectedYear, setSelectedYear] = useState<string>(currentYear.toString());
-  const [activeTab, setActiveTab] = useState('operational');
+  const [activeTab, setActiveTab] = useState<TabType>('operational');
   const navigate = useNavigate();
 
   const { data: financialData = [] } = useQuery<FinancialRecord[]>({
@@ -83,13 +73,11 @@ const StorePerformance = () => {
         .select('*')
         .in('store_name', selectedStores.map(s => s.name))
         .gte('input_date', startDate)
-        .lte('input_date', endDate)
-        .order('input_date');
+        .lte('input_date', endDate);
       
       if (error) throw error;
-      return data || [];
+      return data;
     },
-    enabled: selectedStores.length > 0 && selectedMonth !== '' && selectedYear !== ''
   });
 
   const { data: performanceData = [] } = useQuery<EvaluationRecord[]>({
@@ -106,13 +94,11 @@ const StorePerformance = () => {
         .select('id, store_name, evaluation_date, total_score')
         .in('store_name', selectedStores.map(s => s.name))
         .gte('evaluation_date', startDate)
-        .lte('evaluation_date', endDate)
-        .order('evaluation_date');
+        .lte('evaluation_date', endDate);
       
       if (error) throw error;
-      return data || [];
+      return data;
     },
-    enabled: selectedStores.length > 0 && Boolean(selectedMonth) && Boolean(selectedYear)
   });
 
   const { data: cleanlinessData = [] } = useQuery<EvaluationRecord[]>({
@@ -129,13 +115,11 @@ const StorePerformance = () => {
         .select('id, store_name, evaluation_date, total_score')
         .in('store_name', selectedStores.map(s => s.name))
         .gte('evaluation_date', startDate)
-        .lte('evaluation_date', endDate)
-        .order('evaluation_date');
+        .lte('evaluation_date', endDate);
       
       if (error) throw error;
-      return data || [];
+      return data;
     },
-    enabled: selectedStores.length > 0 && Boolean(selectedMonth) && Boolean(selectedYear)
   });
 
   const { data: serviceData = [] } = useQuery<EvaluationRecord[]>({
@@ -152,13 +136,11 @@ const StorePerformance = () => {
         .select('id, store_name, evaluation_date, total_score')
         .in('store_name', selectedStores.map(s => s.name))
         .gte('evaluation_date', startDate)
-        .lte('evaluation_date', endDate)
-        .order('evaluation_date');
+        .lte('evaluation_date', endDate);
       
       if (error) throw error;
-      return data || [];
+      return data;
     },
-    enabled: selectedStores.length > 0 && Boolean(selectedMonth) && Boolean(selectedYear)
   });
 
   const { data: productQualityData = [] } = useQuery<EvaluationRecord[]>({
@@ -175,13 +157,11 @@ const StorePerformance = () => {
         .select('id, store_name, evaluation_date, total_score')
         .in('store_name', selectedStores.map(s => s.name))
         .gte('evaluation_date', startDate)
-        .lte('evaluation_date', endDate)
-        .order('evaluation_date');
+        .lte('evaluation_date', endDate);
       
       if (error) throw error;
-      return data || [];
+      return data;
     },
-    enabled: selectedStores.length > 0 && Boolean(selectedMonth) && Boolean(selectedYear)
   });
 
   const { data: complaintData = [] } = useQuery<ComplaintRecord[]>({
@@ -195,27 +175,14 @@ const StorePerformance = () => {
 
       const { data, error } = await supabase
         .from('complaint_records_report')
-        .select(`
-          id,
-          store_name,
-          input_date,
-          whatsapp_count,
-          social_media_count,
-          gmaps_count,
-          online_order_count,
-          late_handling_count,
-          total_weighted_complaints,
-          avg_cu_per_day,
-          kpi_score
-        `)
-        .in('store_name', selectedStores.map(store => store.name))
+        .select('*')
+        .in('store_name', selectedStores.map(s => s.name))
         .gte('input_date', startDate)
         .lte('input_date', endDate);
       
       if (error) throw error;
-      return data || [];
+      return data;
     },
-    enabled: selectedStores.length > 0 && selectedMonth !== '' && selectedYear !== ''
   });
 
   const { data: espData = [] } = useQuery<EspRecord[]>({
@@ -232,11 +199,9 @@ const StorePerformance = () => {
         .select('*')
         .in('store_name', selectedStores.map(s => s.name))
         .gte('evaluation_date', startDate)
-        .lte('evaluation_date', endDate)
-        .order('evaluation_date');
-      
+        .lte('evaluation_date', endDate);
+
       if (evaluationError) throw evaluationError;
-      if (!evaluationData) return [];
 
       const evaluationIds = evaluationData.map(e => e.id).filter(Boolean);
       const { data: findingsData, error: findingsError } = await supabase
@@ -253,95 +218,50 @@ const StorePerformance = () => {
           .map(f => f.finding) || []
       }));
     },
-    enabled: selectedStores.length > 0 && selectedMonth !== '' && selectedYear !== ''
   });
 
-  const calculateAverageKPI = (data: EvaluationRecord[]) => {
-    if (!data || data.length === 0) return 0;
-    const totalKPI = data.reduce((sum, record) => sum + (record.total_score || 0), 0);
-    return (totalKPI / data.length).toFixed(1);
-  };
-
-  const formatChartData = (data: EvaluationRecord[], title: string): { data: ChartData<"line", Point[], unknown>, options: any } | null => {
+  const formatChartData = (data: EvaluationRecord[], title: string) => {
     if (!data || !selectedStores.length) return null;
 
-    const formattedData = data.map(record => ({
-      date: new Date(record.evaluation_date).getTime(), // Convert to timestamp
-      store_name: record.store_name,
-      total_score: record.total_score
-    }));
-
-    const datasets = selectedStores.map((store, index) => {
-      const storeData = formattedData
-        .filter(record => record.store_name === store.name)
-        .map(record => ({
-          x: record.date,
-          y: record.total_score
-        }));
-
-      return {
-        label: `${store.name} - ${store.city}`,
-        data: storeData,
-        borderColor: lineColors[index % lineColors.length],
-        backgroundColor: lineColors[index % lineColors.length],
-        tension: 0.4
-      };
-    });
-
-    const chartData: ChartData<"line", Point[], unknown> = {
-      datasets
-    };
-
-    const options = {
-      responsive: true,
-      plugins: {
-        legend: {
-          position: 'top' as const,
-        },
-        title: {
-          display: true,
-          text: title
-        }
-      },
-      scales: {
-        x: {
-          type: 'time' as const,
-          time: {
-            unit: 'day',
-            tooltipFormat: 'dd/MM/yyyy'
-          },
-          title: {
-            display: true,
-            text: 'Date'
-          }
-        },
-        y: {
-          beginAtZero: true,
-          max: 4,
-          title: {
-            display: true,
-            text: 'Score'
-          }
-        }
+    // Kelompokkan data berdasarkan tanggal dan store
+    const groupedData = data.reduce((acc, record) => {
+      const date = format(new Date(record.evaluation_date), 'yyyy-MM-dd');
+      const storeName = record.store_name;
+      
+      if (!acc[date]) {
+        acc[date] = {};
       }
-    };
+      if (!acc[date][storeName]) {
+        acc[date][storeName] = [];
+      }
+      acc[date][storeName].push(record);
+      return acc;
+    }, {} as Record<string, Record<string, EvaluationRecord[]>>);
 
-    return { data: chartData, options };
+    // Dapatkan semua tanggal unik dan urutkan
+    const allDates = Object.keys(groupedData).sort();
+    
+    // Buat data untuk chart dengan rata-rata per hari
+    return allDates.map(date => {
+      const dataPoint: ChartDataPoint = { date };
+      selectedStores.forEach(store => {
+        const storeRecords = groupedData[date]?.[store.name] || [];
+        if (storeRecords.length > 0) {
+          // Hitung rata-rata score untuk hari ini
+          const avgScore = storeRecords.reduce((sum, record) => sum + (record.total_score || 0), 0) / storeRecords.length;
+          dataPoint[store.name] = avgScore;
+        } else {
+          dataPoint[store.name] = null;
+        }
+      });
+      return dataPoint;
+    });
   };
 
   const champsChartData = formatChartData(performanceData, 'CHAMPS Performance');
   const cleanlinessChartData = formatChartData(cleanlinessData, 'Cleanliness Performance');
   const serviceChartData = formatChartData(serviceData, 'Service Performance');
   const productQualityChartData = formatChartData(productQualityData, 'Product Quality Performance');
-
-  const calculateKPIScore = (totalWeightedComplaints: number, avgCUPerDay: number) => {
-    const percentage = (totalWeightedComplaints / (avgCUPerDay * 30)) * 100;
-    if (percentage <= 0.1) return 4;       // <= 0.1% = 4 (Sangat Baik)
-    if (percentage <= 0.3) return 3;       // <= 0.3% = 3 (Baik)
-    if (percentage <= 0.5) return 2;       // <= 0.5% = 2 (Cukup)
-    if (percentage <= 0.7) return 1;       // <= 0.7% = 1 (Kurang)
-    return 0;                              // > 0.7% = 0 (Sangat Kurang)
-  };
 
   const handleStoreSelect = (store: Store) => {
     setSelectedStores(prev => {
@@ -362,71 +282,6 @@ const StorePerformance = () => {
     setSelectedStores(prev => prev.filter(s => s.id !== storeId));
   };
 
-  const renderFinancialCard = (storeData: FinancialRecord, store: Store) => {
-    const salesKPI = calculateKPI(storeData.total_sales || 0, storeData.target_sales || 0);
-    const cogsKPI = calculateKPI(storeData.cogs_target || 0, storeData.cogs_achieved || 0);
-    const productivityKPI = calculateKPI((storeData.total_sales || 0) / (storeData.total_crew || 1), 30000000);
-    const opexKPI = calculateOPEXKPI(storeData.total_sales || 0, storeData.total_opex || 0, 4);
-
-    return (
-      <div key={store.id} className="p-4 border rounded-lg">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-medium text-lg">{store.name} - {store.city}</h3>
-        </div>
-        
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="p-4">
-            <p className="text-sm text-gray-500">Sales KPI</p>
-            <p className={`text-lg font-medium ${
-              salesKPI >= 3 ? 'text-green-600' : 
-              salesKPI >= 2 ? 'text-yellow-600' : 
-              'text-red-600'
-            }`}>{salesKPI.toFixed(2)}</p>
-            <p className="text-sm text-gray-500 mt-1">
-              {storeData.total_sales?.toLocaleString()} / {storeData.target_sales?.toLocaleString()}
-            </p>
-          </Card>
-
-          <Card className="p-4">
-            <p className="text-sm text-gray-500">COGS KPI</p>
-            <p className={`text-lg font-medium ${
-              cogsKPI >= 3 ? 'text-green-600' : 
-              cogsKPI >= 2 ? 'text-yellow-600' : 
-              'text-red-600'
-            }`}>{cogsKPI.toFixed(2)}</p>
-            <p className="text-sm text-gray-500 mt-1">
-              {storeData.cogs_achieved?.toLocaleString()} / {storeData.cogs_target?.toLocaleString()}
-            </p>
-          </Card>
-
-          <Card className="p-4">
-            <p className="text-sm text-gray-500">OPEX KPI</p>
-            <p className={`text-lg font-medium ${
-              opexKPI >= 3 ? 'text-green-600' : 
-              opexKPI >= 2 ? 'text-yellow-600' : 
-              'text-red-600'
-            }`}>{opexKPI.toFixed(2)}</p>
-            <p className="text-sm text-gray-500 mt-1">
-              {storeData.total_opex?.toLocaleString()} ({((storeData.total_opex / storeData.total_sales) * 100).toFixed(1)}%)
-            </p>
-          </Card>
-
-          <Card className="p-4">
-            <p className="text-sm text-gray-500">Productivity KPI</p>
-            <p className={`text-lg font-medium ${
-              productivityKPI >= 3 ? 'text-green-600' : 
-              productivityKPI >= 2 ? 'text-yellow-600' : 
-              'text-red-600'
-            }`}>{productivityKPI.toFixed(2)}</p>
-            <p className="text-sm text-gray-500 mt-1">
-              {((storeData.total_sales / (storeData.total_crew || 1))).toLocaleString()} / crew
-            </p>
-          </Card>
-        </div>
-      </div>
-    );
-  };
-
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
   const months = [
     { value: '01', label: 'January' },
@@ -443,339 +298,600 @@ const StorePerformance = () => {
     { value: '12', label: 'December' },
   ];
 
-  const renderSanctionKPI = (store: Store) => {
-    const { data: sanctionKPI } = useQuery<SanctionKPIType>({
-      queryKey: ['sanctionKPI', store.id, selectedMonth, selectedYear],
-      queryFn: async () => {
-        const { data, error } = await supabase
-          .from('employee_sanctions_kpi')
-          .select('*')
-          .eq('store_id', store.id)
-          .single();
-
-        if (error) throw error;
-        return data;
-      },
-      enabled: Boolean(store.id && selectedMonth && selectedYear)
-    });
-
-    if (!sanctionKPI) {
-      return (
-        <Card key={store.id} className="p-6">
-          <h3 className="font-medium text-lg mb-4">{store.name} - {store.city}</h3>
-          <p className="text-gray-500">No sanction data available</p>
-        </Card>
-      );
-    }
-
-    return (
-      <Card key={store.id} className="p-6">
-        <h3 className="font-medium text-lg mb-4">{store.name} - {store.city}</h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-500">Total Employees</p>
-            <p className="text-xl font-medium">{sanctionKPI.total_employees}</p>
-          </div>
-
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-500">Active Warnings</p>
-            <p className="text-xl font-medium text-yellow-600">{sanctionKPI.active_peringatan}</p>
-          </div>
-
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-500">Active SP1</p>
-            <p className="text-xl font-medium text-orange-600">{sanctionKPI.active_sp1}</p>
-          </div>
-
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-500">Active SP2</p>
-            <p className="text-xl font-medium text-red-600">{sanctionKPI.active_sp2}</p>
-          </div>
-
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-500">KPI Score</p>
-            <p className={`text-xl font-medium ${
-              sanctionKPI.kpi_score >= 3 ? 'text-green-600' :
-              sanctionKPI.kpi_score >= 2 ? 'text-yellow-600' :
-              'text-red-600'
-            }`}>
-              {sanctionKPI.kpi_score}
-            </p>
-          </div>
-        </div>
-      </Card>
-    );
-  };
-
   return (
-    <div className="p-6 min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex flex-col gap-4">
-          <h2 className="text-2xl font-semibold text-gray-900">Store Performance</h2>
-          
-          <div className="flex justify-between items-center">
-            <div className="flex space-x-2 border-b border-gray-200">
-              <button
-                onClick={() => setActiveTab('operational')}
-                className={`px-4 py-2 font-medium ${
-                  activeTab === 'operational'
-                    ? 'text-primary border-b-2 border-primary'
-                    : 'text-gray-500'
-                }`}
-              >
-                Operational Performance
-              </button>
-              <button
-                onClick={() => setActiveTab('financial')}
-                className={`px-4 py-2 font-medium ${
-                  activeTab === 'financial'
-                    ? 'text-primary border-b-2 border-primary'
-                    : 'text-gray-500'
-                }`}
-              >
-                Financial Performance
-              </button>
-              <button
-                onClick={() => setActiveTab('complaint')}
-                className={`px-4 py-2 font-medium ${
-                  activeTab === 'complaint'
-                    ? 'text-primary border-b-2 border-primary'
-                    : 'text-gray-500'
-                }`}
-              >
-                Complaint Performance
-              </button>
-              <button
-                onClick={() => setActiveTab('audit')}
-                className={`px-4 py-2 font-medium ${
-                  activeTab === 'audit'
-                    ? 'text-primary border-b-2 border-primary'
-                    : 'text-gray-500'
-                }`}
-              >
-                Audit Performance
-              </button>
-              <button
-                onClick={() => setActiveTab('sanction')}
-                className={`px-4 py-2 font-medium ${
-                  activeTab === 'sanction'
-                    ? 'text-primary border-b-2 border-primary'
-                    : 'text-gray-500'
-                }`}
-              >
-                Sanction Performance
-              </button>
-            </div>
+    <div className="p-6">
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <div className="flex space-x-2 border-b border-gray-200">
+            <button
+              onClick={() => setActiveTab('operational')}
+              className={`px-4 py-2 font-medium ${
+                activeTab === 'operational'
+                  ? 'text-primary border-b-2 border-primary'
+                  : 'text-gray-500'
+              }`}
+            >
+              Operational
+            </button>
+            <button
+              onClick={() => setActiveTab('financial')}
+              className={`px-4 py-2 font-medium ${
+                activeTab === 'financial'
+                  ? 'text-primary border-b-2 border-primary'
+                  : 'text-gray-500'
+              }`}
+            >
+              Financial
+            </button>
+            <button
+              onClick={() => setActiveTab('complaint')}
+              className={`px-4 py-2 font-medium ${
+                activeTab === 'complaint'
+                  ? 'text-primary border-b-2 border-primary'
+                  : 'text-gray-500'
+              }`}
+            >
+              Complaint
+            </button>
+            <button
+              onClick={() => setActiveTab('audit')}
+              className={`px-4 py-2 font-medium ${
+                activeTab === 'audit'
+                  ? 'text-primary border-b-2 border-primary'
+                  : 'text-gray-500'
+              }`}
+            >
+              Audit
+            </button>
+          </div>
 
-            <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4">
+            {selectedStores.length > 0 && (
               <PDFDownloadLink
-                document={<StorePerformancePDF 
-                  selectedStores={selectedStores}
-                  selectedMonth={selectedMonth}
-                  selectedYear={selectedYear}
-                  operationalData={{
-                    champs: performanceData,
-                    cleanliness: cleanlinessData,
-                    service: serviceData,
-                    productQuality: productQualityData
-                  }}
-                  financialData={financialData}
-                  complaintData={complaintData}
-                  espData={espData}
-                />}
-                fileName="store-performance.pdf"
+                document={
+                  <StorePerformancePDF
+                    selectedStores={selectedStores}
+                    selectedMonth={selectedMonth}
+                    selectedYear={selectedYear}
+                    operationalData={{
+                      champs: performanceData || [],
+                      cleanliness: cleanlinessData || [],
+                      service: serviceData || [],
+                      productQuality: productQualityData || [],
+                    }}
+                    financialData={financialData || []}
+                    complaintData={complaintData || []}
+                    espData={espData || []}
+                  />
+                }
+                fileName={`store-performance-${selectedMonth}-${selectedYear}.pdf`}
               >
-                {({ blob, url, loading, error }) => (
-                  <Button disabled={loading}>
-                    {loading ? "Loading document..." : "Download PDF"}
-                    <FileDown className="ml-2 h-4 w-4" />
+                {({ loading }) => (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    disabled={loading}
+                    className="gap-2"
+                  >
+                    <FileDown className="h-4 w-4" />
+                    {loading ? "Generating PDF..." : "Export PDF"}
                   </Button>
                 )}
               </PDFDownloadLink>
-            </div>
+            )}
           </div>
+        </div>
 
-          <Card className="p-6">
-            <StoreSelect
-              selectedStores={selectedStores}
-              onStoreSelect={handleStoreSelect}
-              onRemoveStore={removeStore}
-            />
-          </Card>
+        <Card className="p-6">
+          <StoreSelect
+            selectedStores={selectedStores}
+            onStoreSelect={handleStoreSelect}
+            onRemoveStore={removeStore}
+          />
+        </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select month" />
-                </SelectTrigger>
-                <SelectContent>
-                  {months.map((month) => (
-                    <SelectItem key={month.value} value={month.value}>
-                      {month.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select year" />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select month" />
+              </SelectTrigger>
+              <SelectContent>
+                {months.map((month) => (
+                  <SelectItem key={month.value} value={month.value}>
+                    {month.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+          <div>
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select year" />
+              </SelectTrigger>
+              <SelectContent>
+                {years.map((year) => (
+                  <SelectItem key={year} value={year.toString()}>
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
-          {activeTab === 'operational' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="space-y-4">
-                <Card>
-                  {champsChartData ? (
-                    <ChartLine data={champsChartData.data} options={champsChartData.options} />
-                  ) : (
-                    <p className="p-4">No CHAMPS data available for the selected stores and period.</p>
-                  )}
-                </Card>
-
-                <Card>
-                  {cleanlinessChartData ? (
-                    <ChartLine data={cleanlinessChartData.data} options={cleanlinessChartData.options} />
-                  ) : (
-                    <p className="p-4">No Cleanliness data available for the selected stores and period.</p>
-                  )}
-                </Card>
-
-                <Card>
-                  {serviceChartData ? (
-                    <ChartLine data={serviceChartData.data} options={serviceChartData.options} />
-                  ) : (
-                    <p className="p-4">No Service data available for the selected stores and period.</p>
-                  )}
-                </Card>
-
-                <Card>
-                  {productQualityChartData ? (
-                    <ChartLine data={productQualityChartData.data} options={productQualityChartData.options} />
-                  ) : (
-                    <p className="p-4">No Product Quality data available for the selected stores and period.</p>
-                  )}
-                </Card>
-              </div>
-
-              <div className="space-y-4">
-                <Card className="p-4">
-                  <h3 className="font-medium text-lg mb-4">Performance Data</h3>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Store</TableHead>
-                        <TableHead>CHAMPS</TableHead>
-                        <TableHead>Cleanliness</TableHead>
-                        <TableHead>Service</TableHead>
-                        <TableHead>Product Quality</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {selectedStores.map(store => {
-                        const champsScore = performanceData
-                          .filter(d => d.store_name === store.name)
-                          .reduce((sum, curr) => sum + (curr.total_score || 0), 0) / (performanceData.filter(d => d.store_name === store.name).length || 1);
-                        
-                        const cleanlinessScore = cleanlinessData
-                          .filter(d => d.store_name === store.name)
-                          .reduce((sum, curr) => sum + (curr.total_score || 0), 0) / (cleanlinessData.filter(d => d.store_name === store.name).length || 1);
-                        
-                        const serviceScore = serviceData
-                          .filter(d => d.store_name === store.name)
-                          .reduce((sum, curr) => sum + (curr.total_score || 0), 0) / (serviceData.filter(d => d.store_name === store.name).length || 1);
-                        
-                        const productQualityScore = productQualityData
-                          .filter(d => d.store_name === store.name)
-                          .reduce((sum, curr) => sum + (curr.total_score || 0), 0) / (productQualityData.filter(d => d.store_name === store.name).length || 1);
-
-                        return (
-                          <TableRow key={store.id}>
-                            <TableCell className="font-medium">{store.name}</TableCell>
-                            <TableCell>{champsScore.toFixed(2)}</TableCell>
-                            <TableCell>{cleanlinessScore.toFixed(2)}</TableCell>
-                            <TableCell>{serviceScore.toFixed(2)}</TableCell>
-                            <TableCell>{productQualityScore.toFixed(2)}</TableCell>
+        {activeTab === 'operational' && (
+          <div className="space-y-4">
+            {champsChartData && (
+              <Card className="p-4">
+                <h3 className="font-medium text-lg mb-4">CHAMPS Performance</h3>
+                <div className="flex gap-4">
+                  <div className="flex-1" style={{ height: '300px' }}>
+                    <ResponsiveContainer>
+                      <LineChart data={champsChartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="date" 
+                          tickFormatter={(value) => format(new Date(value), 'dd/MM')}
+                        />
+                        <YAxis domain={[0, 4]} />
+                        <Tooltip 
+                          labelFormatter={(value) => format(new Date(value), 'dd/MM/yyyy')}
+                        />
+                        <Legend />
+                        {selectedStores.map((store, index) => (
+                          <Line
+                            key={store.id}
+                            type="monotone"
+                            dataKey={store.name}
+                            stroke={lineColors[index % lineColors.length]}
+                            strokeWidth={2}
+                            dot={{ r: 4 }}
+                            activeDot={{ r: 6 }}
+                          />
+                        ))}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex-1 flex flex-col">
+                    <div className="overflow-auto" style={{ maxHeight: '250px' }}>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Tanggal</TableHead>
+                            <TableHead>Store</TableHead>
+                            <TableHead>KPI</TableHead>
+                            <TableHead>Lose Point</TableHead>
                           </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {performanceData.map((record) => (
+                            <TableRow key={record.id}>
+                              <TableCell>{format(new Date(record.evaluation_date), 'dd/MM/yyyy')}</TableCell>
+                              <TableCell>{record.store_name}</TableCell>
+                              <TableCell className={record.total_score >= 3 ? 'text-green-600' : 'text-red-600'}>
+                                {record.total_score}
+                              </TableCell>
+                              <TableCell className="text-red-600">
+                                {(4 - record.total_score).toFixed(2)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    <div className="mt-4 pt-4 border-t">
+                      <div className="font-medium mb-2">Rata-rata KPI:</div>
+                      {selectedStores.map(store => {
+                        const avgScore = performanceData
+                          .filter(d => d.store_name === store.name)
+                          .reduce((sum, curr) => sum + (curr.total_score || 0), 0) / 
+                          (performanceData.filter(d => d.store_name === store.name).length || 1);
+                        
+                        return (
+                          <div key={store.id} className="text-sm">
+                            <span className="font-medium">{store.name}:</span>
+                            <span className={avgScore >= 3 ? 'text-green-600 ml-1' : 'text-red-600 ml-1'}>
+                              {avgScore.toFixed(2)}
+                            </span>
+                          </div>
                         );
                       })}
-                    </TableBody>
-                  </Table>
-                </Card>
-
-                <Card className="p-4">
-                  <h3 className="font-medium text-lg mb-4">Average Scores</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-500">Average CHAMPS KPI</p>
-                      <p className="text-xl font-medium">{calculateAverageKPI(performanceData)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Average Cleanliness KPI</p>
-                      <p className="text-xl font-medium">{calculateAverageKPI(cleanlinessData)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Average Service KPI</p>
-                      <p className="text-xl font-medium">{calculateAverageKPI(serviceData)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Average Product Quality KPI</p>
-                      <p className="text-xl font-medium">{calculateAverageKPI(productQualityData)}</p>
                     </div>
                   </div>
-                </Card>
-              </div>
+                </div>
+              </Card>
+            )}
+
+            {cleanlinessChartData && (
+              <Card className="p-4">
+                <h3 className="font-medium text-lg mb-4">Cleanliness Performance</h3>
+                <div className="flex gap-4">
+                  <div className="flex-1" style={{ height: '300px' }}>
+                    <ResponsiveContainer>
+                      <LineChart data={cleanlinessChartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="date" 
+                          tickFormatter={(value) => format(new Date(value), 'dd/MM')}
+                        />
+                        <YAxis domain={[0, 4]} />
+                        <Tooltip 
+                          labelFormatter={(value) => format(new Date(value), 'dd/MM/yyyy')}
+                        />
+                        <Legend />
+                        {selectedStores.map((store, index) => (
+                          <Line
+                            key={store.id}
+                            type="monotone"
+                            dataKey={store.name}
+                            stroke={lineColors[index % lineColors.length]}
+                            strokeWidth={2}
+                            dot={{ r: 4 }}
+                            activeDot={{ r: 6 }}
+                          />
+                        ))}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex-1 flex flex-col">
+                    <div className="overflow-auto" style={{ maxHeight: '250px' }}>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Tanggal</TableHead>
+                            <TableHead>Store</TableHead>
+                            <TableHead>KPI</TableHead>
+                            <TableHead>Lose Point</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {cleanlinessData.map((record) => (
+                            <TableRow key={record.id}>
+                              <TableCell>{format(new Date(record.evaluation_date), 'dd/MM/yyyy')}</TableCell>
+                              <TableCell>{record.store_name}</TableCell>
+                              <TableCell className={record.total_score >= 3 ? 'text-green-600' : 'text-red-600'}>
+                                {record.total_score}
+                              </TableCell>
+                              <TableCell className="text-red-600">
+                                {(4 - record.total_score).toFixed(2)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    <div className="mt-4 pt-4 border-t">
+                      <div className="font-medium mb-2">Rata-rata KPI:</div>
+                      {selectedStores.map(store => {
+                        const avgScore = cleanlinessData
+                          .filter(d => d.store_name === store.name)
+                          .reduce((sum, curr) => sum + (curr.total_score || 0), 0) / 
+                          (cleanlinessData.filter(d => d.store_name === store.name).length || 1);
+                        
+                        return (
+                          <div key={store.id} className="text-sm">
+                            <span className="font-medium">{store.name}:</span>
+                            <span className={avgScore >= 3 ? 'text-green-600 ml-1' : 'text-red-600 ml-1'}>
+                              {avgScore.toFixed(2)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {serviceChartData && (
+              <Card className="p-4">
+                <h3 className="font-medium text-lg mb-4">Service Performance</h3>
+                <div className="flex gap-4">
+                  <div className="flex-1" style={{ height: '300px' }}>
+                    <ResponsiveContainer>
+                      <LineChart data={serviceChartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="date" 
+                          tickFormatter={(value) => format(new Date(value), 'dd/MM')}
+                        />
+                        <YAxis domain={[0, 4]} />
+                        <Tooltip 
+                          labelFormatter={(value) => format(new Date(value), 'dd/MM/yyyy')}
+                        />
+                        <Legend />
+                        {selectedStores.map((store, index) => (
+                          <Line
+                            key={store.id}
+                            type="monotone"
+                            dataKey={store.name}
+                            stroke={lineColors[index % lineColors.length]}
+                            strokeWidth={2}
+                            dot={{ r: 4 }}
+                            activeDot={{ r: 6 }}
+                          />
+                        ))}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex-1 flex flex-col">
+                    <div className="overflow-auto" style={{ maxHeight: '250px' }}>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Tanggal</TableHead>
+                            <TableHead>Store</TableHead>
+                            <TableHead>KPI</TableHead>
+                            <TableHead>Lose Point</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {serviceData.map((record) => (
+                            <TableRow key={record.id}>
+                              <TableCell>{format(new Date(record.evaluation_date), 'dd/MM/yyyy')}</TableCell>
+                              <TableCell>{record.store_name}</TableCell>
+                              <TableCell className={record.total_score >= 3 ? 'text-green-600' : 'text-red-600'}>
+                                {record.total_score}
+                              </TableCell>
+                              <TableCell className="text-red-600">
+                                {(4 - record.total_score).toFixed(2)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    <div className="mt-4 pt-4 border-t">
+                      <div className="font-medium mb-2">Rata-rata KPI:</div>
+                      {selectedStores.map(store => {
+                        const avgScore = serviceData
+                          .filter(d => d.store_name === store.name)
+                          .reduce((sum, curr) => sum + (curr.total_score || 0), 0) / 
+                          (serviceData.filter(d => d.store_name === store.name).length || 1);
+                        
+                        return (
+                          <div key={store.id} className="text-sm">
+                            <span className="font-medium">{store.name}:</span>
+                            <span className={avgScore >= 3 ? 'text-green-600 ml-1' : 'text-red-600 ml-1'}>
+                              {avgScore.toFixed(2)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {productQualityChartData && (
+              <Card className="p-4">
+                <h3 className="font-medium text-lg mb-4">Product Quality Performance</h3>
+                <div className="flex gap-4">
+                  <div className="flex-1" style={{ height: '300px' }}>
+                    <ResponsiveContainer>
+                      <LineChart data={productQualityChartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="date" 
+                          tickFormatter={(value) => format(new Date(value), 'dd/MM')}
+                        />
+                        <YAxis domain={[0, 4]} />
+                        <Tooltip 
+                          labelFormatter={(value) => format(new Date(value), 'dd/MM/yyyy')}
+                        />
+                        <Legend />
+                        {selectedStores.map((store, index) => (
+                          <Line
+                            key={store.id}
+                            type="monotone"
+                            dataKey={store.name}
+                            stroke={lineColors[index % lineColors.length]}
+                            strokeWidth={2}
+                            dot={{ r: 4 }}
+                            activeDot={{ r: 6 }}
+                          />
+                        ))}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex-1 flex flex-col">
+                    <div className="overflow-auto" style={{ maxHeight: '250px' }}>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Tanggal</TableHead>
+                            <TableHead>Store</TableHead>
+                            <TableHead>KPI</TableHead>
+                            <TableHead>Lose Point</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {productQualityData.map((record) => (
+                            <TableRow key={record.id}>
+                              <TableCell>{format(new Date(record.evaluation_date), 'dd/MM/yyyy')}</TableCell>
+                              <TableCell>{record.store_name}</TableCell>
+                              <TableCell className={record.total_score >= 3 ? 'text-green-600' : 'text-red-600'}>
+                                {record.total_score}
+                              </TableCell>
+                              <TableCell className="text-red-600">
+                                {(4 - record.total_score).toFixed(2)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    <div className="mt-4 pt-4 border-t">
+                      <div className="font-medium mb-2">Rata-rata KPI:</div>
+                      {selectedStores.map(store => {
+                        const avgScore = productQualityData
+                          .filter(d => d.store_name === store.name)
+                          .reduce((sum, curr) => sum + (curr.total_score || 0), 0) / 
+                          (productQualityData.filter(d => d.store_name === store.name).length || 1);
+                        
+                        return (
+                          <div key={store.id} className="text-sm">
+                            <span className="font-medium">{store.name}:</span>
+                            <span className={avgScore >= 3 ? 'text-green-600 ml-1' : 'text-red-600 ml-1'}>
+                              {avgScore.toFixed(2)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'financial' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="space-y-4">
+              <Card className="p-4">
+                <h3 className="font-medium text-lg mb-4">Financial KPI</h3>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Store</TableHead>
+                      <TableHead>Sales</TableHead>
+                      <TableHead>COGS</TableHead>
+                      <TableHead>OPEX</TableHead>
+                      <TableHead>Productivity</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedStores.map(store => {
+                      const storeData = financialData.find(d => d.store_name === store.name);
+                      if (!storeData) return null;
+
+                      const salesKPI = calculateKPI(storeData.total_sales, storeData.target_sales);
+                      const cogsKPI = calculateKPI(storeData.cogs_target, storeData.cogs_achieved);
+                      const opexKPI = calculateOPEXKPI(storeData.total_sales, storeData.total_opex, 4);
+                      const productivityKPI = calculateKPI(storeData.total_sales / (storeData.total_crew || 1), 30000000);
+
+                      return (
+                        <TableRow key={store.id}>
+                          <TableCell className="font-medium">{store.name}</TableCell>
+                          <TableCell className={salesKPI >= 3 ? 'text-green-600' : 'text-red-600'}>
+                            {salesKPI.toFixed(2)}
+                          </TableCell>
+                          <TableCell className={cogsKPI >= 3 ? 'text-green-600' : 'text-red-600'}>
+                            {cogsKPI.toFixed(2)}
+                          </TableCell>
+                          <TableCell className={opexKPI >= 3 ? 'text-green-600' : 'text-red-600'}>
+                            {opexKPI.toFixed(2)}
+                          </TableCell>
+                          <TableCell className={productivityKPI >= 3 ? 'text-green-600' : 'text-red-600'}>
+                            {productivityKPI.toFixed(2)}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </Card>
             </div>
-          )}
+          </div>
+        )}
 
-          {activeTab === 'financial' && (
-            <div className="grid grid-cols-1 gap-4">
-              {selectedStores.map(store => {
-                const storeData = financialData.find(data => data.store_name === store.name);
-                if (!storeData) {
-                  return (
-                    <Card key={store.id} className="p-6">
-                      <h3 className="font-medium text-lg mb-4">{store.name} - {store.city}</h3>
-                      <p className="text-gray-500">No financial data available for this store and period.</p>
-                    </Card>
-                  );
-                }
-                return renderFinancialCard(storeData, store);
-              })}
+        {activeTab === 'complaint' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="space-y-4">
+              <Card className="p-4">
+                <h3 className="font-medium text-lg mb-4">Complaint KPI</h3>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Store</TableHead>
+                      <TableHead>Total Complaints</TableHead>
+                      <TableHead>Avg CU/Day</TableHead>
+                      <TableHead>KPI Score</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedStores.map(store => {
+                      const storeData = complaintData.find(d => d.store_name === store.name);
+                      if (!storeData) return null;
+
+                      const kpiScore = calculateComplaintKPIScore(storeData.total_weighted_complaints, storeData.avg_cu_per_day);
+                      const percentage = (storeData.total_weighted_complaints / (storeData.avg_cu_per_day * 30)) * 100;
+
+                      return (
+                        <TableRow key={store.id}>
+                          <TableCell className="font-medium">{store.name}</TableCell>
+                          <TableCell>{storeData.total_weighted_complaints}</TableCell>
+                          <TableCell>{storeData.avg_cu_per_day}</TableCell>
+                          <TableCell className={kpiScore >= 3 ? 'text-green-600' : 'text-red-600'}>
+                            {kpiScore} ({percentage.toFixed(2)}%)
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </Card>
             </div>
-          )}
+          </div>
+        )}
 
-          {activeTab === 'complaint' && (
-            <div className="grid grid-cols-1 gap-4">
-              {selectedStores.map(store => {
-                const storeData = complaintData.find(data => data.store_name === store.name);
-                if (!storeData) {
-                  return (
-                    <Card key={store.id} className="p-6">
-                      <h3 className="font-medium text-lg mb-4">{store.name} - {store.city}</h3>
-                      <p className="text-gray-500">No complaint data available for this store and period.</p>
-                    </Card>
-                  );
-                }
+        {activeTab === 'audit' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="space-y-4">
+              <Card className="p-4">
+                <h3 className="font-medium text-lg mb-4">ESP Audit</h3>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Store</TableHead>
+                      <TableHead>Final Score</TableHead>
+                      <TableHead>KPI Score</TableHead>
+                      <TableHead>Findings</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedStores.map(store => {
+                      const storeData = espData.find(d => d.store_name === store.name);
+                      if (!storeData) return null;
 
-                const kpiScore = calculateComplaintKPIScore(storeData.total_weighted_complaints, storeData.avg_cu_per_day);
+                      return (
+                        <TableRow key={store.id}>
+                          <TableCell className="font-medium">{store.name}</TableCell>
+                          <TableCell>{storeData.final_score.toFixed(2)}</TableCell>
+                          <TableCell className={storeData.kpi_score >= 3 ? 'text-green-600' : 'text-red-600'}>
+                            {storeData.kpi_score}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {storeData.findings.map((finding, idx) => (
+                                <Badge key={idx} variant="secondary">
+                                  {finding}
+                                </Badge>
+                              ))}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </Card>
+              
+              <SanctionKPI 
+                selectedStores={selectedStores} 
+                selectedMonth={selectedMonth} 
+                selectedYear={selectedYear} 
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
-                return (
-                  <Card key={store.id} className="p-6">
-                    <h3 className="font-medium text-lg mb-4">{store.name} - {store.city}</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="p-4 bg-gray-50 rounded-lg">
+export default StorePerformance;

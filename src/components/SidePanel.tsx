@@ -21,7 +21,9 @@ import {
   HeartHandshake,
   ShieldCheck,
   DollarSign,
-  ClipboardList
+  ClipboardList,
+  Star,
+  AlertTriangle
 } from "lucide-react";
 
 interface SidePanelProps {
@@ -90,37 +92,37 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
       items: [
         {
           icon: Store,
-          label: "Setup Store",
+          label: "Store",
           value: "setup-store",
           route: "/setup-store"
         },
         {
-          icon: ClipboardCheck,
-          label: "Setup CHAMPS",
+          icon: Star,
+          label: "CHAMPS",
           value: "setup-champs",
           route: "/setup-champs"
         },
         {
           icon: Sparkles,
-          label: "Setup Cleanliness",
+          label: "Cleanliness",
           value: "setup-cleanliness",
           route: "/setup-cleanliness"
         },
         {
-          icon: UtensilsCrossed,
-          label: "Setup Product Quality",
-          value: "setup-product-quality",
-          route: "/setup-product-quality"
-        },
-        {
           icon: HeartHandshake,
-          label: "Setup Service",
+          label: "Service",
           value: "setup-service",
           route: "/setup-service"
         },
         {
+          icon: UtensilsCrossed,
+          label: "Product Quality",
+          value: "setup-product-quality",
+          route: "/setup-product-quality"
+        },
+        {
           icon: MessageSquare,
-          label: "Setup Complain",
+          label: "Complaint",
           value: "setup-complain",
           route: "/setup-complain"
         }
@@ -130,46 +132,52 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
       title: "Forms",
       items: [
         {
-          icon: ClipboardCheck,
-          label: "CHAMPS Form",
+          icon: Star,
+          label: "CHAMPS",
           value: "champs-form",
           route: "/champs-form"
         },
         {
           icon: Sparkles,
-          label: "Cleanliness Form",
+          label: "Cleanliness",
           value: "cleanliness-form",
           route: "/cleanliness-form"
         },
         {
           icon: HeartHandshake,
-          label: "Service Form",
+          label: "Service",
           value: "service-form",
           route: "/service-form"
         },
         {
           icon: UtensilsCrossed,
-          label: "Product Quality Form",
+          label: "Product Quality",
           value: "product-quality-form",
           route: "/product-quality-form"
         },
         {
-          icon: ShieldCheck,
-          label: "ESP Form",
+          icon: ClipboardCheck,
+          label: "ESP",
           value: "esp-form",
           route: "/esp-form"
         },
         {
           icon: DollarSign,
-          label: "Finance Form",
+          label: "Finance",
           value: "finance-form",
           route: "/finance-form"
         },
         {
           icon: MessageSquare,
-          label: "Complaint Form",
+          label: "Complaint",
           value: "complaint-form",
           route: "/complaint-form"
+        },
+        {
+          icon: AlertTriangle,
+          label: "Employee Sanction",
+          value: "employee-sanction-form",
+          route: "/employee-sanction-form"
         }
       ]
     },
@@ -177,46 +185,52 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
       title: "Reports",
       items: [
         {
-          icon: ClipboardList,
-          label: "CHAMPS Report",
+          icon: Star,
+          label: "CHAMPS",
           value: "champs-report",
           route: "/report"
         },
         {
-          icon: ClipboardList,
-          label: "Cleanliness Report",
+          icon: Sparkles,
+          label: "Cleanliness",
           value: "cleanliness-report",
           route: "/cleanliness-report"
         },
         {
-          icon: ClipboardList,
-          label: "Service Report",
+          icon: HeartHandshake,
+          label: "Service",
           value: "service-report",
           route: "/service-report"
         },
         {
-          icon: ClipboardList,
-          label: "Product Quality Report",
+          icon: UtensilsCrossed,
+          label: "Product Quality",
           value: "product-quality-report",
           route: "/product-quality-report"
         },
         {
-          icon: ClipboardList,
-          label: "ESP Report",
+          icon: ClipboardCheck,
+          label: "ESP",
           value: "esp-report",
           route: "/esp-report"
         },
         {
-          icon: ClipboardList,
-          label: "Finance Report",
+          icon: DollarSign,
+          label: "Finance",
           value: "finance-report",
           route: "/finance-report"
         },
         {
-          icon: ClipboardList,
-          label: "Complaint Report",
+          icon: MessageSquare,
+          label: "Complaint",
           value: "complaint-report",
           route: "/complaint-report"
+        },
+        {
+          icon: AlertTriangle,
+          label: "Employee Sanction",
+          value: "sanction-report",
+          route: "/sanction-report"
         }
       ]
     }

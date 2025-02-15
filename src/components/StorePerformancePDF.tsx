@@ -212,40 +212,44 @@ const StorePerformancePDF = ({
                 {/* CHAMPS */}
                 <View style={styles.scoreCard}>
                   <Text style={styles.label}>CHAMPS</Text>
-                  <Text style={[styles.value, getScoreColor(
-                    calculateAverageScore(operationalData.champs, store.name)
-                  )]}>
-                    {calculateAverageScore(operationalData.champs, store.name).toFixed(1)}
+                  <Text style={[
+                    styles.value,
+                    { color: calculateAverageScore(operationalData.champs, store.name) >= 3 ? '#22c55e' : '#ef4444' }
+                  ]}>
+                    {calculateAverageScore(operationalData.champs, store.name).toFixed(2)}
                   </Text>
                 </View>
 
                 {/* Cleanliness */}
                 <View style={styles.scoreCard}>
                   <Text style={styles.label}>Cleanliness</Text>
-                  <Text style={[styles.value, getScoreColor(
-                    calculateAverageScore(operationalData.cleanliness, store.name)
-                  )]}>
-                    {calculateAverageScore(operationalData.cleanliness, store.name).toFixed(1)}
+                  <Text style={[
+                    styles.value,
+                    { color: calculateAverageScore(operationalData.cleanliness, store.name) >= 3 ? '#22c55e' : '#ef4444' }
+                  ]}>
+                    {calculateAverageScore(operationalData.cleanliness, store.name).toFixed(2)}
                   </Text>
                 </View>
 
                 {/* Service */}
                 <View style={styles.scoreCard}>
                   <Text style={styles.label}>Service</Text>
-                  <Text style={[styles.value, getScoreColor(
-                    calculateAverageScore(operationalData.service, store.name)
-                  )]}>
-                    {calculateAverageScore(operationalData.service, store.name).toFixed(1)}
+                  <Text style={[
+                    styles.value,
+                    { color: calculateAverageScore(operationalData.service, store.name) >= 3 ? '#22c55e' : '#ef4444' }
+                  ]}>
+                    {calculateAverageScore(operationalData.service, store.name).toFixed(2)}
                   </Text>
                 </View>
 
                 {/* Product Quality */}
                 <View style={styles.scoreCard}>
                   <Text style={styles.label}>Product Quality</Text>
-                  <Text style={[styles.value, getScoreColor(
-                    calculateAverageScore(operationalData.productQuality, store.name)
-                  )]}>
-                    {calculateAverageScore(operationalData.productQuality, store.name).toFixed(1)}
+                  <Text style={[
+                    styles.value,
+                    { color: calculateAverageScore(operationalData.productQuality, store.name) >= 3 ? '#22c55e' : '#ef4444' }
+                  ]}>
+                    {calculateAverageScore(operationalData.productQuality, store.name).toFixed(2)}
                   </Text>
                 </View>
               </View>
