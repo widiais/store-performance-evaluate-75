@@ -344,6 +344,63 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_sanctions: {
+        Row: {
+          created_at: string
+          duration_months: number
+          employee_name: string
+          id: number
+          pic: string
+          sanction_date: string
+          sanction_type: string
+          store_id: number | null
+          submitted_by: string
+          updated_at: string
+          violation_details: string
+        }
+        Insert: {
+          created_at?: string
+          duration_months: number
+          employee_name: string
+          id?: number
+          pic: string
+          sanction_date: string
+          sanction_type: string
+          store_id?: number | null
+          submitted_by: string
+          updated_at?: string
+          violation_details: string
+        }
+        Update: {
+          created_at?: string
+          duration_months?: number
+          employee_name?: string
+          id?: number
+          pic?: string
+          sanction_date?: string
+          sanction_type?: string
+          store_id?: number | null
+          submitted_by?: string
+          updated_at?: string
+          violation_details?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_sanctions_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "store_performance_metrics"
+            referencedColumns: ["store_id"]
+          },
+          {
+            foreignKeyName: "employee_sanctions_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       esp_evaluations: {
         Row: {
           created_at: string
@@ -890,6 +947,38 @@ export type Database = {
           whatsapp_count: number | null
         }
         Relationships: []
+      }
+      employee_sanctions_report: {
+        Row: {
+          duration_months: number | null
+          employee_name: string | null
+          id: number | null
+          pic: string | null
+          sanction_date: string | null
+          sanction_type: string | null
+          sanction_weight: number | null
+          store_city: string | null
+          store_id: number | null
+          store_name: string | null
+          submitted_by: string | null
+          violation_details: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_sanctions_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "store_performance_metrics"
+            referencedColumns: ["store_id"]
+          },
+          {
+            foreignKeyName: "employee_sanctions_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       esp_evaluation_report: {
         Row: {
