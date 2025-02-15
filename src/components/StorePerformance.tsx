@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { useQuery } from '@tanstack/react-query';
@@ -21,8 +22,10 @@ import {
   Tooltip as ChartTooltip,
   Legend,
   ChartData,
-  Point
+  Point,
+  TimeScale
 } from 'chart.js';
+import 'chartjs-adapter-date-fns';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import StorePerformancePDF from './StorePerformancePDF';
 import { useNavigate } from 'react-router-dom';
@@ -53,7 +56,8 @@ ChartJS.register(
   LineElement,
   Title,
   ChartTooltip,
-  Legend
+  Legend,
+  TimeScale  // Register TimeScale
 );
 
 const StorePerformance = () => {
@@ -261,17 +265,16 @@ const StorePerformance = () => {
     if (!data || !selectedStores.length) return null;
 
     const formattedData = data.map(record => ({
-      date: format(new Date(record.evaluation_date), 'dd/MM/yy'),
+      date: new Date(record.evaluation_date).getTime(), // Convert to timestamp
       store_name: record.store_name,
-      total_score: record.total_score,
-      timestamp: new Date(record.evaluation_date).getTime()
+      total_score: record.total_score
     }));
 
     const datasets = selectedStores.map((store, index) => {
       const storeData = formattedData
         .filter(record => record.store_name === store.name)
         .map(record => ({
-          x: record.timestamp,
+          x: record.date,
           y: record.total_score
         }));
 
@@ -285,8 +288,7 @@ const StorePerformance = () => {
     });
 
     const chartData: ChartData<"line", Point[], unknown> = {
-      datasets,
-      labels: formattedData.map(d => d.date).filter((value, index, self) => self.indexOf(value) === index)
+      datasets
     };
 
     const options = {
@@ -302,12 +304,10 @@ const StorePerformance = () => {
       },
       scales: {
         x: {
-          type: 'time',
+          type: 'time' as const,
           time: {
             unit: 'day',
-            displayFormats: {
-              day: 'dd/MM/yy'
-            }
+            tooltipFormat: 'dd/MM/yyyy'
           },
           title: {
             display: true,
