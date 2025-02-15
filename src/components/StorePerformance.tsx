@@ -19,7 +19,9 @@ import {
   LineElement,
   Title,
   Tooltip as ChartTooltip,
-  Legend
+  Legend,
+  ChartData,
+  Point
 } from 'chart.js';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import StorePerformancePDF from './StorePerformancePDF';
@@ -31,7 +33,8 @@ import {
   EvaluationRecord, 
   FinancialRecord, 
   ComplaintRecord, 
-  EspRecord 
+  EspRecord,
+  SanctionKPI as SanctionKPIType 
 } from './store-performance/types';
 import { 
   calculateKPI, 
@@ -254,7 +257,7 @@ const StorePerformance = () => {
     return (totalKPI / data.length).toFixed(1);
   };
 
-  const formatChartData = (data: EvaluationRecord[], title: string) => {
+  const formatChartData = (data: EvaluationRecord[], title: string): ChartData<"line", Point[], unknown> | null => {
     if (!data || !selectedStores.length) return null;
 
     const formattedData = data.map(record => ({
@@ -267,8 +270,8 @@ const StorePerformance = () => {
       const storeData = formattedData
         .filter(record => record.store_name === store.name)
         .map(record => ({
-          date: record.date,
-          value: record.total_score
+          x: record.date,
+          y: record.total_score
         }));
 
       return {
@@ -276,34 +279,13 @@ const StorePerformance = () => {
         data: storeData,
         borderColor: lineColors[index % lineColors.length],
         backgroundColor: lineColors[index % lineColors.length],
-        tension: 0.4,
-        parsing: {
-          xAxisKey: 'date',
-          yAxisKey: 'value'
-        }
+        tension: 0.4
       };
     });
 
     return {
       datasets,
-      options: {
-        responsive: true,
-        plugins: {
-          legend: {
-            position: 'top' as const,
-          },
-          title: {
-            display: true,
-            text: title
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            max: 4
-          }
-        }
-      }
+      labels: formattedData.map(d => d.date).filter((value, index, self) => self.indexOf(value) === index)
     };
   };
 
@@ -422,7 +404,7 @@ const StorePerformance = () => {
   ];
 
   const renderSanctionKPI = (store: Store) => {
-    const { data: sanctionKPI } = useQuery<SanctionKPI>({
+    const { data: sanctionKPI } = useQuery<SanctionKPIType>({
       queryKey: ['sanctionKPI', store.id, selectedMonth, selectedYear],
       queryFn: async () => {
         const { data, error } = await supabase
@@ -552,11 +534,13 @@ const StorePerformance = () => {
                   selectedStores={selectedStores}
                   selectedMonth={selectedMonth}
                   selectedYear={selectedYear}
+                  operationalData={{
+                    champs: performanceData,
+                    cleanliness: cleanlinessData,
+                    service: serviceData,
+                    productQuality: productQualityData
+                  }}
                   financialData={financialData}
-                  performanceData={performanceData}
-                  cleanlinessData={cleanlinessData}
-                  serviceData={serviceData}
-                  productQualityData={productQualityData}
                   complaintData={complaintData}
                   espData={espData}
                 />}
@@ -615,7 +599,7 @@ const StorePerformance = () => {
             <div className="space-y-4">
               <Card>
                 {champsChartData ? (
-                  <ChartLine data={champsChartData.datasets} options={champsChartData.options} />
+                  <ChartLine data={champsChartData} options={champsChartData.options} />
                 ) : (
                   <p className="p-4">No CHAMPS data available for the selected stores and period.</p>
                 )}
@@ -628,7 +612,7 @@ const StorePerformance = () => {
 
               <Card>
                 {cleanlinessChartData ? (
-                  <ChartLine data={cleanlinessChartData.datasets} options={cleanlinessChartData.options} />
+                  <ChartLine data={cleanlinessChartData} options={cleanlinessChartData.options} />
                 ) : (
                   <p className="p-4">No Cleanliness data available for the selected stores and period.</p>
                 )}
@@ -641,7 +625,7 @@ const StorePerformance = () => {
 
               <Card>
                 {serviceChartData ? (
-                  <ChartLine data={serviceChartData.datasets} options={serviceChartData.options} />
+                  <ChartLine data={serviceChartData} options={serviceChartData.options} />
                 ) : (
                   <p className="p-4">No Service data available for the selected stores and period.</p>
                 )}
@@ -654,7 +638,7 @@ const StorePerformance = () => {
 
               <Card>
                 {productQualityChartData ? (
-                  <ChartLine data={productQualityChartData.datasets} options={productQualityChartData.options} />
+                  <ChartLine data={productQualityChartData} options={productQualityChartData.options} />
                 ) : (
                   <p className="p-4">No Product Quality data available for the selected stores and period.</p>
                 )}
