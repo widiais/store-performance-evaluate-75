@@ -116,7 +116,7 @@ interface EspRecord {
   kpi_score: number | null;
   pic: string | null;
   status: string | null;
-  findings: string[];  // Added this field to match the PDF interface
+  findings: string[];  // This will be populated from esp_findings
 }
 
 const lineColors = [
@@ -395,7 +395,6 @@ const StorePerformance = () => {
     enabled: selectedStores.length > 0 && selectedMonth !== '' && selectedYear !== ''
   });
 
-  // Update ESP data query
   const { data: espData = [] } = useQuery<EspRecord[]>({
     queryKey: ['espData', selectedStores.map(s => s.id), selectedMonth, selectedYear],
     queryFn: async () => {
@@ -405,7 +404,7 @@ const StorePerformance = () => {
       const monthDate = parse(startDate, 'yyyy-MM-dd', new Date());
       const endDate = format(endOfMonth(monthDate), 'yyyy-MM-dd');
       
-      const { data, error } = await supabase
+      const { data: evaluationData, error: evaluationError } = await supabase
         .from('esp_evaluation_report')
         .select('*')
         .in('store_name', selectedStores.map(s => s.name))
@@ -413,13 +412,23 @@ const StorePerformance = () => {
         .lte('evaluation_date', endDate)
         .order('evaluation_date');
       
-      if (error) throw error;
-      
-      // Transform the data to include empty findings array if not present
-      return (data || []).map(record => ({
-        ...record,
-        findings: record.findings || []
-      })) as EspRecord[];
+      if (evaluationError) throw evaluationError;
+      if (!evaluationData) return [];
+
+      const evaluationIds = evaluationData.map(e => e.id).filter(Boolean);
+      const { data: findingsData, error: findingsError } = await supabase
+        .from('esp_findings')
+        .select('*')
+        .in('evaluation_id', evaluationIds);
+
+      if (findingsError) throw findingsError;
+
+      return evaluationData.map(evaluation => ({
+        ...evaluation,
+        findings: findingsData
+          ?.filter(f => f.evaluation_id === evaluation.id)
+          .map(f => f.finding) || []
+      }));
     },
     enabled: selectedStores.length > 0 && selectedMonth !== '' && selectedYear !== ''
   });
