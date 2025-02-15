@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { useQuery } from '@tanstack/react-query';
@@ -117,6 +116,7 @@ interface EspRecord {
   kpi_score: number | null;
   pic: string | null;
   status: string | null;
+  findings: string[];  // Added this field to match the PDF interface
 }
 
 const lineColors = [
@@ -414,7 +414,12 @@ const StorePerformance = () => {
         .order('evaluation_date');
       
       if (error) throw error;
-      return data as EspRecord[];
+      
+      // Transform the data to include empty findings array if not present
+      return (data || []).map(record => ({
+        ...record,
+        findings: record.findings || []
+      })) as EspRecord[];
     },
     enabled: selectedStores.length > 0 && selectedMonth !== '' && selectedYear !== ''
   });
