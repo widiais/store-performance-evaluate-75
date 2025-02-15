@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { format, endOfMonth, parse, getYear } from 'date-fns';
+import { format, endOfMonth, parse, getYear, startOfMonth } from 'date-fns';
 import {
   Select,
   SelectContent,
@@ -32,6 +32,10 @@ import {
   Legend
 } from 'chart.js';
 import { Input } from "@/components/ui/input";
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import StorePerformancePDF from './StorePerformancePDF';
+import { Button } from "@/components/ui/button";
+import { FileDown } from "lucide-react";
 
 ChartJS.register(
   CategoryScale,
@@ -71,6 +75,32 @@ interface FinancialRecord {
   cogs_target: number;
   opex_target: number;
   total_crew: number;
+}
+
+interface EspFinding {
+  finding: string;
+}
+
+interface EspEvaluation {
+  id: number;
+  store_name: string;
+  store_city: string;
+  evaluation_date: string;
+  total_score: number;
+  final_score: number;
+  kpi_score: number;
+  esp_findings: EspFinding[];
+}
+
+interface EspData {
+  id: number;
+  store_name: string;
+  store_city: string;
+  evaluation_date: string;
+  total_score: number;
+  final_score: number;
+  kpi_score: number;
+  findings: string[];
 }
 
 const lineColors = [
@@ -521,6 +551,53 @@ const StorePerformance = () => {
     { value: '12', label: 'December' },
   ];
 
+  // Query untuk data ESP
+  const { data: espData } = useQuery<EspData[]>({
+    queryKey: ['esp-data', selectedStores.map(s => s.id), selectedMonth, selectedYear],
+    queryFn: async () => {
+      if (selectedStores.length === 0) return [];
+
+      const startDate = `${selectedYear}-${selectedMonth}-01`;
+      const monthDate = parse(startDate, 'yyyy-MM-dd', new Date());
+      const endDate = format(endOfMonth(monthDate), 'yyyy-MM-dd');
+
+      // Fetch evaluations with findings
+      const { data: evaluations, error: evalError } = await supabase
+        .from('esp_evaluation_report')
+        .select(`
+          id,
+          store_name,
+          store_city,
+          evaluation_date,
+          total_score,
+          final_score,
+          kpi_score,
+          esp_findings (
+            finding
+          )
+        `)
+        .in('store_name', selectedStores.map(store => store.name))
+        .gte('evaluation_date', startDate)
+        .lte('evaluation_date', endDate)
+        .order('evaluation_date', { ascending: false });
+
+      if (evalError) throw evalError;
+      if (!evaluations) return [];
+
+      return evaluations.map(evaluation => ({
+        id: evaluation.id,
+        store_name: evaluation.store_name,
+        store_city: evaluation.store_city,
+        evaluation_date: evaluation.evaluation_date,
+        total_score: evaluation.total_score,
+        final_score: evaluation.final_score,
+        kpi_score: evaluation.kpi_score,
+        findings: evaluation.esp_findings?.map(f => f.finding) || []
+      }));
+    },
+    enabled: selectedStores.length > 0
+  });
+
   return (
     <div className="p-6 min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -528,47 +605,83 @@ const StorePerformance = () => {
           <h2 className="text-2xl font-semibold text-gray-900">Store Performance</h2>
           
           {/* Tab Navigation */}
-          <div className="flex space-x-2 border-b border-gray-200">
-            <button
-              onClick={() => setActiveTab('operational')}
-              className={`px-4 py-2 font-medium ${
-                activeTab === 'operational'
-                  ? 'text-primary border-b-2 border-primary'
-                  : 'text-gray-500'
-              }`}
-            >
-              Operational Performance
-            </button>
-            <button
-              onClick={() => setActiveTab('financial')}
-              className={`px-4 py-2 font-medium ${
-                activeTab === 'financial'
-                  ? 'text-primary border-b-2 border-primary'
-                  : 'text-gray-500'
-              }`}
-            >
-              Financial Performance
-            </button>
-            <button
-              onClick={() => setActiveTab('complaint')}
-              className={`px-4 py-2 font-medium ${
-                activeTab === 'complaint'
-                  ? 'text-primary border-b-2 border-primary'
-                  : 'text-gray-500'
-              }`}
-            >
-              Customer Complain
-            </button>
-            <button
-              onClick={() => setActiveTab('audit')}
-              className={`px-4 py-2 font-medium ${
-                activeTab === 'audit'
-                  ? 'text-primary border-b-2 border-primary'
-                  : 'text-gray-500'
-              }`}
-            >
-              Audit
-            </button>
+          <div className="flex justify-between items-center">
+            <div className="flex space-x-2 border-b border-gray-200">
+              <button
+                onClick={() => setActiveTab('operational')}
+                className={`px-4 py-2 font-medium ${
+                  activeTab === 'operational'
+                    ? 'text-primary border-b-2 border-primary'
+                    : 'text-gray-500'
+                }`}
+              >
+                Operational Performance
+              </button>
+              <button
+                onClick={() => setActiveTab('financial')}
+                className={`px-4 py-2 font-medium ${
+                  activeTab === 'financial'
+                    ? 'text-primary border-b-2 border-primary'
+                    : 'text-gray-500'
+                }`}
+              >
+                Financial Performance
+              </button>
+              <button
+                onClick={() => setActiveTab('complaint')}
+                className={`px-4 py-2 font-medium ${
+                  activeTab === 'complaint'
+                    ? 'text-primary border-b-2 border-primary'
+                    : 'text-gray-500'
+                }`}
+              >
+                Complaint Performance
+              </button>
+              <button
+                onClick={() => setActiveTab('audit')}
+                className={`px-4 py-2 font-medium ${
+                  activeTab === 'audit'
+                    ? 'text-primary border-b-2 border-primary'
+                    : 'text-gray-500'
+                }`}
+              >
+                Audit Performance
+              </button>
+            </div>
+
+            {selectedStores.length > 0 && (
+              <PDFDownloadLink
+                document={
+                  <StorePerformancePDF
+                    selectedStores={selectedStores}
+                    selectedMonth={selectedMonth}
+                    selectedYear={selectedYear}
+                    operationalData={{
+                      champs: performanceData || [],
+                      cleanliness: cleanlinessData || [],
+                      service: serviceData || [],
+                      productQuality: productQualityData || [],
+                    }}
+                    financialData={financialData || []}
+                    complaintData={complaintData || []}
+                    espData={espData || []}
+                  />
+                }
+                fileName={`store-performance-${selectedMonth}-${selectedYear}.pdf`}
+              >
+                {({ loading }) => (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    disabled={loading}
+                    className="gap-2"
+                  >
+                    <FileDown className="h-4 w-4" />
+                    {loading ? "Generating PDF..." : "Export PDF"}
+                  </Button>
+                )}
+              </PDFDownloadLink>
+            )}
           </div>
 
           {/* Store Selection */}
@@ -965,6 +1078,100 @@ const StorePerformance = () => {
                   </div>
                 )}
               </Card>
+            </div>
+          )}
+
+          {/* Audit Performance */}
+          {activeTab === "audit" && (
+            <div className="space-y-6">
+              {/* Month & Year Selection */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="p-4">
+                  <h3 className="font-medium mb-4">Select Month</h3>
+                  <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {months.map((month) => (
+                        <SelectItem key={month.value} value={month.value}>
+                          {month.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Card>
+
+                <Card className="p-4">
+                  <h3 className="font-medium mb-4">Select Year</h3>
+                  <Select value={selectedYear} onValueChange={setSelectedYear}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {years.map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Card>
+              </div>
+
+              <h2 className="text-xl font-semibold">Audit Performance</h2>
+              {selectedStores.length > 0 ? (
+                espData && espData.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-6">
+                    {espData.map((evaluation) => (
+                      <div key={evaluation.id} className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                        <div className="mb-4">
+                          <p className="text-sm text-gray-500">Tanggal Evaluasi</p>
+                          <p className="font-medium">{format(new Date(evaluation.evaluation_date), 'dd MMMM yyyy')}</p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                          <div className="p-4 bg-gray-50 rounded-lg">
+                            <p className="text-sm text-gray-500">Total Score</p>
+                            <p className="text-2xl font-semibold">{evaluation.total_score}</p>
+                          </div>
+                          <div className="p-4 bg-gray-50 rounded-lg">
+                            <p className="text-sm text-gray-500">Final Score</p>
+                            <p className={`text-2xl font-semibold ${evaluation.final_score >= 90 ? 'text-green-600' : 'text-red-600'}`}>
+                              {evaluation.final_score}
+                            </p>
+                          </div>
+                          <div className="p-4 bg-gray-50 rounded-lg">
+                            <p className="text-sm text-gray-500">KPI Score</p>
+                            <p className={`text-2xl font-semibold ${evaluation.kpi_score >= 3 ? 'text-green-600' : 'text-red-600'}`}>
+                              {evaluation.kpi_score}
+                            </p>
+                          </div>
+                        </div>
+
+                        {evaluation.findings.length > 0 && (
+                          <div>
+                            <p className="font-medium mb-2">Temuan:</p>
+                            <ul className="list-disc pl-5 space-y-1">
+                              {evaluation.findings.map((finding, index) => (
+                                <li key={index} className="text-gray-700">{finding}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-gray-500">
+                    Tidak ada data audit untuk periode ini
+                  </div>
+                )
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  Pilih satu atau lebih store untuk melihat data audit
+                </div>
+              )}
             </div>
           )}
         </div>
