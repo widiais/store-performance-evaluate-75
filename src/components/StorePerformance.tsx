@@ -1,3 +1,4 @@
+<lov-code>
 import { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { useQuery } from '@tanstack/react-query';
@@ -224,6 +225,78 @@ const StoreSelect = ({ selectedStores, onStoreSelect, onRemoveStore }: StoreSele
         </div>
       )}
     </div>
+  );
+};
+
+// Move SanctionKPI to a proper React component
+interface SanctionKPIProps {
+  store: Store;
+  selectedMonth: string;
+  selectedYear: string;
+}
+
+const SanctionKPI: React.FC<SanctionKPIProps> = ({ store, selectedMonth, selectedYear }) => {
+  const { data: sanctionKPI } = useQuery<SanctionKPI>({
+    queryKey: ['sanctionKPI', store.id, selectedMonth, selectedYear],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('employee_sanctions_kpi')
+        .select('*')
+        .eq('store_id', store.id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: Boolean(store.id && selectedMonth && selectedYear)
+  });
+
+  if (!sanctionKPI) {
+    return (
+      <Card key={store.id} className="p-6">
+        <h3 className="font-medium text-lg mb-4">{store.name} - {store.city}</h3>
+        <p className="text-gray-500">No sanction data available</p>
+      </Card>
+    );
+  }
+
+  return (
+    <Card key={store.id} className="p-6">
+      <h3 className="font-medium text-lg mb-4">{store.name} - {store.city}</h3>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="p-4 bg-gray-50 rounded-lg">
+          <p className="text-sm text-gray-500">Total Employees</p>
+          <p className="text-xl font-medium">{sanctionKPI.total_employees}</p>
+        </div>
+
+        <div className="p-4 bg-gray-50 rounded-lg">
+          <p className="text-sm text-gray-500">Active Warnings</p>
+          <p className="text-xl font-medium text-yellow-600">{sanctionKPI.active_peringatan}</p>
+        </div>
+
+        <div className="p-4 bg-gray-50 rounded-lg">
+          <p className="text-sm text-gray-500">Active SP1</p>
+          <p className="text-xl font-medium text-orange-600">{sanctionKPI.active_sp1}</p>
+        </div>
+
+        <div className="p-4 bg-gray-50 rounded-lg">
+          <p className="text-sm text-gray-500">Active SP2</p>
+          <p className="text-xl font-medium text-red-600">{sanctionKPI.active_sp2}</p>
+        </div>
+
+        <div className="p-4 bg-gray-50 rounded-lg">
+          <p className="text-sm text-gray-500">KPI Score</p>
+          <p className={`text-xl font-medium ${
+            sanctionKPI.kpi_score >= 3 ? 'text-green-600' :
+            sanctionKPI.kpi_score >= 2 ? 'text-yellow-600' :
+            'text-red-600'
+          }`}>
+            {sanctionKPI.kpi_score}
+          </p>
+        </div>
+      </div>
+    </Card>
   );
 };
 
@@ -720,255 +793,4 @@ const StorePerformance = () => {
                 Audit Performance
               </button>
               <button
-                onClick={() => setActiveTab('sanction')}
-                className={`px-4 py-2 font-medium ${
-                  activeTab === 'sanction'
-                    ? 'text-primary border-b-2 border-primary'
-                    : 'text-gray-500'
-                }`}
-              >
-                Employee Sanction
-              </button>
-            </div>
-
-            {selectedStores.length > 0 && (
-              <PDFDownloadLink
-                document={
-                  <StorePerformancePDF
-                    selectedStores={selectedStores}
-                    selectedMonth={selectedMonth}
-                    selectedYear={selectedYear}
-                    operationalData={{
-                      champs: performanceData || [],
-                      cleanliness: cleanlinessData || [],
-                      service: serviceData || [],
-                      productQuality: productQualityData || [],
-                    }}
-                    financialData={financialData || []}
-                    complaintData={complaintData || []}
-                    espData={espData || []}
-                  />
-                }
-                fileName={`store-performance-${selectedMonth}-${selectedYear}.pdf`}
-              >
-                {({ loading }) => (
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    disabled={loading}
-                    className="gap-2"
-                  >
-                    <FileDown className="h-4 w-4" />
-                    {loading ? "Generating PDF..." : "Export PDF"}
-                  </Button>
-                )}
-              </PDFDownloadLink>
-            )}
-          </div>
-
-          <Card className="p-6">
-            <StoreSelect
-              selectedStores={selectedStores}
-              onStoreSelect={handleStoreSelect}
-              onRemoveStore={removeStore}
-            />
-          </Card>
-
-          {activeTab === 'operational' && (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <Card className="p-4">
-                  <h3 className="font-medium mb-4">Select Month</h3>
-                  <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {months.map((month) => (
-                        <SelectItem key={month.value} value={month.value}>
-                          {month.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Card>
-
-                <Card className="p-4">
-                  <h3 className="font-medium mb-4">Select Year</h3>
-                  <Select value={selectedYear} onValueChange={setSelectedYear}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {years.map((year) => (
-                        <SelectItem key={year} value={year.toString()}>
-                          {year}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Card>
-              </div>
-
-              {selectedStores.length > 0 && (
-                <Card className="p-6 mb-6">
-                  <h2 className="text-xl font-semibold mb-6">CHAMPS Performance</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="h-[300px]">
-                      {champsChartData ? (
-                        <ChartLine data={champsChartData} options={champsChartData.options} />
-                      ) : (
-                        <div className="flex items-center justify-center h-64 text-gray-500">
-                          Pilih store untuk melihat data
-                        </div>
-                      )}
-                    </div>
-                    <div className="overflow-auto max-h-[300px]">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Store</TableHead>
-                            <TableHead>KPI</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {performanceData?.map((record) => (
-                            <TableRow key={record.id}>
-                              <TableCell>
-                                {format(new Date(record.evaluation_date), 'dd/MM/yy')}
-                              </TableCell>
-                              <TableCell>{record.store_name}</TableCell>
-                              <TableCell>{record.total_score.toFixed(2)}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </div>
-                </Card>
-              )}
-            </>
-          )}
-
-          {activeTab === 'financial' && (
-            <>
-              {selectedStores.length > 0 && (
-                <div className="space-y-6">
-                  {selectedStores.map((store) => {
-                    const storeData = financialData?.find(d => d.store_name === store.name);
-                    if (!storeData) return null;
-                    return renderFinancialCard(storeData, store);
-                  })}
-                </div>
-              )}
-            </>
-          )}
-
-          {activeTab === 'complaint' && (
-            <>
-              {selectedStores.length > 0 && (
-                <div className="space-y-6">
-                  {selectedStores.map((store) => {
-                    const storeComplaints = complaintData?.find(d => d.store_name === store.name);
-                    if (!storeComplaints) return null;
-                    return (
-                      <Card key={store.id} className="p-6">
-                        <h3 className="font-medium text-lg mb-4">{store.name} - {store.city}</h3>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <Card className="p-4">
-                            <p className="text-sm text-gray-500">Total Complaints</p>
-                            <p className="text-lg font-medium">{storeComplaints.total_weighted_complaints}</p>
-                          </Card>
-                          <Card className="p-4">
-                            <p className="text-sm text-gray-500">Average Customers/Day</p>
-                            <p className="text-lg font-medium">{storeComplaints.avg_cu_per_day}</p>
-                          </Card>
-                          <Card className="p-4">
-                            <p className="text-sm text-gray-500">KPI Score</p>
-                            <p className={`text-lg font-medium ${
-                              storeComplaints.kpi_score >= 3 ? 'text-green-600' :
-                              storeComplaints.kpi_score >= 2 ? 'text-yellow-600' :
-                              'text-red-600'
-                            }`}>
-                              {storeComplaints.kpi_score}
-                            </p>
-                          </Card>
-                        </div>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
-            </>
-          )}
-
-          {activeTab === 'audit' && (
-            <>
-              {selectedStores.length > 0 && (
-                <div className="space-y-6">
-                  {selectedStores.map((store) => {
-                    const storeAudit = espData?.find(d => d.store_name === store.name);
-                    if (!storeAudit) return null;
-                    return (
-                      <Card key={store.id} className="p-6">
-                        <h3 className="font-medium text-lg mb-4">{store.name} - {store.city}</h3>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <Card className="p-4">
-                            <p className="text-sm text-gray-500">Total Score</p>
-                            <p className="text-lg font-medium">{storeAudit.total_score}</p>
-                          </Card>
-                          <Card className="p-4">
-                            <p className="text-sm text-gray-500">Final Score</p>
-                            <p className={`text-lg font-medium ${
-                              storeAudit.final_score >= 90 ? 'text-green-600' :
-                              'text-red-600'
-                            }`}>
-                              {storeAudit.final_score}
-                            </p>
-                          </Card>
-                          <Card className="p-4">
-                            <p className="text-sm text-gray-500">KPI Score</p>
-                            <p className={`text-lg font-medium ${
-                              storeAudit.kpi_score >= 3 ? 'text-green-600' :
-                              storeAudit.kpi_score >= 2 ? 'text-yellow-600' :
-                              'text-red-600'
-                            }`}>
-                              {storeAudit.kpi_score}
-                            </p>
-                          </Card>
-                        </div>
-                        {storeAudit.findings.length > 0 && (
-                          <div className="mt-4">
-                            <h4 className="font-medium mb-2">Findings:</h4>
-                            <ul className="list-disc pl-5 space-y-1">
-                              {storeAudit.findings.map((finding, index) => (
-                                <li key={index} className="text-sm text-gray-600">{finding}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
-            </>
-          )}
-
-          {activeTab === 'sanction' && (
-            <>
-              {selectedStores.length > 0 && (
-                <div className="space-y-6">
-                  {selectedStores.map((store) => renderSanctionKPI(store))}
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default StorePerformance;
+                onClick={() => setActiveTab
