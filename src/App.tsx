@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/components/ui/theme-provider";
@@ -46,11 +47,11 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
+      <Router>
         <ThemeProvider>
-          <Toaster />
-          <Sonner />
-          <Router>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
             <div className="min-h-screen flex w-full">
               <SidePanel onTabChange={setActiveTab} />
               <div className="flex-1 md:pl-64">
@@ -97,9 +98,9 @@ function App() {
                 </Routes>
               </div>
             </div>
-          </Router>
+          </TooltipProvider>
         </ThemeProvider>
-      </TooltipProvider>
+      </Router>
     </QueryClientProvider>
   );
 }
