@@ -257,20 +257,21 @@ const StorePerformance = () => {
     return (totalKPI / data.length).toFixed(1);
   };
 
-  const formatChartData = (data: EvaluationRecord[], title: string): ChartData<"line", Point[], unknown> | null => {
+  const formatChartData = (data: EvaluationRecord[], title: string): { data: ChartData<"line", Point[], unknown>, options: any } | null => {
     if (!data || !selectedStores.length) return null;
 
     const formattedData = data.map(record => ({
       date: format(new Date(record.evaluation_date), 'dd/MM/yy'),
       store_name: record.store_name,
-      total_score: record.total_score
+      total_score: record.total_score,
+      timestamp: new Date(record.evaluation_date).getTime()
     }));
 
     const datasets = selectedStores.map((store, index) => {
       const storeData = formattedData
         .filter(record => record.store_name === store.name)
         .map(record => ({
-          x: record.date,
+          x: record.timestamp,
           y: record.total_score
         }));
 
@@ -283,10 +284,48 @@ const StorePerformance = () => {
       };
     });
 
-    return {
+    const chartData: ChartData<"line", Point[], unknown> = {
       datasets,
       labels: formattedData.map(d => d.date).filter((value, index, self) => self.indexOf(value) === index)
     };
+
+    const options = {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'top' as const,
+        },
+        title: {
+          display: true,
+          text: title
+        }
+      },
+      scales: {
+        x: {
+          type: 'time',
+          time: {
+            unit: 'day',
+            displayFormats: {
+              day: 'dd/MM/yy'
+            }
+          },
+          title: {
+            display: true,
+            text: 'Date'
+          }
+        },
+        y: {
+          beginAtZero: true,
+          max: 4,
+          title: {
+            display: true,
+            text: 'Score'
+          }
+        }
+      }
+    };
+
+    return { data: chartData, options };
   };
 
   const champsChartData = formatChartData(performanceData, 'CHAMPS Performance');
@@ -599,7 +638,7 @@ const StorePerformance = () => {
             <div className="space-y-4">
               <Card>
                 {champsChartData ? (
-                  <ChartLine data={champsChartData} options={champsChartData.options} />
+                  <ChartLine data={champsChartData.data} options={champsChartData.options} />
                 ) : (
                   <p className="p-4">No CHAMPS data available for the selected stores and period.</p>
                 )}
@@ -612,7 +651,7 @@ const StorePerformance = () => {
 
               <Card>
                 {cleanlinessChartData ? (
-                  <ChartLine data={cleanlinessChartData} options={cleanlinessChartData.options} />
+                  <ChartLine data={cleanlinessChartData.data} options={cleanlinessChartData.options} />
                 ) : (
                   <p className="p-4">No Cleanliness data available for the selected stores and period.</p>
                 )}
@@ -625,7 +664,7 @@ const StorePerformance = () => {
 
               <Card>
                 {serviceChartData ? (
-                  <ChartLine data={serviceChartData} options={serviceChartData.options} />
+                  <ChartLine data={serviceChartData.data} options={serviceChartData.options} />
                 ) : (
                   <p className="p-4">No Service data available for the selected stores and period.</p>
                 )}
@@ -638,7 +677,7 @@ const StorePerformance = () => {
 
               <Card>
                 {productQualityChartData ? (
-                  <ChartLine data={productQualityChartData} options={productQualityChartData.options} />
+                  <ChartLine data={productQualityChartData.data} options={productQualityChartData.options} />
                 ) : (
                   <p className="p-4">No Product Quality data available for the selected stores and period.</p>
                 )}
