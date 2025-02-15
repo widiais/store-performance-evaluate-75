@@ -105,6 +105,17 @@ interface SanctionKPI {
   kpi_score: number;
 }
 
+interface EspRecord {
+  id: number;
+  store_name: string;
+  store_city: string;
+  evaluation_date: string;
+  total_score: number;
+  final_score: number;
+  kpi_score: number;
+  findings: string[];
+}
+
 const lineColors = [
   'rgb(99, 102, 241)',
   'rgb(236, 72, 153)',
@@ -252,7 +263,7 @@ const StorePerformance = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: Boolean(selectedStores.length > 0 && selectedMonth && selectedYear)
+    enabled: selectedStores.length > 0 && Boolean(selectedMonth) && Boolean(selectedYear)
   });
 
   const { data: performanceData = [] } = useQuery<EvaluationRecord[]>({
@@ -275,7 +286,7 @@ const StorePerformance = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: Boolean(selectedStores.length > 0 && selectedMonth && selectedYear)
+    enabled: selectedStores.length > 0 && Boolean(selectedMonth) && Boolean(selectedYear)
   });
 
   const { data: cleanlinessData = [] } = useQuery<EvaluationRecord[]>({
@@ -298,7 +309,7 @@ const StorePerformance = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: Boolean(selectedStores.length > 0 && selectedMonth && selectedYear)
+    enabled: selectedStores.length > 0 && Boolean(selectedMonth) && Boolean(selectedYear)
   });
 
   const { data: serviceData = [] } = useQuery<EvaluationRecord[]>({
@@ -321,7 +332,7 @@ const StorePerformance = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: Boolean(selectedStores.length > 0 && selectedMonth && selectedYear)
+    enabled: selectedStores.length > 0 && Boolean(selectedMonth) && Boolean(selectedYear)
   });
 
   const { data: productQualityData = [] } = useQuery<EvaluationRecord[]>({
@@ -344,7 +355,7 @@ const StorePerformance = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: Boolean(selectedStores.length > 0 && selectedMonth && selectedYear)
+    enabled: selectedStores.length > 0 && Boolean(selectedMonth) && Boolean(selectedYear)
   });
 
   const { data: complaintData = [] } = useQuery<ComplaintRecord[]>({
@@ -378,7 +389,30 @@ const StorePerformance = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: Boolean(selectedStores.length > 0 && selectedMonth && selectedYear)
+    enabled: selectedStores.length > 0 && Boolean(selectedMonth) && Boolean(selectedYear)
+  });
+
+  const { data: espData = [] } = useQuery<EspRecord[]>({
+    queryKey: ['espData', selectedStores.map(s => s.id), selectedMonth, selectedYear],
+    queryFn: async () => {
+      if (selectedStores.length === 0) return [];
+      
+      const startDate = `${selectedYear}-${selectedMonth}-01`;
+      const monthDate = parse(startDate, 'yyyy-MM-dd', new Date());
+      const endDate = format(endOfMonth(monthDate), 'yyyy-MM-dd');
+      
+      const { data, error } = await supabase
+        .from('esp_evaluation_report')
+        .select('*')
+        .in('store_name', selectedStores.map(s => s.name))
+        .gte('evaluation_date', startDate)
+        .lte('evaluation_date', endDate)
+        .order('evaluation_date');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: selectedStores.length > 0 && Boolean(selectedMonth) && Boolean(selectedYear)
   });
 
   const calculateAverageKPI = (data: EvaluationRecord[]) => {
