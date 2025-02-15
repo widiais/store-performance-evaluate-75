@@ -554,7 +554,6 @@ const StorePerformance = () => {
     { value: '12', label: 'December' },
   ];
 
-  // Query untuk data ESP
   const { data: espData } = useQuery<EspData[]>({
     queryKey: ['esp-data', selectedStores.map(s => s.id), selectedMonth, selectedYear],
     queryFn: async () => {
@@ -564,7 +563,6 @@ const StorePerformance = () => {
       const monthDate = parse(startDate, 'yyyy-MM-dd', new Date());
       const endDate = format(endOfMonth(monthDate), 'yyyy-MM-dd');
 
-      // Fetch evaluations with findings
       const { data: evaluations, error: evalError } = await supabase
         .from('esp_evaluation_report')
         .select(`
@@ -620,7 +618,6 @@ const StorePerformance = () => {
         <div className="flex flex-col gap-4">
           <h2 className="text-2xl font-semibold text-gray-900">Store Performance</h2>
           
-          {/* Tab Navigation */}
           <div className="flex justify-between items-center">
             <div className="flex space-x-2 border-b border-gray-200">
               <button
@@ -710,7 +707,6 @@ const StorePerformance = () => {
             )}
           </div>
 
-          {/* Store Selection */}
           <Card className="p-6">
             <StoreSelect
               selectedStores={selectedStores}
@@ -719,12 +715,9 @@ const StorePerformance = () => {
             />
           </Card>
 
-          {/* Content based on active tab */}
           {activeTab === 'operational' && (
             <>
-              {/* Header Controls */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                {/* Month Selection */}
                 <Card className="p-4">
                   <h3 className="font-medium mb-4">Select Month</h3>
                   <Select value={selectedMonth} onValueChange={setSelectedMonth}>
@@ -741,7 +734,6 @@ const StorePerformance = () => {
                   </Select>
                 </Card>
 
-                {/* Year Selection */}
                 <Card className="p-4">
                   <h3 className="font-medium mb-4">Select Year</h3>
                   <Select value={selectedYear} onValueChange={setSelectedYear}>
@@ -761,7 +753,6 @@ const StorePerformance = () => {
 
               {selectedStores.length > 0 && (
                 <>
-                  {/* CHAMPS Performance */}
                   <Card className="p-6 mb-6">
                     <h2 className="text-xl font-semibold mb-6">CHAMPS Performance</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -804,7 +795,6 @@ const StorePerformance = () => {
                     </div>
                   </Card>
 
-                  {/* Cleanliness Performance */}
                   <Card className="p-6 mb-6">
                     <h2 className="text-xl font-semibold mb-6">Cleanliness Performance</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -847,7 +837,385 @@ const StorePerformance = () => {
                     </div>
                   </Card>
 
-                  {/* Service Performance */}
                   <Card className="p-6 mb-6">
                     <h2 className="text-xl font-semibold mb-6">Service Performance</h2>
-                    <div className="grid grid-cols-1 md:grid-cols
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="h-[300px]">
+                        {serviceChartData ? (
+                          <ChartLine data={serviceChartData} options={serviceChartData.options} />
+                        ) : (
+                          <div className="flex items-center justify-center h-64 text-gray-500">
+                            Pilih store untuk melihat data
+                          </div>
+                        )}
+                      </div>
+                      <div className="overflow-auto max-h-[300px]">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Date</TableHead>
+                              <TableHead>Store</TableHead>
+                              <TableHead>KPI</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {serviceData?.map((record) => (
+                              <TableRow key={record.id}>
+                                <TableCell>
+                                  {format(new Date(record.evaluation_date), 'dd/MM/yy')}
+                                </TableCell>
+                                <TableCell>{record.store_name}</TableCell>
+                                <TableCell>{record.total_score?.toFixed(1)}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                    <div className="mt-6 p-4 bg-gray-100 rounded-lg">
+                      <p className="text-sm font-medium">
+                        Store Average Service: {calculateAverageKPI(serviceData)} (Taken: {serviceData.length})
+                      </p>
+                    </div>
+                  </Card>
+
+                  <Card className="p-6 mb-6">
+                    <h2 className="text-xl font-semibold mb-6">Product Quality Performance</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="h-[300px]">
+                        {productQualityChartData ? (
+                          <ChartLine data={productQualityChartData} options={productQualityChartData.options} />
+                        ) : (
+                          <div className="flex items-center justify-center h-64 text-gray-500">
+                            Pilih store untuk melihat data
+                          </div>
+                        )}
+                      </div>
+                      <div className="overflow-auto max-h-[300px]">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Date</TableHead>
+                              <TableHead>Store</TableHead>
+                              <TableHead>KPI</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {productQualityData?.map((record) => (
+                              <TableRow key={record.id}>
+                                <TableCell>
+                                  {format(new Date(record.evaluation_date), 'dd/MM/yy')}
+                                </TableCell>
+                                <TableCell>{record.store_name}</TableCell>
+                                <TableCell>{record.total_score?.toFixed(1)}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                    <div className="mt-6 p-4 bg-gray-100 rounded-lg">
+                      <p className="text-sm font-medium">
+                        Store Average Product Quality: {calculateAverageKPI(productQualityData)} (Taken: {productQualityData.length})
+                      </p>
+                    </div>
+                  </Card>
+                </>
+              )}
+            </>
+          )}
+
+          {activeTab === 'financial' && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <Card className="p-4">
+                  <h3 className="font-medium mb-4">Select Month</h3>
+                  <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {months.map((month) => (
+                        <SelectItem key={month.value} value={month.value}>
+                          {month.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Card>
+
+                <Card className="p-4">
+                  <h3 className="font-medium mb-4">Select Year</h3>
+                  <Select value={selectedYear} onValueChange={setSelectedYear}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {years.map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Card>
+              </div>
+
+              {selectedStores.length > 0 && (
+                <>
+                  {selectedStores.map(store => {
+                    const { data: financialRecord } = useQuery<FinancialRecord[]>({
+                      queryKey: ['financial-data', store.id, selectedMonth, selectedYear],
+                      queryFn: async () => {
+                        const startDate = `${selectedYear}-${selectedMonth}-01`;
+                        const monthDate = parse(startDate, 'yyyy-MM-dd', new Date());
+                        const endDate = format(endOfMonth(monthDate), 'yyyy-MM-dd');
+                        
+                        const { data, error } = await supabase
+                          .from('financial_records_report')
+                          .select('*')
+                          .eq('store_name', store.name)
+                          .gte('input_date', startDate)
+                          .lte('input_date', endDate)
+                          .order('input_date');
+                        
+                        if (error) throw error;
+                        return data || [];
+                      },
+                      enabled: selectedMonth && selectedYear,
+                    });
+
+                    return (
+                      <div key={store.id} className="p-6 mb-6">
+                        <h2 className="text-xl font-semibold mb-6">{store.name} - {store.city}</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {renderFinancialCard(financialRecord[0], store)}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+            </>
+          )}
+
+          {activeTab === 'complaint' && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <Card className="p-4">
+                  <h3 className="font-medium mb-4">Select Month</h3>
+                  <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {months.map((month) => (
+                        <SelectItem key={month.value} value={month.value}>
+                          {month.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Card>
+
+                <Card className="p-4">
+                  <h3 className="font-medium mb-4">Select Year</h3>
+                  <Select value={selectedYear} onValueChange={setSelectedYear}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {years.map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Card>
+              </div>
+
+              {selectedStores.length > 0 && (
+                <>
+                  {selectedStores.map(store => {
+                    const { data: complaintRecord } = useQuery({
+                      queryKey: ['complaintData', store, selectedMonth, selectedYear],
+                      queryFn: async () => {
+                        const startDate = `${selectedYear}-${selectedMonth}-01`;
+                        const monthDate = parse(startDate, 'yyyy-MM-dd', new Date());
+                        const endDate = format(endOfMonth(monthDate), 'yyyy-MM-dd');
+
+                        const { data, error } = await supabase
+                          .from('complaint_records_report')
+                          .select(`
+                            id,
+                            store_name,
+                            input_date,
+                            whatsapp_count,
+                            social_media_count,
+                            gmaps_count,
+                            online_order_count,
+                            late_handling_count,
+                            total_weighted_complaints,
+                            avg_cu_per_day,
+                            kpi_score
+                          `)
+                          .eq('store_name', store.name)
+                          .gte('input_date', startDate)
+                          .lte('input_date', endDate);
+                        
+                        if (error) throw error;
+                        return data || [];
+                      },
+                      enabled: selectedMonth && selectedYear,
+                    });
+
+                    return (
+                      <div key={store.id} className="p-6 mb-6">
+                        <h2 className="text-xl font-semibold mb-6">{store.name} - {store.city}</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="p-4 bg-gray-50 rounded-lg">
+                            <p className="text-sm text-gray-500">Total Weighted Complaints</p>
+                            <p className="text-xl font-medium">{complaintRecord[0].total_weighted_complaints}</p>
+                          </div>
+
+                          <div className="p-4 bg-gray-50 rounded-lg">
+                            <p className="text-sm text-gray-500">Average CU per Day</p>
+                            <p className="text-xl font-medium">{complaintRecord[0].avg_cu_per_day}</p>
+                          </div>
+
+                          <div className="p-4 bg-gray-50 rounded-lg">
+                            <p className="text-sm text-gray-500">KPI Score</p>
+                            <p className={`text-xl font-medium ${
+                              complaintRecord[0].kpi_score >= 3 ? 'text-green-600' :
+                              complaintRecord[0].kpi_score >= 2 ? 'text-yellow-600' :
+                              'text-red-600'
+                            }`}>
+                              {complaintRecord[0].kpi_score}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+            </>
+          )}
+
+          {activeTab === "sanction" && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="p-4">
+                  <h3 className="font-medium mb-4">Select Month</h3>
+                  <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {months.map((month) => (
+                        <SelectItem key={month.value} value={month.value}>
+                          {month.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Card>
+
+                <Card className="p-4">
+                  <h3 className="font-medium mb-4">Select Year</h3>
+                  <Select value={selectedYear} onValueChange={setSelectedYear}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {years.map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Card>
+              </div>
+
+              {selectedStores.length > 0 ? (
+                <div className="space-y-6">
+                  {selectedStores.map(store => {
+                    const { data: sanctionKPI } = useQuery({
+                      queryKey: ['sanctionKPI', store.id, selectedMonth, selectedYear],
+                      queryFn: async () => {
+                        const { data, error } = await supabase
+                          .from('employee_sanctions_kpi')
+                          .select('*')
+                          .eq('store_id', store.id)
+                          .single();
+
+                        if (error) throw error;
+                        return data;
+                      }
+                    });
+
+                    if (!sanctionKPI) {
+                      return (
+                        <Card key={store.id} className="p-6">
+                          <h3 className="font-medium text-lg mb-4">{store.name} - {store.city}</h3>
+                          <p className="text-gray-500">No sanction data available</p>
+                        </Card>
+                      );
+                    }
+
+                    return (
+                      <Card key={store.id} className="p-6">
+                        <h3 className="font-medium text-lg mb-4">{store.name} - {store.city}</h3>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                          <div className="p-4 bg-gray-50 rounded-lg">
+                            <p className="text-sm text-gray-500">Total Employees</p>
+                            <p className="text-xl font-medium">{sanctionKPI.total_employees}</p>
+                          </div>
+
+                          <div className="p-4 bg-gray-50 rounded-lg">
+                            <p className="text-sm text-gray-500">Active Warnings</p>
+                            <p className="text-xl font-medium text-yellow-600">{sanctionKPI.active_peringatan}</p>
+                          </div>
+
+                          <div className="p-4 bg-gray-50 rounded-lg">
+                            <p className="text-sm text-gray-500">Active SP1</p>
+                            <p className="text-xl font-medium text-orange-600">{sanctionKPI.active_sp1}</p>
+                          </div>
+
+                          <div className="p-4 bg-gray-50 rounded-lg">
+                            <p className="text-sm text-gray-500">Active SP2</p>
+                            <p className="text-xl font-medium text-red-600">{sanctionKPI.active_sp2}</p>
+                          </div>
+
+                          <div className="p-4 bg-gray-50 rounded-lg">
+                            <p className="text-sm text-gray-500">KPI Score</p>
+                            <p className={`text-xl font-medium ${
+                              sanctionKPI.kpi_score >= 3 ? 'text-green-600' :
+                              sanctionKPI.kpi_score >= 2 ? 'text-yellow-600' :
+                              'text-red-600'
+                            }`}>
+                              {sanctionKPI.kpi_score}
+                            </p>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  Select one or more stores to view employee sanction data
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default StorePerformance;
