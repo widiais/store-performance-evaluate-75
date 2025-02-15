@@ -232,7 +232,7 @@ const StorePerformance = () => {
     return Math.max(0, Math.min((targetOPEXPercentage / actualOPEXPercentage) * 4, 4));
   };
 
-  const { data: financialData } = useQuery<FinancialRecord[]>({
+  const { data: financialData = [] } = useQuery({
     queryKey: ['financial-data', selectedStores.map(s => s.id), selectedMonth, selectedYear],
     queryFn: async () => {
       if (selectedStores.length === 0) return [];
@@ -252,7 +252,7 @@ const StorePerformance = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: selectedStores.length > 0,
+    enabled: selectedStores.length > 0 && !!selectedMonth && !!selectedYear
   });
 
   const { data: performanceData = [] } = useQuery<EvaluationRecord[]>({
@@ -275,7 +275,7 @@ const StorePerformance = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: selectedStores.length > 0,
+    enabled: selectedStores.length > 0 && !!selectedMonth && !!selectedYear
   });
 
   const { data: cleanlinessData = [] } = useQuery<EvaluationRecord[]>({
@@ -298,7 +298,7 @@ const StorePerformance = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: selectedStores.length > 0,
+    enabled: selectedStores.length > 0 && !!selectedMonth && !!selectedYear
   });
 
   const { data: serviceData = [] } = useQuery<EvaluationRecord[]>({
@@ -321,7 +321,7 @@ const StorePerformance = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: selectedStores.length > 0,
+    enabled: selectedStores.length > 0 && !!selectedMonth && !!selectedYear
   });
 
   const { data: productQualityData = [] } = useQuery<EvaluationRecord[]>({
@@ -344,7 +344,7 @@ const StorePerformance = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: selectedStores.length > 0,
+    enabled: selectedStores.length > 0 && !!selectedMonth && !!selectedYear
   });
 
   const { data: complaintData = [] } = useQuery({
@@ -378,7 +378,7 @@ const StorePerformance = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: selectedStores.length > 0 && !!selectedMonth && !!selectedYear,
+    enabled: selectedStores.length > 0 && !!selectedMonth && !!selectedYear
   });
 
   const calculateAverageKPI = (data: EvaluationRecord[]) => {
