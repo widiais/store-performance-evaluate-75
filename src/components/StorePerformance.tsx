@@ -1,8 +1,9 @@
+
 import { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { format, endOfMonth, parse, getYear, startOfMonth } from 'date-fns';
+import { format, endOfMonth, parse, getYear } from 'date-fns';
 import {
   Select,
   SelectContent,
@@ -796,31 +797,49 @@ const StorePerformance = () => {
               </div>
 
               {selectedStores.length > 0 && (
-                <>
-                  <Card className="p-6 mb-6">
-                    <h2 className="text-xl font-semibold mb-6">CHAMPS Performance</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="h-[300px]">
-                        {champsChartData ? (
-                          <ChartLine data={champsChartData} options={champsChartData.options} />
-                        ) : (
-                          <div className="flex items-center justify-center h-64 text-gray-500">
-                            Pilih store untuk melihat data
-                          </div>
-                        )}
-                      </div>
-                      <div className="overflow-auto max-h-[300px]">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Date</TableHead>
-                              <TableHead>Store</TableHead>
-                              <TableHead>KPI</TableHead>
+                <Card className="p-6 mb-6">
+                  <h2 className="text-xl font-semibold mb-6">CHAMPS Performance</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="h-[300px]">
+                      {champsChartData ? (
+                        <ChartLine data={champsChartData} options={champsChartData.options} />
+                      ) : (
+                        <div className="flex items-center justify-center h-64 text-gray-500">
+                          Pilih store untuk melihat data
+                        </div>
+                      )}
+                    </div>
+                    <div className="overflow-auto max-h-[300px]">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Store</TableHead>
+                            <TableHead>KPI</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {performanceData?.map((record) => (
+                            <TableRow key={record.id}>
+                              <TableCell>
+                                {format(new Date(record.evaluation_date), 'dd/MM/yy')}
+                              </TableCell>
+                              <TableCell>{record.store_name}</TableCell>
+                              <TableCell>{record.total_score.toFixed(2)}</TableCell>
                             </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {performanceData?.map((record) => (
-                              <TableRow key={record.id}>
-                                <TableCell>
-                                  {format(new Date(record.evaluation_date), 'dd/MM/yy')}
-                                </TableCell>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                </Card>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default StorePerformance;
