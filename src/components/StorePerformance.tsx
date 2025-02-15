@@ -1,4 +1,3 @@
-<lov-code>
 import { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { useQuery } from '@tanstack/react-query';
@@ -793,4 +792,4 @@ const StorePerformance = () => {
                 Audit Performance
               </button>
               <button
-                onClick={() => setActiveTab
+                onClick={() => setActiveTab('sanction
