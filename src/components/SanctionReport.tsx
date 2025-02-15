@@ -6,14 +6,22 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Eye } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, Eye, ArrowDown, ArrowUp } from "lucide-react";
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from "date-fns";
 
+type SortConfig = {
+  key: string;
+  direction: 'asc' | 'desc';
+};
+
 const SanctionReport = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState('active');
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'sanction_date', direction: 'desc' });
 
   const { data: sanctions = [], isLoading } = useQuery({
     queryKey: ['sanctionReports'],
@@ -28,19 +36,40 @@ const SanctionReport = () => {
     }
   });
 
-  const filteredSanctions = sanctions.filter(sanction => 
-    sanction.store_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    sanction.store_city.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    sanction.employee_name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleSort = (key: string) => {
+    setSortConfig(currentConfig => ({
+      key,
+      direction: currentConfig.key === key && currentConfig.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
+  const getSortedData = (data: any[]) => {
+    return [...data].sort((a, b) => {
+      if (sortConfig.key === 'sanction_date') {
+        const dateA = new Date(a[sortConfig.key]).getTime();
+        const dateB = new Date(b[sortConfig.key]).getTime();
+        return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
+      }
+      
+      if (a[sortConfig.key] < b[sortConfig.key]) {
+        return sortConfig.direction === 'asc' ? -1 : 1;
+      }
+      if (a[sortConfig.key] > b[sortConfig.key]) {
+        return sortConfig.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  };
+
+  const filteredSanctions = sanctions
+    .filter(sanction => 
+      (sanction.store_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       sanction.employee_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       sanction.store_city.toLowerCase().includes(searchTerm.toLowerCase())) &&
+      (activeTab === 'active' ? sanction.is_active : !sanction.is_active)
     );
-  }
+
+  const sortedSanctions = getSortedData(filteredSanctions);
 
   const getSanctionColor = (type: string) => {
     switch (type) {
@@ -55,12 +84,36 @@ const SanctionReport = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  const SortIcon = ({ columnKey }: { columnKey: string }) => {
+    if (sortConfig.key !== columnKey) return null;
+    return sortConfig.direction === 'asc' ? (
+      <ArrowUp className="inline h-4 w-4 ml-1" />
+    ) : (
+      <ArrowDown className="inline h-4 w-4 ml-1" />
+    );
+  };
+
   return (
     <div className="p-6 min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto">
         <h2 className="text-2xl font-semibold mb-6 text-gray-900">
           Employee Sanction Report
         </h2>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <TabsList>
+            <TabsTrigger value="active">Active Sanctions</TabsTrigger>
+            <TabsTrigger value="expired">Expired Sanctions</TabsTrigger>
+          </TabsList>
+        </Tabs>
         
         <div className="mb-4">
           <div className="relative">
@@ -78,16 +131,53 @@ const SanctionReport = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[150px]">Store</TableHead>
-                <TableHead>Employee Name</TableHead>
-                <TableHead>Sanction Type</TableHead>
-                <TableHead>Duration</TableHead>
-                <TableHead>Date</TableHead>
+                <TableHead 
+                  className="cursor-pointer"
+                  onClick={() => handleSort('store_name')}
+                >
+                  Store
+                  <SortIcon columnKey="store_name" />
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer"
+                  onClick={() => handleSort('employee_name')}
+                >
+                  Employee Name
+                  <SortIcon columnKey="employee_name" />
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer"
+                  onClick={() => handleSort('sanction_type')}
+                >
+                  Sanction Type
+                  <SortIcon columnKey="sanction_type" />
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer"
+                  onClick={() => handleSort('duration_months')}
+                >
+                  Duration
+                  <SortIcon columnKey="duration_months" />
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer"
+                  onClick={() => handleSort('sanction_date')}
+                >
+                  Date
+                  <SortIcon columnKey="sanction_date" />
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer"
+                  onClick={() => handleSort('expiry_date')}
+                >
+                  Expiry Date
+                  <SortIcon columnKey="expiry_date" />
+                </TableHead>
                 <TableHead className="text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredSanctions.map((sanction) => (
+              {sortedSanctions.map((sanction) => (
                 <TableRow key={sanction.id}>
                   <TableCell>
                     {sanction.store_name}
@@ -102,6 +192,7 @@ const SanctionReport = () => {
                   </TableCell>
                   <TableCell>{sanction.duration_months} months</TableCell>
                   <TableCell>{format(new Date(sanction.sanction_date), 'dd/MM/yyyy')}</TableCell>
+                  <TableCell>{format(new Date(sanction.expiry_date), 'dd/MM/yyyy')}</TableCell>
                   <TableCell className="text-right">
                     <Button
                       variant="outline"

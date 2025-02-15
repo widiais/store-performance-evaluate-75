@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, X } from "lucide-react";
+import { Search, X, Eye } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Line as ChartLine } from 'react-chartjs-2';
 import {
@@ -36,6 +36,8 @@ import { PDFDownloadLink } from '@react-pdf/renderer';
 import StorePerformancePDF from './StorePerformancePDF';
 import { Button } from "@/components/ui/button";
 import { FileDown } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
+import { Badge } from "@/components/ui/badge";
 
 ChartJS.register(
   CategoryScale,
@@ -217,6 +219,7 @@ const StorePerformance = () => {
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'MM'));
   const [selectedYear, setSelectedYear] = useState<string>(currentYear.toString());
   const [activeTab, setActiveTab] = useState('operational');
+  const navigate = useNavigate();
 
   const calculateKPI = (actual: number, target: number): number => {
     if (!target) return 0;
@@ -598,6 +601,19 @@ const StorePerformance = () => {
     enabled: selectedStores.length > 0
   });
 
+  const getSanctionColor = (type: string) => {
+    switch (type) {
+      case 'Peringatan Tertulis':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'SP1':
+        return 'bg-orange-100 text-orange-800';
+      case 'SP2':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
     <div className="p-6 min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -646,6 +662,16 @@ const StorePerformance = () => {
                 }`}
               >
                 Audit Performance
+              </button>
+              <button
+                onClick={() => setActiveTab('sanction')}
+                className={`px-4 py-2 font-medium ${
+                  activeTab === 'sanction'
+                    ? 'text-primary border-b-2 border-primary'
+                    : 'text-gray-500'
+                }`}
+              >
+                Employee Sanction
               </button>
             </div>
 
@@ -824,360 +850,4 @@ const StorePerformance = () => {
                   {/* Service Performance */}
                   <Card className="p-6 mb-6">
                     <h2 className="text-xl font-semibold mb-6">Service Performance</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="h-[300px]">
-                        {serviceChartData ? (
-                          <ChartLine data={serviceChartData} options={serviceChartData.options} />
-                        ) : (
-                          <div className="flex items-center justify-center h-64 text-gray-500">
-                            Pilih store untuk melihat data
-                          </div>
-                        )}
-                      </div>
-                      <div className="overflow-auto max-h-[300px]">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Date</TableHead>
-                              <TableHead>Store</TableHead>
-                              <TableHead>KPI</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {serviceData?.map((record) => (
-                              <TableRow key={record.id}>
-                                <TableCell>
-                                  {format(new Date(record.evaluation_date), 'dd/MM/yy')}
-                                </TableCell>
-                                <TableCell>{record.store_name}</TableCell>
-                                <TableCell>{record.total_score?.toFixed(1)}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </div>
-                    <div className="mt-6 p-4 bg-gray-100 rounded-lg">
-                      <p className="text-sm font-medium">
-                        Store Average Service: {calculateAverageKPI(serviceData)} (Taken: {serviceData.length})
-                      </p>
-                    </div>
-                  </Card>
-
-                  {/* Product Quality Performance */}
-                  <Card className="p-6">
-                    <h2 className="text-xl font-semibold mb-6">Product Quality Performance</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="h-[300px]">
-                        {productQualityChartData ? (
-                          <ChartLine data={productQualityChartData} options={productQualityChartData.options} />
-                        ) : (
-                          <div className="flex items-center justify-center h-64 text-gray-500">
-                            Pilih store untuk melihat data
-                          </div>
-                        )}
-                      </div>
-                      <div className="overflow-auto max-h-[300px]">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Date</TableHead>
-                              <TableHead>Store</TableHead>
-                              <TableHead>KPI</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {productQualityData?.map((record) => (
-                              <TableRow key={record.id}>
-                                <TableCell>
-                                  {format(new Date(record.evaluation_date), 'dd/MM/yy')}
-                                </TableCell>
-                                <TableCell>{record.store_name}</TableCell>
-                                <TableCell>{record.total_score?.toFixed(1)}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </div>
-                    <div className="mt-6 p-4 bg-gray-100 rounded-lg">
-                      <p className="text-sm font-medium">
-                        Store Average Product Quality: {calculateAverageKPI(productQualityData)} (Taken: {productQualityData.length})
-                      </p>
-                    </div>
-                  </Card>
-                </>
-              )}
-            </>
-          )}
-
-          {/* Complaint Tab */}
-          {activeTab === 'complaint' && (
-            <div className="space-y-6">
-              {/* Month & Year Selection */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="p-4">
-                  <h3 className="font-medium mb-4">Select Month</h3>
-                  <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {months.map((month) => (
-                        <SelectItem key={month.value} value={month.value}>
-                          {month.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Card>
-
-                <Card className="p-4">
-                  <h3 className="font-medium mb-4">Select Year</h3>
-                  <Select value={selectedYear} onValueChange={setSelectedYear}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {years.map((year) => (
-                        <SelectItem key={year} value={year.toString()}>
-                          {year}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Card>
-              </div>
-
-              {/* Complaint Data */}
-              {selectedStores.length > 0 ? (
-                <div className="space-y-6">
-                  {selectedStores.map(store => {
-                    const storeComplaints = complaintData?.find(d => d.store_name === store.name);
-                    
-                    if (!storeComplaints) {
-                      return (
-                        <div key={store.id} className="p-4 border rounded-lg">
-                          <h3 className="font-medium text-lg">{store.name} - {store.city}</h3>
-                          <p className="text-gray-500 mt-2">No complaint data available for this period</p>
-                        </div>
-                      );
-                    }
-
-                    const kpiScore = calculateKPIScore(
-                      storeComplaints.total_weighted_complaints || 0,
-                      storeComplaints.avg_cu_per_day || 0
-                    );
-
-                    return (
-                      <Card key={store.id} className="p-6">
-                        <h3 className="font-medium text-lg mb-4">{store.name} - {store.city}</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          <div className="p-4 bg-gray-50 rounded-lg">
-                            <h4 className="font-medium mb-2">Complaint Sources</h4>
-                            <div className="space-y-2">
-                              <p>WhatsApp: {storeComplaints.whatsapp_count}</p>
-                              <p>Social Media: {storeComplaints.social_media_count}</p>
-                              <p>Google Maps: {storeComplaints.gmaps_count}</p>
-                              <p>Online Order: {storeComplaints.online_order_count}</p>
-                            </div>
-                          </div>
-                          
-                          <div className="p-4 bg-gray-50 rounded-lg">
-                            <h4 className="font-medium mb-2">Handling</h4>
-                            <p>Late Handling: {storeComplaints.late_handling_count}</p>
-                          </div>
-
-                          <div className="p-4 bg-gray-50 rounded-lg">
-                            <h4 className="font-medium mb-2">KPI Score</h4>
-                            <p className={`text-lg font-medium ${
-                              kpiScore >= 3 ? 'text-green-600' :
-                              kpiScore >= 2 ? 'text-yellow-600' :
-                              'text-red-600'
-                            }`}>
-                              {kpiScore.toFixed(1)}
-                            </p>
-                            <p className="text-sm text-gray-500 mt-1">
-                              Based on {storeComplaints.avg_cu_per_day} average customers per day
-                            </p>
-                          </div>
-                        </div>
-                      </Card>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  Select one or more stores to view complaint data
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Financial Performance Tab */}
-          {activeTab === 'financial' && (
-            <div className="space-y-6">
-              {/* Month & Year Selection */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="p-4">
-                  <h3 className="font-medium mb-4">Select Month</h3>
-                  <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {months.map((month) => (
-                        <SelectItem key={month.value} value={month.value}>
-                          {month.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Card>
-
-                <Card className="p-4">
-                  <h3 className="font-medium mb-4">Select Year</h3>
-                  <Select value={selectedYear} onValueChange={setSelectedYear}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {years.map((year) => (
-                        <SelectItem key={year} value={year.toString()}>
-                          {year}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Card>
-              </div>
-
-              {/* Financial Performance Data */}
-              <Card className="p-6">
-                <h2 className="text-xl font-semibold mb-6">Financial Performance</h2>
-                {selectedStores.length > 0 ? (
-                  <div className="space-y-6">
-                    {selectedStores.map(store => {
-                      const storeData = financialData?.find(d => d.store_name === store.name);
-                      
-                      if (!storeData) {
-                        return (
-                          <div key={store.id} className="p-4 border rounded-lg">
-                            <h3 className="font-medium text-lg">{store.name} - {store.city}</h3>
-                            <p className="text-gray-500 mt-2">No financial data available for this period</p>
-                          </div>
-                        );
-                      }
-
-                      return renderFinancialCard(storeData, store);
-                    })}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    Select one or more stores to view financial performance
-                  </div>
-                )}
-              </Card>
-            </div>
-          )}
-
-          {/* Audit Performance */}
-          {activeTab === "audit" && (
-            <div className="space-y-6">
-              {/* Month & Year Selection */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="p-4">
-                  <h3 className="font-medium mb-4">Select Month</h3>
-                  <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {months.map((month) => (
-                        <SelectItem key={month.value} value={month.value}>
-                          {month.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Card>
-
-                <Card className="p-4">
-                  <h3 className="font-medium mb-4">Select Year</h3>
-                  <Select value={selectedYear} onValueChange={setSelectedYear}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {years.map((year) => (
-                        <SelectItem key={year} value={year.toString()}>
-                          {year}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Card>
-              </div>
-
-              <h2 className="text-xl font-semibold">Audit Performance</h2>
-              {selectedStores.length > 0 ? (
-                espData && espData.length > 0 ? (
-                  <div className="grid grid-cols-1 gap-6">
-                    {espData.map((evaluation) => (
-                      <div key={evaluation.id} className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                        <div className="mb-4">
-                          <p className="text-sm text-gray-500">Tanggal Evaluasi</p>
-                          <p className="font-medium">{format(new Date(evaluation.evaluation_date), 'dd MMMM yyyy')}</p>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                          <div className="p-4 bg-gray-50 rounded-lg">
-                            <p className="text-sm text-gray-500">Total Score</p>
-                            <p className="text-2xl font-semibold">{evaluation.total_score}</p>
-                          </div>
-                          <div className="p-4 bg-gray-50 rounded-lg">
-                            <p className="text-sm text-gray-500">Final Score</p>
-                            <p className={`text-2xl font-semibold ${evaluation.final_score >= 90 ? 'text-green-600' : 'text-red-600'}`}>
-                              {evaluation.final_score}
-                            </p>
-                          </div>
-                          <div className="p-4 bg-gray-50 rounded-lg">
-                            <p className="text-sm text-gray-500">KPI Score</p>
-                            <p className={`text-2xl font-semibold ${evaluation.kpi_score >= 3 ? 'text-green-600' : 'text-red-600'}`}>
-                              {evaluation.kpi_score}
-                            </p>
-                          </div>
-                        </div>
-
-                        {evaluation.findings.length > 0 && (
-                          <div>
-                            <p className="font-medium mb-2">Temuan:</p>
-                            <ul className="list-disc pl-5 space-y-1">
-                              {evaluation.findings.map((finding, index) => (
-                                <li key={index} className="text-gray-700">{finding}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 text-gray-500">
-                    Tidak ada data audit untuk periode ini
-                  </div>
-                )
-              ) : (
-                <div className="text-center py-12 text-gray-500">
-                  Pilih satu atau lebih store untuk melihat data audit
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default StorePerformance;
+                    <div className="grid grid-cols-1 md:grid-cols
