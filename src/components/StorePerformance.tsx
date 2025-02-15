@@ -10,16 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Search, X, Eye } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Line as ChartLine } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -31,12 +21,26 @@ import {
   Tooltip as ChartTooltip,
   Legend
 } from 'chart.js';
-import { Input } from "@/components/ui/input";
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import StorePerformancePDF from './StorePerformancePDF';
+import { useNavigate } from 'react-router-dom';
+import { StoreSelect } from './store-performance/StoreSelect';
+import { SanctionKPI } from './store-performance/SanctionKPI';
+import { 
+  Store, 
+  EvaluationRecord, 
+  FinancialRecord, 
+  ComplaintRecord, 
+  EspRecord 
+} from './store-performance/types';
+import { 
+  calculateKPI, 
+  calculateOPEXKPI, 
+  calculateComplaintKPIScore,
+  lineColors 
+} from './store-performance/utils';
 import { Button } from "@/components/ui/button";
 import { FileDown } from "lucide-react";
-import { useNavigate } from 'react-router-dom';
 import { Badge } from "@/components/ui/badge";
 
 ChartJS.register(
@@ -49,256 +53,6 @@ ChartJS.register(
   Legend
 );
 
-interface Store {
-  id: number;
-  name: string;
-  city: string;
-  target_sales?: number;
-  cogs_target?: number;
-  opex_target?: number;
-  total_crew?: number;
-}
-
-interface EvaluationRecord {
-  id: number;
-  store_name: string;
-  evaluation_date: string;
-  total_score: number;
-}
-
-interface FinancialRecord {
-  id: number;
-  store_name: string;
-  store_city: string;
-  input_date: string;
-  total_sales: number;
-  total_opex: number;
-  cogs_achieved: number;
-  target_sales: number;
-  cogs_target: number;
-  opex_target: number;
-  total_crew: number;
-}
-
-interface ComplaintRecord {
-  id: number;
-  store_name: string;
-  input_date: string;
-  whatsapp_count: number;
-  social_media_count: number;
-  gmaps_count: number;
-  online_order_count: number;
-  late_handling_count: number;
-  total_weighted_complaints: number;
-  avg_cu_per_day: number;
-  kpi_score: number;
-}
-
-interface SanctionKPI {
-  store_id: number;
-  store_name: string;
-  store_city: string;
-  total_employees: number;
-  active_peringatan: number;
-  active_sp1: number;
-  active_sp2: number;
-  kpi_score: number;
-}
-
-// Update EspRecord interface to match database schema
-interface EspRecord {
-  id: number | null;
-  store_name: string | null;
-  store_city: string | null;
-  evaluation_date: string | null;
-  total_score: number | null;
-  final_score: number | null;
-  kpi_score: number | null;
-  pic: string | null;
-  status: string | null;
-  findings: string[];  // This will be populated from esp_findings
-}
-
-const lineColors = [
-  'rgb(99, 102, 241)',
-  'rgb(236, 72, 153)',
-  'rgb(34, 197, 94)',
-  'rgb(249, 115, 22)',
-  'rgb(168, 85, 247)',
-  'rgb(234, 179, 8)',
-  'rgb(14, 165, 233)',
-  'rgb(239, 68, 68)',
-  'rgb(20, 184, 166)',
-  'rgb(139, 92, 246)',
-];
-
-interface StoreSelectProps {
-  selectedStores: Store[];
-  onStoreSelect: (store: Store) => void;
-  onRemoveStore: (storeId: number) => void;
-}
-
-const StoreSelect = ({ selectedStores, onStoreSelect, onRemoveStore }: StoreSelectProps) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showDropdown, setShowDropdown] = useState(false);
-
-  const { data: stores = [] } = useQuery<Store[]>({
-    queryKey: ['stores'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('stores')
-        .select('id, name, city')
-        .order('name');
-      
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-    setShowDropdown(true);
-  };
-
-  const filteredStores = stores.filter(store => 
-    !selectedStores.some(s => s.id === store.id) &&
-    (store.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     store.city.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
-  return (
-    <div className="w-full space-y-2">
-      <div className="relative">
-        <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-        <Input
-          placeholder="Search store..."
-          value={searchTerm}
-          onChange={handleInputChange}
-          onFocus={() => setShowDropdown(true)}
-          className="pl-10"
-        />
-      </div>
-
-      {selectedStores.length > 0 && (
-        <div className="flex flex-wrap gap-2 mt-2">
-          {selectedStores.map((store) => (
-            <div
-              key={store.id}
-              className="flex items-center gap-2 px-3 py-1 bg-gray-100 rounded-full"
-            >
-              <span className="text-sm">
-                {store.name} - {store.city}
-              </span>
-              <button
-                onClick={() => onRemoveStore(store.id)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {showDropdown && searchTerm && (
-        <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg">
-          <ScrollArea className="h-[200px]">
-            {filteredStores.length > 0 ? (
-              filteredStores.map((store) => (
-                <div
-                  key={store.id}
-                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                  onClick={() => {
-                    onStoreSelect(store);
-                    setSearchTerm('');
-                    setShowDropdown(false);
-                  }}
-                >
-                  {store.name} - {store.city}
-                </div>
-              ))
-            ) : (
-              <div className="px-4 py-2 text-gray-500">No stores found</div>
-            )}
-          </ScrollArea>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// Move SanctionKPI to a proper React component
-interface SanctionKPIProps {
-  store: Store;
-  selectedMonth: string;
-  selectedYear: string;
-}
-
-const SanctionKPI: React.FC<SanctionKPIProps> = ({ store, selectedMonth, selectedYear }) => {
-  const { data: sanctionKPI } = useQuery<SanctionKPI>({
-    queryKey: ['sanctionKPI', store.id, selectedMonth, selectedYear],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('employee_sanctions_kpi')
-        .select('*')
-        .eq('store_id', store.id)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: Boolean(store.id && selectedMonth && selectedYear)
-  });
-
-  if (!sanctionKPI) {
-    return (
-      <Card key={store.id} className="p-6">
-        <h3 className="font-medium text-lg mb-4">{store.name} - {store.city}</h3>
-        <p className="text-gray-500">No sanction data available</p>
-      </Card>
-    );
-  }
-
-  return (
-    <Card key={store.id} className="p-6">
-      <h3 className="font-medium text-lg mb-4">{store.name} - {store.city}</h3>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="p-4 bg-gray-50 rounded-lg">
-          <p className="text-sm text-gray-500">Total Employees</p>
-          <p className="text-xl font-medium">{sanctionKPI.total_employees}</p>
-        </div>
-
-        <div className="p-4 bg-gray-50 rounded-lg">
-          <p className="text-sm text-gray-500">Active Warnings</p>
-          <p className="text-xl font-medium text-yellow-600">{sanctionKPI.active_peringatan}</p>
-        </div>
-
-        <div className="p-4 bg-gray-50 rounded-lg">
-          <p className="text-sm text-gray-500">Active SP1</p>
-          <p className="text-xl font-medium text-orange-600">{sanctionKPI.active_sp1}</p>
-        </div>
-
-        <div className="p-4 bg-gray-50 rounded-lg">
-          <p className="text-sm text-gray-500">Active SP2</p>
-          <p className="text-xl font-medium text-red-600">{sanctionKPI.active_sp2}</p>
-        </div>
-
-        <div className="p-4 bg-gray-50 rounded-lg">
-          <p className="text-sm text-gray-500">KPI Score</p>
-          <p className={`text-xl font-medium ${
-            sanctionKPI.kpi_score >= 3 ? 'text-green-600' :
-            sanctionKPI.kpi_score >= 2 ? 'text-yellow-600' :
-            'text-red-600'
-          }`}>
-            {sanctionKPI.kpi_score}
-          </p>
-        </div>
-      </div>
-    </Card>
-  );
-};
-
 const StorePerformance = () => {
   const currentYear = getYear(new Date());
   const [selectedStores, setSelectedStores] = useState<Store[]>([]);
@@ -306,17 +60,6 @@ const StorePerformance = () => {
   const [selectedYear, setSelectedYear] = useState<string>(currentYear.toString());
   const [activeTab, setActiveTab] = useState('operational');
   const navigate = useNavigate();
-
-  const calculateKPI = (actual: number, target: number): number => {
-    if (!target) return 0;
-    return Math.min((actual / target) * 4, 4);
-  };
-
-  const calculateOPEXKPI = (totalSales: number, actualOPEX: number, targetOPEXPercentage: number): number => {
-    if (!totalSales || !targetOPEXPercentage) return 0;
-    const actualOPEXPercentage = (actualOPEX / totalSales) * 100;
-    return Math.max(0, Math.min((targetOPEXPercentage / actualOPEXPercentage) * 4, 4));
-  };
 
   const { data: financialData = [] } = useQuery<FinancialRecord[]>({
     queryKey: ['financial-data', selectedStores.map(s => s.id), selectedMonth, selectedYear],
@@ -792,4 +535,252 @@ const StorePerformance = () => {
                 Audit Performance
               </button>
               <button
-                onClick={() => setActiveTab('sanction
+                onClick={() => setActiveTab('sanction')}
+                className={`px-4 py-2 font-medium ${
+                  activeTab === 'sanction'
+                    ? 'text-primary border-b-2 border-primary'
+                    : 'text-gray-500'
+                }`}
+              >
+                Sanction KPI
+              </button>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <PDFDownloadLink
+                document={<StorePerformancePDF 
+                  selectedStores={selectedStores}
+                  selectedMonth={selectedMonth}
+                  selectedYear={selectedYear}
+                  financialData={financialData}
+                  performanceData={performanceData}
+                  cleanlinessData={cleanlinessData}
+                  serviceData={serviceData}
+                  productQualityData={productQualityData}
+                  complaintData={complaintData}
+                  espData={espData}
+                />}
+                fileName="store-performance.pdf"
+              >
+                {({ blob, url, loading, error }) => (
+                  <Button disabled={loading}>
+                    {loading ? "Loading document..." : "Download PDF"}
+                    <FileDown className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
+              </PDFDownloadLink>
+            </div>
+          </div>
+
+          <Card className="p-6">
+            <StoreSelect
+              selectedStores={selectedStores}
+              onStoreSelect={handleStoreSelect}
+              onRemoveStore={removeStore}
+            />
+          </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select month" />
+                </SelectTrigger>
+                <SelectContent>
+                  {months.map((month) => (
+                    <SelectItem key={month.value} value={month.value}>
+                      {month.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Select value={selectedYear} onValueChange={setSelectedYear}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {activeTab === 'operational' && (
+            <div className="space-y-4">
+              <Card>
+                {champsChartData ? (
+                  <ChartLine data={champsChartData.datasets} options={champsChartData.options} />
+                ) : (
+                  <p className="p-4">No CHAMPS data available for the selected stores and period.</p>
+                )}
+                {selectedStores.length > 0 && (
+                  <div className="p-4">
+                    Average CHAMPS KPI: <Badge>{calculateAverageKPI(performanceData)}</Badge>
+                  </div>
+                )}
+              </Card>
+
+              <Card>
+                {cleanlinessChartData ? (
+                  <ChartLine data={cleanlinessChartData.datasets} options={cleanlinessChartData.options} />
+                ) : (
+                  <p className="p-4">No Cleanliness data available for the selected stores and period.</p>
+                )}
+                 {selectedStores.length > 0 && (
+                  <div className="p-4">
+                    Average Cleanliness KPI: <Badge>{calculateAverageKPI(cleanlinessData)}</Badge>
+                  </div>
+                )}
+              </Card>
+
+              <Card>
+                {serviceChartData ? (
+                  <ChartLine data={serviceChartData.datasets} options={serviceChartData.options} />
+                ) : (
+                  <p className="p-4">No Service data available for the selected stores and period.</p>
+                )}
+                {selectedStores.length > 0 && (
+                  <div className="p-4">
+                    Average Service KPI: <Badge>{calculateAverageKPI(serviceData)}</Badge>
+                  </div>
+                )}
+              </Card>
+
+              <Card>
+                {productQualityChartData ? (
+                  <ChartLine data={productQualityChartData.datasets} options={productQualityChartData.options} />
+                ) : (
+                  <p className="p-4">No Product Quality data available for the selected stores and period.</p>
+                )}
+                {selectedStores.length > 0 && (
+                  <div className="p-4">
+                    Average Product Quality KPI: <Badge>{calculateAverageKPI(productQualityData)}</Badge>
+                  </div>
+                )}
+              </Card>
+            </div>
+          )}
+
+          {activeTab === 'financial' && (
+            <div className="grid grid-cols-1 gap-4">
+              {selectedStores.map(store => {
+                const storeData = financialData.find(data => data.store_name === store.name);
+                if (!storeData) {
+                  return (
+                    <Card key={store.id} className="p-6">
+                      <h3 className="font-medium text-lg mb-4">{store.name} - {store.city}</h3>
+                      <p className="text-gray-500">No financial data available for this store and period.</p>
+                    </Card>
+                  );
+                }
+                return renderFinancialCard(storeData, store);
+              })}
+            </div>
+          )}
+
+          {activeTab === 'complaint' && (
+            <div className="grid grid-cols-1 gap-4">
+              {selectedStores.map(store => {
+                const storeData = complaintData.find(data => data.store_name === store.name);
+                if (!storeData) {
+                  return (
+                    <Card key={store.id} className="p-6">
+                      <h3 className="font-medium text-lg mb-4">{store.name} - {store.city}</h3>
+                      <p className="text-gray-500">No complaint data available for this store and period.</p>
+                    </Card>
+                  );
+                }
+
+                const kpiScore = calculateComplaintKPIScore(storeData.total_weighted_complaints, storeData.avg_cu_per_day);
+
+                return (
+                  <Card key={store.id} className="p-6">
+                    <h3 className="font-medium text-lg mb-4">{store.name} - {store.city}</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-500">Total Complaints</p>
+                        <p className="text-xl font-medium">{storeData.total_weighted_complaints}</p>
+                      </div>
+
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-500">Average CU per Day</p>
+                        <p className="text-xl font-medium">{storeData.avg_cu_per_day}</p>
+                      </div>
+
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-500">KPI Score</p>
+                        <p className={`text-xl font-medium ${
+                          kpiScore >= 3 ? 'text-green-600' :
+                          kpiScore >= 2 ? 'text-yellow-600' :
+                          'text-red-600'
+                        }`}>
+                          {kpiScore}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+
+          {activeTab === 'audit' && (
+            <div className="grid grid-cols-1 gap-4">
+              {selectedStores.map(store => {
+                const storeData = espData.find(data => data.store_name === store.name);
+                if (!storeData) {
+                  return (
+                    <Card key={store.id} className="p-6">
+                      <h3 className="font-medium text-lg mb-4">{store.name} - {store.city}</h3>
+                      <p className="text-gray-500">No ESP data available for this store and period.</p>
+                    </Card>
+                  );
+                }
+
+                return (
+                  <Card key={store.id} className="p-6">
+                    <h3 className="font-medium text-lg mb-4">{store.name} - {store.city}</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-500">Total Score</p>
+                        <p className="text-xl font-medium">{storeData.total_score}</p>
+                      </div>
+
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-500">Final Score</p>
+                        <p className="text-xl font-medium">{storeData.final_score}</p>
+                      </div>
+
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-500">KPI Score</p>
+                        <p className="text-xl font-medium">{storeData.kpi_score}</p>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+
+          {activeTab === 'sanction' && (
+            <div className="grid grid-cols-1 gap-4">
+              {selectedStores.map(store => (
+                <SanctionKPI key={store.id} store={store} selectedMonth={selectedMonth} selectedYear={selectedYear} />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default StorePerformance;
