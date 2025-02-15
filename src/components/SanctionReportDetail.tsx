@@ -18,7 +18,7 @@ const SanctionReportDetail = () => {
       const { data, error } = await supabase
         .from('employee_sanctions_report')
         .select('*')
-        .eq('id', id)
+        .eq('id', parseInt(id || '0'))
         .single();
 
       if (error) throw error;
