@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Store } from "./types";
@@ -24,7 +25,7 @@ export const StorePerformance = ({
           <TabsTrigger value="operational">Operational</TabsTrigger>
           <TabsTrigger value="financial">Financial</TabsTrigger>
           <TabsTrigger value="complaint">Complaint</TabsTrigger>
-          <TabsTrigger value="sanction">Sanksi</TabsTrigger>
+          <TabsTrigger value="sanction">Sanction Performance</TabsTrigger>
           <TabsTrigger value="audit">Audit</TabsTrigger>
         </TabsList>
         <TabsContent value="operational">
@@ -64,4 +65,4 @@ export const StorePerformance = ({
       </Tabs>
     </Card>
   );
-}; 
+};

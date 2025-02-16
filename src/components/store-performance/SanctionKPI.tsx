@@ -1,37 +1,16 @@
+
 import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Store } from "./types";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { format } from "date-fns";
+import { AlertCircle, Users } from "lucide-react";
 
 interface SanctionKPIProps {
   selectedStores: Store[];
   selectedMonth: number;
   selectedYear: number;
-}
-
-interface SanctionKPI {
-  id: number;
-  store_id: number;
-  store_name: string;
-  store_city: string;
-  total_employees: number;
-  active_peringatan: number;
-  active_sp1: number;
-  active_sp2: number;
-  kpi_score: number;
-}
-
-interface ActiveSanction {
-  id: number;
-  employee_name: string;
-  sanction_type: string;
-  sanction_date: string;
-  violation_details: string;
-  submitted_by: string;
-  store_id: number;
-  is_active: boolean;
 }
 
 export const SanctionKPI = ({ selectedStores, selectedMonth, selectedYear }: SanctionKPIProps) => {
@@ -46,7 +25,7 @@ export const SanctionKPI = ({ selectedStores, selectedMonth, selectedYear }: San
         .in("store_id", selectedStores.map(s => s.id));
 
       if (error) throw error;
-      return (data || []) as SanctionKPI[];
+      return data;
     },
   });
 
@@ -63,101 +42,100 @@ export const SanctionKPI = ({ selectedStores, selectedMonth, selectedYear }: San
         .order("sanction_date", { ascending: false });
 
       if (error) throw error;
-      return (data || []) as ActiveSanction[];
+      return data;
     },
   });
 
-  const calculateSanctionKPI = (record: SanctionKPI) => {
-    const peringatanWeight = record.active_peringatan * 0.5;
-    const sp1Weight = record.active_sp1 * 1;
-    const sp2Weight = record.active_sp2 * 2;
-    
-    const totalWeight = peringatanWeight + sp1Weight + sp2Weight;
-    const maxWeight = record.total_employees * 2;
-    
-    const kpiScore = 4 * (1 - totalWeight / maxWeight);
-    return Math.max(0, Math.min(4, kpiScore));
-  };
-
-  const getSanctionColor = (type: string) => {
-    switch (type.toLowerCase()) {
-      case 'peringatan':
-        return 'text-yellow-500';
-      case 'sp1':
-        return 'text-orange-500';
-      case 'sp2':
-        return 'text-red-500';
-      default:
-        return 'text-gray-500';
-    }
-  };
-
   return (
     <div className="space-y-4">
-      <Card className="p-4">
-        <h3 className="font-medium text-lg mb-4">Ringkasan KPI Sanksi</h3>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Store</TableHead>
-              <TableHead className="text-center">Total Karyawan</TableHead>
-              <TableHead className="text-center">Peringatan</TableHead>
-              <TableHead className="text-center">SP1</TableHead>
-              <TableHead className="text-center">SP2</TableHead>
-              <TableHead className="text-center">KPI Score</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sanctionData?.map((record) => {
-              const kpiScore = calculateSanctionKPI(record);
-              return (
-                <TableRow key={record.id}>
-                  <TableCell className="font-medium">{record.store_name}</TableCell>
-                  <TableCell className="text-center">{record.total_employees}</TableCell>
-                  <TableCell className="text-center text-yellow-500">{record.active_peringatan}</TableCell>
-                  <TableCell className="text-center text-orange-500">{record.active_sp1}</TableCell>
-                  <TableCell className="text-center text-red-500">{record.active_sp2}</TableCell>
-                  <TableCell className={`text-center ${kpiScore >= 3 ? "text-green-600" : "text-red-600"}`}>
-                    {kpiScore.toFixed(2)}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </Card>
+      {selectedStores.map(store => {
+        const storeData = sanctionData?.find(s => s.store_id === store.id);
+        
+        if (!storeData) return null;
 
-      <Card className="p-4">
-        <h3 className="font-medium text-lg mb-4">Detail Sanksi Aktif</h3>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Store</TableHead>
-              <TableHead>Nama Karyawan</TableHead>
-              <TableHead className="text-center">Jenis Sanksi</TableHead>
-              <TableHead className="text-center">Tanggal</TableHead>
-              <TableHead>Detail Pelanggaran</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {activeSanctions?.map((sanction) => (
-              <TableRow key={sanction.id}>
-                <TableCell>{sanctionData?.find(s => s.store_id === sanction.store_id)?.store_name}</TableCell>
-                <TableCell>{sanction.employee_name}</TableCell>
-                <TableCell className={`text-center ${getSanctionColor(sanction.sanction_type)}`}>
-                  {sanction.sanction_type}
-                </TableCell>
-                <TableCell className="text-center">
-                  {format(new Date(sanction.sanction_date), 'dd/MM/yyyy')}
-                </TableCell>
-                <TableCell className="max-w-[300px] truncate" title={sanction.violation_details}>
-                  {sanction.violation_details}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Card>
+        return (
+          <Card key={store.id} className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-medium text-lg">{store.name} - {store.city}</h3>
+              <div className="flex items-center space-x-2">
+                <Users className="h-5 w-5 text-gray-500" />
+                <span className="text-gray-500">{storeData.total_employees} Employees</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-500">Active Warnings</p>
+                <p className="text-xl font-medium text-yellow-600">{storeData.active_peringatan}</p>
+              </div>
+
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-500">Active SP1</p>
+                <p className="text-xl font-medium text-orange-600">{storeData.active_sp1}</p>
+              </div>
+
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-500">Active SP2</p>
+                <p className="text-xl font-medium text-red-600">{storeData.active_sp2}</p>
+              </div>
+
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-500">KPI Score</p>
+                <p className={`text-xl font-medium ${
+                  storeData.kpi_score >= 3 ? 'text-green-600' :
+                  storeData.kpi_score >= 2 ? 'text-yellow-600' :
+                  'text-red-600'
+                }`}>
+                  {storeData.kpi_score.toFixed(2)}
+                </p>
+              </div>
+            </div>
+
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Employee Name</TableHead>
+                  <TableHead>Sanction Type</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Reason</TableHead>
+                  <TableHead>Submitted By</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {activeSanctions?.filter(s => s.store_id === store.id).length ? (
+                  activeSanctions
+                    ?.filter(s => s.store_id === store.id)
+                    .map((sanction) => (
+                      <TableRow key={sanction.id}>
+                        <TableCell className="font-medium">{sanction.employee_name}</TableCell>
+                        <TableCell>
+                          <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                            ${sanction.sanction_type === 'SP2' ? 'bg-red-100 text-red-800' :
+                              sanction.sanction_type === 'SP1' ? 'bg-orange-100 text-orange-800' :
+                              'bg-yellow-100 text-yellow-800'}`}>
+                            {sanction.sanction_type}
+                          </div>
+                        </TableCell>
+                        <TableCell>{format(new Date(sanction.sanction_date), 'dd MMM yyyy')}</TableCell>
+                        <TableCell>{sanction.violation_details}</TableCell>
+                        <TableCell>{sanction.submitted_by}</TableCell>
+                      </TableRow>
+                    ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-4">
+                      <div className="flex items-center justify-center text-gray-500">
+                        <AlertCircle className="h-4 w-4 mr-2" />
+                        No active sanctions
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </Card>
+        );
+      })}
     </div>
   );
 };
