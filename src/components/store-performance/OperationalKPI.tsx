@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { LineChart } from "@/components/charts/LineChart";
 import { Store, EvaluationRecord, ChartDataPoint } from "./types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { format, startOfMonth, endOfMonth } from "date-fns";
+import { format } from "date-fns";
 
 interface OperationalKPIProps {
   selectedStores: Store[];
@@ -13,9 +13,6 @@ interface OperationalKPIProps {
 }
 
 export const OperationalKPI = ({ selectedStores, selectedMonth, selectedYear }: OperationalKPIProps) => {
-  const startDate = startOfMonth(new Date(selectedYear, selectedMonth - 1));
-  const endDate = endOfMonth(new Date(selectedYear, selectedMonth - 1));
-
   const champsQueryKey = ["champsData", selectedMonth, selectedYear];
   const cleanlinessQueryKey = ["cleanlinessData", selectedMonth, selectedYear];
 
@@ -29,8 +26,9 @@ export const OperationalKPI = ({ selectedStores, selectedMonth, selectedYear }: 
           "store_name",
           selectedStores.map((store) => store.name)
         )
-        .gte('evaluation_date', startDate.toISOString().split('T')[0])
-        .lte('evaluation_date', endDate.toISOString().split('T')[0]);
+        .filter('evaluation_date', 'in', 
+          `(SELECT evaluation_date FROM filter_evaluation_by_month_year(${selectedMonth}, ${selectedYear}))`
+        );
 
       if (error) throw error;
       return data as EvaluationRecord[];
@@ -48,8 +46,9 @@ export const OperationalKPI = ({ selectedStores, selectedMonth, selectedYear }: 
           "store_name",
           selectedStores.map((store) => store.name)
         )
-        .gte('evaluation_date', startDate.toISOString().split('T')[0])
-        .lte('evaluation_date', endDate.toISOString().split('T')[0]);
+        .filter('evaluation_date', 'in', 
+          `(SELECT evaluation_date FROM filter_evaluation_by_month_year(${selectedMonth}, ${selectedYear}))`
+        );
 
       if (error) throw error;
       return data as EvaluationRecord[];

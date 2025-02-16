@@ -1,10 +1,8 @@
-
 import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Store, FinancialRecord } from "./types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { startOfMonth, endOfMonth } from "date-fns";
 
 interface FinancialKPIProps {
   selectedStores: Store[];
@@ -13,9 +11,6 @@ interface FinancialKPIProps {
 }
 
 export const FinancialKPI = ({ selectedStores, selectedMonth, selectedYear }: FinancialKPIProps) => {
-  const startDate = startOfMonth(new Date(selectedYear, selectedMonth - 1));
-  const endDate = endOfMonth(new Date(selectedYear, selectedMonth - 1));
-
   const queryKey = ["financialData", selectedMonth, selectedYear];
 
   const { data: financialData } = useQuery({
@@ -28,8 +23,9 @@ export const FinancialKPI = ({ selectedStores, selectedMonth, selectedYear }: Fi
           "store_name",
           selectedStores.map((store) => store.name)
         )
-        .gte('input_date', startDate.toISOString().split('T')[0])
-        .lte('input_date', endDate.toISOString().split('T')[0]);
+        .filter('input_date', 'in', 
+          `(SELECT evaluation_date FROM filter_evaluation_by_month_year(${selectedMonth}, ${selectedYear}))`
+        );
 
       if (error) throw error;
       return data as FinancialRecord[];

@@ -1143,7 +1143,17 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      filter_evaluation_by_month_year: {
+        Args: {
+          target_month: number
+          target_year: number
+        }
+        Returns: {
+          evaluation_date: string
+          month: number
+          year: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
