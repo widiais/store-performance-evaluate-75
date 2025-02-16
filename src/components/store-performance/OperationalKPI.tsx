@@ -13,8 +13,11 @@ interface OperationalKPIProps {
 }
 
 export const OperationalKPI = ({ selectedStores, selectedMonth, selectedYear }: OperationalKPIProps) => {
+  const champsQueryKey = ["champsData", selectedMonth, selectedYear];
+  const cleanlinessQueryKey = ["cleanlinessData", selectedMonth, selectedYear];
+
   const { data: performanceData } = useQuery({
-    queryKey: ["champsData", selectedStores.map(s => s.id), selectedMonth, selectedYear],
+    queryKey: champsQueryKey,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("champs_evaluation_report")
@@ -29,10 +32,11 @@ export const OperationalKPI = ({ selectedStores, selectedMonth, selectedYear }: 
       if (error) throw error;
       return data as EvaluationRecord[];
     },
+    enabled: selectedStores.length > 0
   });
 
   const { data: cleanlinessData } = useQuery({
-    queryKey: ["cleanlinessData", selectedStores.map(s => s.id), selectedMonth, selectedYear],
+    queryKey: cleanlinessQueryKey,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cleanliness_evaluation_report")
@@ -47,6 +51,7 @@ export const OperationalKPI = ({ selectedStores, selectedMonth, selectedYear }: 
       if (error) throw error;
       return data as EvaluationRecord[];
     },
+    enabled: selectedStores.length > 0
   });
 
   const formatChartData = (data: EvaluationRecord[]): ChartDataPoint[] => {

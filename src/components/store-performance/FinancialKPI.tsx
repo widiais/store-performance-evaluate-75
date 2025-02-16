@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Store, FinancialRecord } from "./types";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface FinancialKPIProps {
   selectedStores: Store[];
@@ -10,23 +11,34 @@ interface FinancialKPIProps {
 }
 
 export const FinancialKPI = ({ selectedStores, selectedMonth, selectedYear }: FinancialKPIProps) => {
+  const queryKey = ["financialData", selectedMonth, selectedYear];
+
   const { data: financialData } = useQuery({
-    queryKey: ["financialData", selectedStores, selectedMonth, selectedYear],
+    queryKey,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("financial_records_report")
         .select("*")
         .in(
-          "store_id",
-          selectedStores.map((store) => store.id)
+          "store_name",
+          selectedStores.map((store) => store.name)
         )
-        .eq("month", selectedMonth)
-        .eq("year", selectedYear);
+        .eq("EXTRACT(MONTH FROM input_date)::integer", selectedMonth)
+        .eq("EXTRACT(YEAR FROM input_date)::integer", selectedYear);
 
       if (error) throw error;
       return data as FinancialRecord[];
     },
+    enabled: selectedStores.length > 0
   });
+
+  if (!financialData) {
+    return (
+      <Card className="p-4">
+        <p className="text-center text-gray-500">No financial data available</p>
+      </Card>
+    );
+  }
 
   const calculateKPIs = (record: FinancialRecord) => {
     const salesKPI = record.total_sales / record.target_sales;
@@ -46,41 +58,41 @@ export const FinancialKPI = ({ selectedStores, selectedMonth, selectedYear }: Fi
     <div className="grid grid-cols-2 gap-4">
       <Card className="p-4 h-[600px]">
         <div className="overflow-auto" style={{ maxHeight: "550px" }}>
-          <table className="w-full">
-            <thead>
-              <tr>
-                <th>Store</th>
-                <th>Sales KPI</th>
-                <th>COGS KPI</th>
-                <th>OPEX KPI</th>
-                <th>Productivity KPI</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableHeader>Store</TableHeader>
+                <TableHeader>Sales KPI</TableHeader>
+                <TableHeader>COGS KPI</TableHeader>
+                <TableHeader>OPEX KPI</TableHeader>
+                <TableHeader>Productivity KPI</TableHeader>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {financialData?.map((record) => {
                 const kpis = calculateKPIs(record);
                 return (
-                  <tr key={record.id}>
-                    <td>{record.store_name}</td>
-                    <td className={kpis.salesKPI >= 1 ? "text-green-500" : "text-red-500"}>
+                  <TableRow key={record.id}>
+                    <TableCell>{record.store_name}</TableCell>
+                    <TableCell className={kpis.salesKPI >= 1 ? "text-green-500" : "text-red-500"}>
                       {kpis.salesKPI}
-                    </td>
-                    <td className={kpis.cogsKPI >= 1 ? "text-green-500" : "text-red-500"}>
+                    </TableCell>
+                    <TableCell className={kpis.cogsKPI >= 1 ? "text-green-500" : "text-red-500"}>
                       {kpis.cogsKPI}
-                    </td>
-                    <td className={kpis.opexKPI <= 1 ? "text-green-500" : "text-red-500"}>
+                    </TableCell>
+                    <TableCell className={kpis.opexKPI <= 1 ? "text-green-500" : "text-red-500"}>
                       {kpis.opexKPI}
-                    </td>
-                    <td className={kpis.productivityKPI >= 1 ? "text-green-500" : "text-red-500"}>
+                    </TableCell>
+                    <TableCell className={kpis.productivityKPI >= 1 ? "text-green-500" : "text-red-500"}>
                       {kpis.productivityKPI}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </Card>
     </div>
   );
-}; 
+};

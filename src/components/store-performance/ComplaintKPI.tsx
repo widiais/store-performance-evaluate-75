@@ -12,8 +12,10 @@ interface ComplaintKPIProps {
 }
 
 export const ComplaintKPI = ({ selectedStores, selectedMonth, selectedYear }: ComplaintKPIProps) => {
-  const { data: complaintData } = useQuery<ComplaintRecord[]>({
-    queryKey: ["complaintData", selectedMonth, selectedYear, selectedStores.map(s => s.id)],
+  const queryKey = ["complaintData", selectedMonth, selectedYear];
+  
+  const { data: complaintData } = useQuery({
+    queryKey,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("complaint_records_report")
@@ -26,7 +28,7 @@ export const ComplaintKPI = ({ selectedStores, selectedMonth, selectedYear }: Co
         .eq("EXTRACT(YEAR FROM input_date)::integer", selectedYear);
 
       if (error) throw error;
-      return data;
+      return data as ComplaintRecord[];
     },
     enabled: selectedStores.length > 0
   });
