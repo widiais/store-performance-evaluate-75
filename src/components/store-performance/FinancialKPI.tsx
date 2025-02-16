@@ -17,6 +17,7 @@ export const FinancialKPI = ({ selectedStores, selectedMonth, selectedYear }: Fi
   const { data: financialData } = useQuery({
     queryKey,
     queryFn: async () => {
+      // First get filtered dates
       const { data: filteredDates, error: dateError } = await supabase.rpc('filter_evaluation_by_month_year', {
         target_month: selectedMonth,
         target_year: selectedYear
@@ -24,7 +25,8 @@ export const FinancialKPI = ({ selectedStores, selectedMonth, selectedYear }: Fi
 
       if (dateError) throw dateError;
       if (!filteredDates?.length) return [];
-      
+
+      // Then get financial records for those dates
       const { data, error } = await supabase
         .from("financial_records_report")
         .select("*")

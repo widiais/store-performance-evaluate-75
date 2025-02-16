@@ -17,24 +17,24 @@ export const ComplaintKPI = ({ selectedStores, selectedMonth, selectedYear }: Co
   const { data: complaintData } = useQuery({
     queryKey,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('filter_evaluation_by_month_year', {
+      // First get filtered dates
+      const { data: filteredDates, error: dateError } = await supabase.rpc('filter_evaluation_by_month_year', {
         target_month: selectedMonth,
         target_year: selectedYear
-      }).then(async ({ data: filteredDates }) => {
-        if (!filteredDates?.length) return [];
-        
-        const { data, error } = await supabase
-          .from("complaint_records_report")
-          .select("*")
-          .in(
-            "store_name",
-            selectedStores.map((store) => store.name)
-          )
-          .in('input_date', filteredDates.map(d => d.evaluation_date));
-
-        if (error) throw error;
-        return data;
       });
+
+      if (dateError) throw dateError;
+      if (!filteredDates?.length) return [];
+
+      // Then get complaint records for those dates
+      const { data, error } = await supabase
+        .from("complaint_records_report")
+        .select("*")
+        .in(
+          "store_name",
+          selectedStores.map((store) => store.name)
+        )
+        .in('input_date', filteredDates.map(d => d.evaluation_date));
 
       if (error) throw error;
       return data as ComplaintRecord[];

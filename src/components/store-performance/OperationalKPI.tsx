@@ -1,10 +1,10 @@
+
 import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { LineChart } from "@/components/charts/LineChart";
 import { Store, EvaluationRecord, ChartDataPoint } from "./types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { format } from "date-fns";
 
 interface OperationalKPIProps {
   selectedStores: Store[];
@@ -16,6 +16,7 @@ export const OperationalKPI = ({ selectedStores, selectedMonth, selectedYear }: 
   const champsQueryKey = ["champsData", selectedMonth, selectedYear];
   const cleanlinessQueryKey = ["cleanlinessData", selectedMonth, selectedYear];
 
+  // Single query to get filtered dates
   const { data: filteredDates } = useQuery({
     queryKey: ['filteredDates', selectedMonth, selectedYear],
     queryFn: async () => {
