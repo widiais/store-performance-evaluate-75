@@ -47,6 +47,30 @@ export interface ComplaintRecord {
   kpi_score: number;
 }
 
+export interface SanctionKPI {
+  store_id: number;
+  store_name: string;
+  store_city: string;
+  total_employees: number;
+  active_peringatan: number;
+  active_sp1: number;
+  active_sp2: number;
+  kpi_score: number;
+}
+
+export interface EspRecord {
+  id: number;
+  store_name: string;
+  store_city: string;
+  evaluation_date: string;
+  total_score: number;
+  final_score: number;
+  kpi_score: number;
+  pic: string;
+  status: string;
+  findings: string[];
+}
+
 export interface ChartDataPoint {
   date: string;
   [key: string]: number | string | null;

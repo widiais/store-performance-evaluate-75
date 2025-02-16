@@ -1,7 +1,9 @@
+
 import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Store, ComplaintRecord } from "./types";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface ComplaintKPIProps {
   selectedStores: Store[];
@@ -10,61 +12,57 @@ interface ComplaintKPIProps {
 }
 
 export const ComplaintKPI = ({ selectedStores, selectedMonth, selectedYear }: ComplaintKPIProps) => {
-  const { data: complaintData } = useQuery({
-    queryKey: ["complaintData", selectedStores, selectedMonth, selectedYear],
+  const { data: complaintData } = useQuery<ComplaintRecord[]>({
+    queryKey: ["complaintData", selectedMonth, selectedYear, selectedStores.map(s => s.id)],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("complaint_records_report")
         .select("*")
         .in(
-          "store_id",
-          selectedStores.map((store) => store.id)
+          "store_name",
+          selectedStores.map((store) => store.name)
         )
-        .eq("month", selectedMonth)
-        .eq("year", selectedYear);
+        .eq("EXTRACT(MONTH FROM input_date)::integer", selectedMonth)
+        .eq("EXTRACT(YEAR FROM input_date)::integer", selectedYear);
 
       if (error) throw error;
-      return data as ComplaintRecord[];
+      return data;
     },
+    enabled: selectedStores.length > 0
   });
 
-  const calculateComplaintKPI = (record: ComplaintRecord) => {
-    // KPI Score calculation based on weighted complaints and average customers
-    const kpiScore = 4 - (record.total_weighted_complaints / record.avg_cu_per_day) * 100;
-    return Math.max(0, Math.min(4, kpiScore));
-  };
+  if (!complaintData) {
+    return (
+      <Card className="p-4">
+        <p className="text-center text-gray-500">No complaint data available</p>
+      </Card>
+    );
+  }
 
   return (
-    <div className="grid grid-cols-2 gap-4">
-      <Card className="p-4 h-[600px]">
-        <div className="overflow-auto" style={{ maxHeight: "550px" }}>
-          <table className="w-full">
-            <thead>
-              <tr>
-                <th>Store</th>
-                <th>Total Weighted Complaints</th>
-                <th>Avg. Customers/Day</th>
-                <th>KPI Score</th>
-              </tr>
-            </thead>
-            <tbody>
-              {complaintData?.map((record) => {
-                const kpiScore = calculateComplaintKPI(record);
-                return (
-                  <tr key={record.id}>
-                    <td>{record.store_name}</td>
-                    <td className="text-red-500">{record.total_weighted_complaints}</td>
-                    <td>{record.avg_cu_per_day}</td>
-                    <td className={kpiScore >= 3 ? "text-green-500" : "text-red-500"}>
-                      {kpiScore.toFixed(2)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <Card className="p-4">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Store</TableHead>
+              <TableHead>Total Complaints</TableHead>
+              <TableHead>Avg. CU/Day</TableHead>
+              <TableHead>KPI Score</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {complaintData.map((record) => (
+              <TableRow key={record.id}>
+                <TableCell>{record.store_name}</TableCell>
+                <TableCell>{record.total_weighted_complaints}</TableCell>
+                <TableCell>{record.avg_cu_per_day}</TableCell>
+                <TableCell>{record.kpi_score}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </Card>
     </div>
   );
-}; 
+};
