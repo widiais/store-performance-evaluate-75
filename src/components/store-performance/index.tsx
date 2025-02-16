@@ -9,8 +9,8 @@ import { SanctionKPI } from "./SanctionKPI";
 
 interface StorePerformanceProps {
   selectedStores: Store[];
-  selectedMonth: number;
-  selectedYear: number;
+  selectedMonth: number; // Changed from string to number
+  selectedYear: number; // Changed from string to number
 }
 
 export const StorePerformance = ({
@@ -57,7 +57,6 @@ export const StorePerformance = ({
           />
         </TabsContent>
         <TabsContent value="audit">
-          {/* Audit content will be added later */}
           <div className="p-4 text-center text-gray-500">
             Audit content will be added soon
           </div>

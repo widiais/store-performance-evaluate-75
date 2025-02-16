@@ -2,7 +2,9 @@ import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { LineChart } from "@/components/charts/LineChart";
-import { Store, ChartDataPoint, EvaluationRecord } from "./types";
+import { Store, EvaluationRecord, ChartDataPoint } from "./types";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { format } from "date-fns";
 
 interface OperationalKPIProps {
   selectedStores: Store[];
@@ -12,17 +14,35 @@ interface OperationalKPIProps {
 
 export const OperationalKPI = ({ selectedStores, selectedMonth, selectedYear }: OperationalKPIProps) => {
   const { data: performanceData } = useQuery({
-    queryKey: ["performanceData", selectedStores, selectedMonth, selectedYear],
+    queryKey: ["champsData", selectedStores.map(s => s.id), selectedMonth, selectedYear],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("performance_records_report")
+        .from("champs_evaluation_report")
         .select("*")
         .in(
-          "store_id",
-          selectedStores.map((store) => store.id)
+          "store_name",
+          selectedStores.map((store) => store.name)
         )
-        .eq("month", selectedMonth)
-        .eq("year", selectedYear);
+        .eq("EXTRACT(MONTH FROM evaluation_date)::integer", selectedMonth)
+        .eq("EXTRACT(YEAR FROM evaluation_date)::integer", selectedYear);
+
+      if (error) throw error;
+      return data as EvaluationRecord[];
+    },
+  });
+
+  const { data: cleanlinessData } = useQuery({
+    queryKey: ["cleanlinessData", selectedStores.map(s => s.id), selectedMonth, selectedYear],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cleanliness_evaluation_report")
+        .select("*")
+        .in(
+          "store_name",
+          selectedStores.map((store) => store.name)
+        )
+        .eq("EXTRACT(MONTH FROM evaluation_date)::integer", selectedMonth)
+        .eq("EXTRACT(YEAR FROM evaluation_date)::integer", selectedYear);
 
       if (error) throw error;
       return data as EvaluationRecord[];
@@ -60,7 +80,7 @@ export const OperationalKPI = ({ selectedStores, selectedMonth, selectedYear }: 
   const chartData = performanceData ? formatChartData(performanceData) : [];
 
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <Card className="p-4 h-[600px]">
         <div className="h-[300px]">
           <LineChart
@@ -112,4 +132,4 @@ export const OperationalKPI = ({ selectedStores, selectedMonth, selectedYear }: 
       </Card>
     </div>
   );
-}; 
+};
