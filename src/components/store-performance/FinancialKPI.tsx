@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,8 +45,8 @@ export const FinancialKPI = ({ selectedStores, selectedMonth, selectedYear }: Fi
   const calculateKPIs = (record: FinancialRecord) => {
     const salesKPI = record.total_sales / record.target_sales;
     const cogsKPI = record.cogs_target / record.cogs_achieved;
-    const opexKPI = record.total_opex / (record.total_sales * 0.3); // Assuming 30% target
-    const productivityKPI = record.total_sales / (record.total_crew * 30000000); // Assuming 30M per crew target
+    const opexKPI = record.total_opex / (record.total_sales * 0.3);
+    const productivityKPI = record.total_sales / (record.total_crew * 30000000);
 
     return {
       salesKPI: Number(salesKPI.toFixed(2)),
@@ -60,15 +61,15 @@ export const FinancialKPI = ({ selectedStores, selectedMonth, selectedYear }: Fi
       <Card className="p-4 h-[600px]">
         <div className="overflow-auto" style={{ maxHeight: "550px" }}>
           <Table>
-            <TableHead>
+            <TableHeader>
               <TableRow>
-                <TableHeader>Store</TableHeader>
-                <TableHeader>Sales KPI</TableHeader>
-                <TableHeader>COGS KPI</TableHeader>
-                <TableHeader>OPEX KPI</TableHeader>
-                <TableHeader>Productivity KPI</TableHeader>
+                <TableHead>Store</TableHead>
+                <TableHead>Sales KPI</TableHead>
+                <TableHead>COGS KPI</TableHead>
+                <TableHead>OPEX KPI</TableHead>
+                <TableHead>Productivity KPI</TableHead>
               </TableRow>
-            </TableHead>
+            </TableHeader>
             <TableBody>
               {financialData?.map((record) => {
                 const kpis = calculateKPIs(record);
