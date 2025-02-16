@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { LineChart } from "@/components/charts/LineChart";
 import { Store, EvaluationRecord, ChartDataPoint } from "./types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { format } from "date-fns";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface OperationalKPIProps {
   selectedStores: Store[];
@@ -16,7 +18,6 @@ export const OperationalKPI = ({ selectedStores, selectedMonth, selectedYear }: 
   const champsQueryKey = ["champsData", selectedMonth, selectedYear];
   const cleanlinessQueryKey = ["cleanlinessData", selectedMonth, selectedYear];
 
-  // Single query to get filtered dates
   const { data: filteredDates } = useQuery({
     queryKey: ['filteredDates', selectedMonth, selectedYear],
     queryFn: async () => {
@@ -49,28 +50,8 @@ export const OperationalKPI = ({ selectedStores, selectedMonth, selectedYear }: 
     enabled: selectedStores.length > 0 && !!filteredDates?.length
   });
 
-  const { data: cleanlinessData } = useQuery({
-    queryKey: cleanlinessQueryKey,
-    queryFn: async () => {
-      if (!filteredDates?.length) return [];
-      
-      const { data, error } = await supabase
-        .from("cleanliness_evaluation_report")
-        .select("*")
-        .in(
-          "store_name",
-          selectedStores.map((store) => store.name)
-        )
-        .in('evaluation_date', filteredDates.map(d => d.evaluation_date));
-
-      if (error) throw error;
-      return data as EvaluationRecord[];
-    },
-    enabled: selectedStores.length > 0 && !!filteredDates?.length
-  });
-
   const formatChartData = (data: EvaluationRecord[]): ChartDataPoint[] => {
-    const groupedData = data.reduce((acc, record) => {
+    const groupedData = data?.reduce((acc, record) => {
       const date = record.evaluation_date;
       if (!acc[date]) {
         acc[date] = {
@@ -80,7 +61,7 @@ export const OperationalKPI = ({ selectedStores, selectedMonth, selectedYear }: 
       }
       acc[date].records.push(record);
       return acc;
-    }, {} as Record<string, { records: EvaluationRecord[]; averages: Record<string, number> }>);
+    }, {} as Record<string, { records: EvaluationRecord[]; averages: Record<string, number> }>) || {};
 
     return Object.entries(groupedData).map(([date, { records }]) => {
       const point: ChartDataPoint = { date };
@@ -98,57 +79,74 @@ export const OperationalKPI = ({ selectedStores, selectedMonth, selectedYear }: 
   };
 
   const chartData = performanceData ? formatChartData(performanceData) : [];
+  const averageScore = performanceData?.length 
+    ? (performanceData.reduce((sum, record) => sum + record.total_score, 0) / performanceData.length).toFixed(2)
+    : '0';
+  const totalEvaluations = performanceData?.length || 0;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <Card className="p-4 h-[600px]">
-        <div className="h-[300px]">
-          <LineChart
-            data={chartData}
-            xField="date"
-            yField={selectedStores.map((store) => store.name)}
-            title="Performance Trend"
-          />
+      {/* Left Column - KPI Chart */}
+      <Card className="p-6">
+        <div className="space-y-6">
+          {/* KPI Score Box */}
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <h3 className="font-medium text-lg mb-2">KPI Score</h3>
+            <div className="text-2xl font-bold">{averageScore}</div>
+          </div>
+
+          {/* Date Taken Box */}
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <h3 className="font-medium text-lg mb-2">Evaluation Dates</h3>
+            <div className="text-sm">
+              {performanceData?.map(record => format(new Date(record.evaluation_date), 'dd/MM/yy')).join(', ')}
+            </div>
+          </div>
+
+          {/* Average KPI Box */}
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <h3 className="font-medium text-lg mb-2">Average KPI</h3>
+            <div>Store Average: {averageScore}</div>
+            <div>Total Evaluations: {totalEvaluations}</div>
+          </div>
+
+          {/* Chart */}
+          <div className="h-[200px] mt-4">
+            <LineChart
+              data={chartData}
+              xField="date"
+              yField={selectedStores.map((store) => store.name)}
+              title="Performance Trend"
+            />
+          </div>
         </div>
-        <div className="mt-4 overflow-auto" style={{ maxHeight: "250px" }}>
-          <table className="w-full">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Store</th>
-                <th>Score</th>
-              </tr>
-            </thead>
-            <tbody>
+      </Card>
+
+      {/* Right Column - Detailed Data */}
+      <Card className="p-6">
+        <h3 className="font-medium text-lg mb-4">Performance Details</h3>
+        <ScrollArea className="h-[500px] w-full">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Store</TableHead>
+                <TableHead>KPI Score</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {performanceData?.map((record) => (
-                <tr key={record.id}>
-                  <td>{record.evaluation_date}</td>
-                  <td>{record.store_name}</td>
-                  <td className={record.total_score >= 3 ? "text-green-500" : "text-red-500"}>
+                <TableRow key={record.id}>
+                  <TableCell>{format(new Date(record.evaluation_date), 'dd/MM/yy')}</TableCell>
+                  <TableCell>{record.store_name}</TableCell>
+                  <TableCell className={record.total_score >= 3 ? "text-green-500 font-medium" : "text-red-500 font-medium"}>
                     {record.total_score.toFixed(2)}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="mt-4 border-t pt-4">
-          <h3 className="font-semibold mb-2">Average Scores</h3>
-          {selectedStores.map((store) => {
-            const storeRecords = performanceData?.filter((r) => r.store_name === store.name) || [];
-            const avgScore = storeRecords.length
-              ? storeRecords.reduce((sum, r) => sum + r.total_score, 0) / storeRecords.length
-              : 0;
-            return (
-              <div key={store.id} className="flex justify-between">
-                <span>{store.name}</span>
-                <span className={avgScore >= 3 ? "text-green-500" : "text-red-500"}>
-                  {avgScore.toFixed(2)}
-                </span>
-              </div>
-            );
-          })}
-        </div>
+            </TableBody>
+          </Table>
+        </ScrollArea>
       </Card>
     </div>
   );
