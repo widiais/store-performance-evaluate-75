@@ -44,6 +44,7 @@ export interface ComplaintRecord {
 }
 
 export interface SanctionKPI {
+  id: number;
   store_id: number;
   store_name: string;
   store_city: string;
@@ -76,4 +77,9 @@ export interface ActiveSanction {
   submitted_by: string;
   store_id: number;
   is_active: boolean;
+}
+
+export interface ChartDataPoint {
+  date: string;
+  [key: string]: number | string | null;
 }

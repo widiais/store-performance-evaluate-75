@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
+import {
   LineChart, 
   Line, 
   XAxis, 
@@ -268,7 +268,7 @@ const StorePerformance = () => {
       const isSelected = prev.some(s => s.id === store.id);
       if (isSelected) {
         return prev.filter(s => s.id !== store.id);
-      } else {
+    } else {
         if (prev.length >= 10) {
           alert('Maksimal 10 store dapat dipilih');
           return prev;
@@ -379,8 +379,8 @@ const StorePerformance = () => {
                 )}
               </PDFDownloadLink>
             )}
-          </div>
-        </div>
+                </div>
+            </div>
 
         <Card className="p-6">
           <StoreSelect
@@ -388,7 +388,7 @@ const StorePerformance = () => {
             onStoreSelect={handleStoreSelect}
             onRemoveStore={removeStore}
           />
-        </Card>
+          </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -673,30 +673,30 @@ const StorePerformance = () => {
                   <div className="flex-1" style={{ height: '300px' }}>
                     <ResponsiveContainer>
                       <LineChart data={productQualityChartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
                           dataKey="date" 
                           tickFormatter={(value) => format(new Date(value), 'dd/MM')}
-                        />
+                    />
                         <YAxis domain={[0, 4]} />
-                        <Tooltip 
+                    <Tooltip 
                           labelFormatter={(value) => format(new Date(value), 'dd/MM/yyyy')}
-                        />
+                    />
                         <Legend />
                         {selectedStores.map((store, index) => (
-                          <Line
+                    <Line 
                             key={store.id}
-                            type="monotone"
+                      type="monotone" 
                             dataKey={store.name}
                             stroke={lineColors[index % lineColors.length]}
-                            strokeWidth={2}
+                      strokeWidth={2}
                             dot={{ r: 4 }}
                             activeDot={{ r: 6 }}
-                          />
+                    />
                         ))}
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
                   <div className="flex-1 flex flex-col">
                     <div className="overflow-auto" style={{ maxHeight: '250px' }}>
                       <Table>
@@ -788,15 +788,15 @@ const StorePerformance = () => {
                           </TableCell>
                           <TableCell className={productivityKPI >= 3 ? 'text-green-600' : 'text-red-600'}>
                             {productivityKPI.toFixed(2)}
-                          </TableCell>
-                        </TableRow>
+                        </TableCell>
+                      </TableRow>
                       );
                     })}
                   </TableBody>
                 </Table>
               </Card>
             </div>
-          </div>
+              </div>
         )}
 
         {activeTab === 'complaint' && (
