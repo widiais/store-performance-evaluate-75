@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,9 +16,23 @@ export const OperationalKPI = ({ selectedStores, selectedMonth, selectedYear }: 
   const champsQueryKey = ["champsData", selectedMonth, selectedYear];
   const cleanlinessQueryKey = ["cleanlinessData", selectedMonth, selectedYear];
 
+  const { data: filteredDates } = useQuery({
+    queryKey: ['filteredDates', selectedMonth, selectedYear],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('filter_evaluation_by_month_year', {
+        target_month: selectedMonth,
+        target_year: selectedYear
+      });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   const { data: performanceData } = useQuery({
     queryKey: champsQueryKey,
     queryFn: async () => {
+      if (!filteredDates?.length) return [];
+      
       const { data, error } = await supabase
         .from("champs_evaluation_report")
         .select("*")
@@ -27,19 +40,19 @@ export const OperationalKPI = ({ selectedStores, selectedMonth, selectedYear }: 
           "store_name",
           selectedStores.map((store) => store.name)
         )
-        .filter('evaluation_date', 'in', 
-          `(SELECT evaluation_date FROM filter_evaluation_by_month_year(${selectedMonth}, ${selectedYear}))`
-        );
+        .in('evaluation_date', filteredDates.map(d => d.evaluation_date));
 
       if (error) throw error;
       return data as EvaluationRecord[];
     },
-    enabled: selectedStores.length > 0
+    enabled: selectedStores.length > 0 && !!filteredDates?.length
   });
 
   const { data: cleanlinessData } = useQuery({
     queryKey: cleanlinessQueryKey,
     queryFn: async () => {
+      if (!filteredDates?.length) return [];
+      
       const { data, error } = await supabase
         .from("cleanliness_evaluation_report")
         .select("*")
@@ -47,14 +60,12 @@ export const OperationalKPI = ({ selectedStores, selectedMonth, selectedYear }: 
           "store_name",
           selectedStores.map((store) => store.name)
         )
-        .filter('evaluation_date', 'in', 
-          `(SELECT evaluation_date FROM filter_evaluation_by_month_year(${selectedMonth}, ${selectedYear}))`
-        );
+        .in('evaluation_date', filteredDates.map(d => d.evaluation_date));
 
       if (error) throw error;
       return data as EvaluationRecord[];
     },
-    enabled: selectedStores.length > 0
+    enabled: selectedStores.length > 0 && !!filteredDates?.length
   });
 
   const formatChartData = (data: EvaluationRecord[]): ChartDataPoint[] => {

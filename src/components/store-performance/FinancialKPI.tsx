@@ -17,6 +17,14 @@ export const FinancialKPI = ({ selectedStores, selectedMonth, selectedYear }: Fi
   const { data: financialData } = useQuery({
     queryKey,
     queryFn: async () => {
+      const { data: filteredDates, error: dateError } = await supabase.rpc('filter_evaluation_by_month_year', {
+        target_month: selectedMonth,
+        target_year: selectedYear
+      });
+
+      if (dateError) throw dateError;
+      if (!filteredDates?.length) return [];
+      
       const { data, error } = await supabase
         .from("financial_records_report")
         .select("*")
@@ -24,9 +32,7 @@ export const FinancialKPI = ({ selectedStores, selectedMonth, selectedYear }: Fi
           "store_name",
           selectedStores.map((store) => store.name)
         )
-        .filter('input_date', 'in', 
-          `(SELECT evaluation_date FROM filter_evaluation_by_month_year(${selectedMonth}, ${selectedYear}))`
-        );
+        .in('input_date', filteredDates.map(d => d.evaluation_date));
 
       if (error) throw error;
       return data as FinancialRecord[];
