@@ -87,14 +87,22 @@ export const StorePerformance = ({
 
   return (
     <Card className="p-4">
-      <Tabs defaultValue="financial" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="financial">Financial</TabsTrigger>
+      <Tabs defaultValue="operational" className="w-full">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="operational">Operational</TabsTrigger>
+          <TabsTrigger value="financial">Finance</TabsTrigger>
           <TabsTrigger value="complaint">Complaint</TabsTrigger>
           <TabsTrigger value="sanction">Sanction</TabsTrigger>
           <TabsTrigger value="audit">Audit</TabsTrigger>
-          <TabsTrigger value="operational">Operational</TabsTrigger>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
         </TabsList>
+        <TabsContent value="operational">
+          <OperationalKPI
+            selectedStores={selectedStores}
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
+          />
+        </TabsContent>
         <TabsContent value="financial">
           <FinancialKPI
             selectedStores={selectedStores}
@@ -123,7 +131,7 @@ export const StorePerformance = ({
             selectedYear={selectedYear}
           />
         </TabsContent>
-        <TabsContent value="operational">
+        <TabsContent value="overview">
           <OperationalKPI
             selectedStores={selectedStores}
             selectedMonth={selectedMonth}
