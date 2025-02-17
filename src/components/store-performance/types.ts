@@ -1,4 +1,3 @@
-
 export interface Store {
   id: number;
   name: string;
@@ -58,7 +57,7 @@ export interface SanctionKPI {
   kpi_score: number;
 }
 
-export interface EspRecord {
+export interface ESPRecord {
   id: number;
   store_name: string;
   store_city: string;

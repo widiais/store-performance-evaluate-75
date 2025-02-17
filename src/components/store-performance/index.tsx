@@ -6,11 +6,12 @@ import { OperationalKPI } from "./OperationalKPI";
 import { FinancialKPI } from "./FinancialKPI";
 import { ComplaintKPI } from "./ComplaintKPI";
 import { SanctionKPI } from "./SanctionKPI";
+import { AuditKPI } from "./AuditKPI";
 
 interface StorePerformanceProps {
   selectedStores: Store[];
-  selectedMonth: number; // Changed from string to number
-  selectedYear: number; // Changed from string to number
+  selectedMonth: number;
+  selectedYear: number;
 }
 
 export const StorePerformance = ({
@@ -57,9 +58,11 @@ export const StorePerformance = ({
           />
         </TabsContent>
         <TabsContent value="audit">
-          <div className="p-4 text-center text-gray-500">
-            Audit content will be added soon
-          </div>
+          <AuditKPI
+            selectedStores={selectedStores}
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
+          />
         </TabsContent>
       </Tabs>
     </Card>
