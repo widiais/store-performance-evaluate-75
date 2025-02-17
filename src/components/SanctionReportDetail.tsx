@@ -7,7 +7,7 @@ import { ArrowLeft, AlertCircle, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from "date-fns";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 const SanctionReportDetail = () => {
   const { id } = useParams();
@@ -20,10 +20,10 @@ const SanctionReportDetail = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('employee_sanctions_report')
-        .select('*, stores!inner(total_employees)')
+        .select('*, stores!inner(total_crew)')
         .eq('id', parseInt(id || '0'))
         .single();
-
+      
       if (error) throw error;
       return data;
     },
@@ -113,10 +113,10 @@ const SanctionReportDetail = () => {
     }
   };
 
-  const totalEmployees = sanction.stores?.total_employees || 0;
+  const totalCrew = sanction.stores?.total_crew || 0;
   const sanctionWeight = getSanctionWeight(sanction.sanction_type);
-  const violationRatio = totalEmployees > 0 ? sanctionWeight / totalEmployees : 0;
-  const maxViolationRatio = 0.5; // 50% of total employees
+  const violationRatio = totalCrew > 0 ? sanctionWeight / totalCrew : 0;
+  const maxViolationRatio = 0.5; // 50% of total crew
   const kpiScore = Math.max(0, (1 - (violationRatio / maxViolationRatio)) * 4);
 
   return (
@@ -193,8 +193,8 @@ const SanctionReportDetail = () => {
                 <h3 className="font-medium text-blue-900 mb-2">KPI Calculation</h3>
                 <div className="space-y-2">
                   <div className="grid grid-cols-2 gap-2">
-                    <p className="text-sm text-blue-700">Total Employees:</p>
-                    <p className="text-sm text-blue-900 font-medium">{totalEmployees}</p>
+                    <p className="text-sm text-blue-700">Total Crew:</p>
+                    <p className="text-sm text-blue-900 font-medium">{totalCrew}</p>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <p className="text-sm text-blue-700">Sanction Weight:</p>
@@ -227,4 +227,3 @@ const SanctionReportDetail = () => {
 };
 
 export default SanctionReportDetail;
-

@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PDFDownloadLink } from '@react-pdf/renderer';
@@ -16,7 +15,7 @@ import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileSpreadsheet, FileText, Trash2 } from "lucide-react";
 import EspPDF from "./EspReportPDF";
-import { useToast } from "@/hooks/use-toast"; // Fixed import
+import { useToast } from "@/hooks/use-toast";
 
 interface Finding {
   id: number;
@@ -30,7 +29,6 @@ const EspReportDetail = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch evaluation details
   const { data: evaluation, isLoading } = useQuery({
     queryKey: ['esp-evaluation', id],
     queryFn: async () => {
@@ -46,7 +44,6 @@ const EspReportDetail = () => {
     enabled: !!id,
   });
 
-  // Fetch findings
   const { data: findings = [], isLoading: isLoadingFindings } = useQuery({
     queryKey: ['esp-findings', id],
     queryFn: async () => {
@@ -96,7 +93,6 @@ const EspReportDetail = () => {
   const handleExcelDownload = () => {
     const workbook = XLSX.utils.book_new();
     
-    // Sheet 1: General Info
     const generalInfo = [
       ['ESP Evaluation Report'],
       [],
@@ -112,7 +108,6 @@ const EspReportDetail = () => {
     const ws1 = XLSX.utils.aoa_to_sheet(generalInfo);
     XLSX.utils.book_append_sheet(workbook, ws1, "General Info");
 
-    // Sheet 2: Findings Detail
     const findingsData = [
       ['Finding', 'Deduction Points']
     ];
@@ -123,7 +118,6 @@ const EspReportDetail = () => {
     const ws2 = XLSX.utils.aoa_to_sheet(findingsData);
     XLSX.utils.book_append_sheet(workbook, ws2, "Findings Detail");
 
-    // Download file
     XLSX.writeFile(workbook, `ESP_Report_${evaluation?.store_name}_${format(new Date(evaluation?.evaluation_date || ''), 'dd-MM-yyyy')}.xlsx`);
   };
 
