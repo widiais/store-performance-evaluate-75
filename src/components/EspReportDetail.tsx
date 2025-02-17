@@ -13,8 +13,10 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileSpreadsheet, FileText } from "lucide-react";
+import { ArrowLeft, FileSpreadsheet, FileText, Trash2 } from "lucide-react";
 import EspPDF from "./EspReportPDF";
+import { useToast, useQueryClient } from "@/components/ui/toast";
+import { useMutation } from "@tanstack/react-query";
 
 interface Finding {
   id: number;
@@ -25,6 +27,8 @@ interface Finding {
 const EspReportDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Fetch evaluation details
   const { data: evaluation, isLoading } = useQuery({
@@ -57,6 +61,37 @@ const EspReportDetail = () => {
     },
     enabled: !!id,
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('esp_evaluations')
+        .delete()
+        .eq('id', parseInt(id || '0'));
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Evaluation deleted",
+        description: "The ESP evaluation has been successfully deleted.",
+      });
+      navigate('/esp-report');
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete evaluation: " + error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDelete = () => {
+    if (window.confirm('Are you sure you want to delete this ESP evaluation?')) {
+      deleteMutation.mutate();
+    }
+  };
 
   const handleExcelDownload = () => {
     const workbook = XLSX.utils.book_new();
@@ -115,14 +150,24 @@ const EspReportDetail = () => {
   return (
     <div className="p-4 sm:p-6 min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto">
-        <Button 
-          variant="outline" 
-          onClick={() => navigate(-1)} 
-          className="mb-4 sm:mb-6 border-gray-200 hover:bg-gray-100 w-full sm:w-auto"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Reports
-        </Button>
+        <div className="flex justify-between items-center mb-4 sm:mb-6">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate(-1)} 
+            className="border-gray-200 hover:bg-gray-100"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Reports
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={handleDelete}
+            className="ml-4"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete Record
+          </Button>
+        </div>
 
         <h2 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6 text-gray-900">
           ESP Evaluation Details
