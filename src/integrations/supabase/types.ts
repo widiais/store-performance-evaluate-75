@@ -24,7 +24,7 @@ export type Database = {
           answer: boolean
           created_at?: string
           evaluation_id?: number | null
-          id?: number
+          id?: never
           question_id?: number | null
           score: number
           status?: string
@@ -34,7 +34,7 @@ export type Database = {
           answer?: boolean
           created_at?: string
           evaluation_id?: number | null
-          id?: number
+          id?: never
           question_id?: number | null
           score?: number
           status?: string
@@ -78,7 +78,7 @@ export type Database = {
         Insert: {
           created_at?: string
           evaluation_date: string
-          id?: number
+          id?: never
           pic: string
           status?: string
           store_id?: number | null
@@ -88,7 +88,7 @@ export type Database = {
         Update: {
           created_at?: string
           evaluation_date?: string
-          id?: number
+          id?: never
           pic?: string
           status?: string
           store_id?: number | null
@@ -129,14 +129,14 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          id?: number
+          id?: never
           points?: number
           question: string
           updated_at?: string
         }
         Update: {
           created_at?: string
-          id?: number
+          id?: never
           points?: number
           question?: string
           updated_at?: string
@@ -158,7 +158,7 @@ export type Database = {
           answer: boolean
           created_at?: string
           evaluation_id?: number | null
-          id?: number
+          id?: never
           question_id?: number | null
           score: number
           status?: string
@@ -168,7 +168,7 @@ export type Database = {
           answer?: boolean
           created_at?: string
           evaluation_id?: number | null
-          id?: number
+          id?: never
           question_id?: number | null
           score?: number
           status?: string
@@ -212,7 +212,7 @@ export type Database = {
         Insert: {
           created_at?: string
           evaluation_date: string
-          id?: number
+          id?: never
           pic: string
           status?: string
           store_id?: number | null
@@ -222,7 +222,7 @@ export type Database = {
         Update: {
           created_at?: string
           evaluation_date?: string
-          id?: number
+          id?: never
           pic?: string
           status?: string
           store_id?: number | null
@@ -263,14 +263,14 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          id?: number
+          id?: never
           points?: number
           question: string
           updated_at?: string
         }
         Update: {
           created_at?: string
-          id?: number
+          id?: never
           points?: number
           question?: string
           updated_at?: string
@@ -383,7 +383,7 @@ export type Database = {
           created_at?: string
           duration_months: number
           employee_name: string
-          id?: number
+          id?: never
           pic: string
           sanction_date: string
           sanction_type: string
@@ -396,7 +396,7 @@ export type Database = {
           created_at?: string
           duration_months?: number
           employee_name?: string
-          id?: number
+          id?: never
           pic?: string
           sanction_date?: string
           sanction_type?: string
@@ -446,7 +446,7 @@ export type Database = {
           created_at?: string
           evaluation_date: string
           final_score?: number
-          id?: number
+          id?: never
           kpi_score?: number
           pic: string
           status?: string
@@ -458,7 +458,7 @@ export type Database = {
           created_at?: string
           evaluation_date?: string
           final_score?: number
-          id?: number
+          id?: never
           kpi_score?: number
           pic?: string
           status?: string
@@ -504,7 +504,7 @@ export type Database = {
           deduction_points?: number
           evaluation_id?: number | null
           finding: string
-          id?: number
+          id?: never
           updated_at?: string
         }
         Update: {
@@ -512,7 +512,7 @@ export type Database = {
           deduction_points?: number
           evaluation_id?: number | null
           finding?: string
-          id?: number
+          id?: never
           updated_at?: string
         }
         Relationships: [
@@ -549,7 +549,7 @@ export type Database = {
           cogs_achieved: number
           created_at?: string
           deleted_at?: string | null
-          id?: number
+          id?: never
           input_date: string
           pic: string
           store_id?: number | null
@@ -561,7 +561,7 @@ export type Database = {
           cogs_achieved?: number
           created_at?: string
           deleted_at?: string | null
-          id?: number
+          id?: never
           input_date?: string
           pic?: string
           store_id?: number | null
@@ -669,7 +669,7 @@ export type Database = {
           answer: boolean
           created_at?: string
           evaluation_id?: number | null
-          id?: number
+          id?: never
           question_id?: number | null
           score: number
           status?: string
@@ -679,7 +679,7 @@ export type Database = {
           answer?: boolean
           created_at?: string
           evaluation_id?: number | null
-          id?: number
+          id?: never
           question_id?: number | null
           score?: number
           status?: string
@@ -723,7 +723,7 @@ export type Database = {
         Insert: {
           created_at?: string
           evaluation_date: string
-          id?: number
+          id?: never
           pic: string
           status?: string
           store_id?: number | null
@@ -733,7 +733,7 @@ export type Database = {
         Update: {
           created_at?: string
           evaluation_date?: string
-          id?: number
+          id?: never
           pic?: string
           status?: string
           store_id?: number | null
@@ -774,14 +774,14 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          id?: number
+          id?: never
           points?: number
           question: string
           updated_at?: string
         }
         Update: {
           created_at?: string
-          id?: number
+          id?: never
           points?: number
           question?: string
           updated_at?: string
@@ -803,7 +803,7 @@ export type Database = {
           answer: boolean
           created_at?: string
           evaluation_id?: number | null
-          id?: number
+          id?: never
           question_id?: number | null
           score: number
           status?: string
@@ -813,7 +813,7 @@ export type Database = {
           answer?: boolean
           created_at?: string
           evaluation_id?: number | null
-          id?: number
+          id?: never
           question_id?: number | null
           score?: number
           status?: string
@@ -857,7 +857,7 @@ export type Database = {
         Insert: {
           created_at?: string
           evaluation_date: string
-          id?: number
+          id?: never
           pic: string
           status?: string
           store_id?: number | null
@@ -867,7 +867,7 @@ export type Database = {
         Update: {
           created_at?: string
           evaluation_date?: string
-          id?: number
+          id?: never
           pic?: string
           status?: string
           store_id?: number | null
@@ -908,14 +908,14 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          id?: number
+          id?: never
           points?: number
           question: string
           updated_at?: string
         }
         Update: {
           created_at?: string
-          id?: number
+          id?: never
           points?: number
           question?: string
           updated_at?: string
@@ -944,7 +944,7 @@ export type Database = {
           city: string
           cogs_target?: number | null
           created_at?: string
-          id?: number
+          id?: never
           name: string
           opex_target?: number | null
           regional?: number | null
@@ -959,7 +959,7 @@ export type Database = {
           city?: string
           cogs_target?: number | null
           created_at?: string
-          id?: number
+          id?: never
           name?: string
           opex_target?: number | null
           regional?: number | null
