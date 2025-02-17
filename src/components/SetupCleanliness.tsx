@@ -56,8 +56,7 @@ const SetupCleanliness = () => {
           .neq('id', -1);
       }
       
-      const questionsToUpsert = questions.map(({ id, question, points }) => ({
-        id,
+      const questionsToUpsert = questions.map(({ question, points }) => ({
         question,
         points,
       }));

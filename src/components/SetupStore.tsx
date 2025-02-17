@@ -51,7 +51,7 @@ const SetupStore = () => {
   });
 
   const addStoreMutation = useMutation({
-    mutationFn: async (newStore: Omit<Store, 'id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (newStore: Omit<Store, 'id'>) => {
       const { data, error } = await supabase
         .from('stores')
         .insert([newStore])
@@ -80,10 +80,11 @@ const SetupStore = () => {
 
   const updateStoreMutation = useMutation({
     mutationFn: async (store: Store) => {
+      const { id, ...storeWithoutId } = store;
       const { data, error } = await supabase
         .from('stores')
-        .update(store)
-        .eq('id', store.id)
+        .update(storeWithoutId)
+        .eq('id', id)
         .select()
         .single();
       
