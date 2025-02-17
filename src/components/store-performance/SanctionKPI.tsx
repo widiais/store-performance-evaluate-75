@@ -30,24 +30,25 @@ const StoreSanctionCard = ({
     },
   });
 
+  // Calculate total sanction score
+  const totalSanctionScore = sanctions.reduce((total, sanction) => {
+    switch (sanction.sanction_type) {
+      case 'Peringatan Tertulis':
+        return total + 1;
+      case 'SP1':
+        return total + 2;
+      case 'SP2':
+        return total + 3;
+      default:
+        return total;
+    }
+  }, 0);
+
   // Calculate KPI score based on crew count
   const calculateKPIScore = () => {
-    if (!sanctions?.length || !store.total_crew) return 0;
+    if (!store.total_crew) return 0;
 
-    const sanctionWeights = sanctions.reduce((total, sanction) => {
-      switch (sanction.sanction_type) {
-        case 'Peringatan Tertulis':
-          return total + 1;
-        case 'SP1':
-          return total + 2;
-        case 'SP2':
-          return total + 3;
-        default:
-          return total;
-      }
-    }, 0);
-    
-    const violationRatio = sanctionWeights / store.total_crew;
+    const violationRatio = totalSanctionScore / store.total_crew;
     const maxViolationRatio = 0.5; // 50% of total crew
     return Math.max(0, (1 - (violationRatio / maxViolationRatio)) * 4);
   };
@@ -66,8 +67,8 @@ const StoreSanctionCard = ({
           </div>
           
           <div className="p-4 bg-gray-50 rounded-lg">
-            <h3 className="font-medium text-lg mb-2">Total Active Sanctions</h3>
-            <div className="text-2xl font-bold">{sanctions?.length || 0}</div>
+            <h3 className="font-medium text-lg mb-2">Total Score</h3>
+            <div className="text-2xl font-bold">{totalSanctionScore}</div>
           </div>
         </div>
 
