@@ -109,31 +109,6 @@ const ComplaintForm = () => {
     if (!file || !stores || !weights) return;
 
     try {
-      // Check for existing records in the selected month/year
-      const inputDate = `${selectedYear}-${selectedMonth}-01`;
-      const { data: existingRecords } = await supabase
-        .from('complaint_records')
-        .select('id')
-        .eq('input_date', inputDate);
-
-      if (existingRecords && existingRecords.length > 0) {
-        const proceed = window.confirm(
-          'Data for this month already exists. Do you want to replace it?'
-        );
-        if (!proceed) {
-          event.target.value = '';
-          return;
-        }
-
-        // Delete existing records for this month
-        const { error: deleteError } = await supabase
-          .from('complaint_records')
-          .delete()
-          .eq('input_date', inputDate);
-
-        if (deleteError) throw deleteError;
-      }
-
       const reader = new FileReader();
       reader.onload = async (e) => {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
@@ -141,7 +116,6 @@ const ComplaintForm = () => {
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-        // Validate data
         const isValid = jsonData.every((row: any) => {
           return (
             row.store_name &&
@@ -162,29 +136,45 @@ const ComplaintForm = () => {
           return;
         }
 
-        const records = jsonData.map((row: any) => {
+        const inputDate = `${selectedYear}-${selectedMonth}-01`;
+
+        for (const row of jsonData) {
           const store = stores.find(s => s.name === row.store_name);
-          if (!store) throw new Error(`Store not found: ${row.store_name}`);
+          if (!store) continue;
+
+          const { data: existingRecords } = await supabase
+            .from('complaint_records')
+            .select('id')
+            .eq('store_id', store.id)
+            .eq('input_date', inputDate);
+
+          if (existingRecords && existingRecords.length > 0) {
+            const { error: deleteError } = await supabase
+              .from('complaint_records')
+              .delete()
+              .eq('store_id', store.id)
+              .eq('input_date', inputDate);
+
+            if (deleteError) throw deleteError;
+          }
 
           const total_weighted_complaints = calculateTotalComplaints(row, weights);
 
-          return {
-            store_id: store.id,
-            input_date: inputDate,
-            whatsapp_count: Number(row.whatsapp_count),
-            social_media_count: Number(row.social_media_count),
-            gmaps_count: Number(row.gmaps_count),
-            online_order_count: Number(row.online_order_count),
-            late_handling_count: Number(row.late_handling_count),
-            total_weighted_complaints,
-          };
-        });
+          const { error: insertError } = await supabase
+            .from('complaint_records')
+            .insert({
+              store_id: store.id,
+              input_date: inputDate,
+              whatsapp_count: Number(row.whatsapp_count),
+              social_media_count: Number(row.social_media_count),
+              gmaps_count: Number(row.gmaps_count),
+              online_order_count: Number(row.online_order_count),
+              late_handling_count: Number(row.late_handling_count),
+              total_weighted_complaints,
+            });
 
-        const { error } = await supabase
-          .from('complaint_records')
-          .insert(records);
-
-        if (error) throw error;
+          if (insertError) throw insertError;
+        }
 
         toast({
           title: "Success",
@@ -204,10 +194,8 @@ const ComplaintForm = () => {
     }
   };
 
-  // Generate year options (current year and previous 2 years)
   const yearOptions = Array.from({ length: 3 }, (_, i) => currentYear - i);
 
-  // Generate month options
   const monthOptions = Array.from({ length: 12 }, (_, i) => {
     const month = (i + 1).toString().padStart(2, '0');
     const monthName = new Date(2024, i, 1).toLocaleString('default', { month: 'long' });

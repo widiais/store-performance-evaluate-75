@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -75,31 +74,6 @@ const FinanceDataForm = () => {
     if (!file || !stores) return;
 
     try {
-      // Check for existing records in the selected month/year
-      const inputDate = `${selectedYear}-${selectedMonth}-01`;
-      const { data: existingRecords } = await supabase
-        .from('financial_records')
-        .select('id')
-        .eq('input_date', inputDate);
-
-      if (existingRecords && existingRecords.length > 0) {
-        const proceed = window.confirm(
-          'Data for this month already exists. Do you want to replace it?'
-        );
-        if (!proceed) {
-          event.target.value = '';
-          return;
-        }
-
-        // Delete existing records for this month
-        const { error: deleteError } = await supabase
-          .from('financial_records')
-          .delete()
-          .eq('input_date', inputDate);
-
-        if (deleteError) throw deleteError;
-      }
-
       const reader = new FileReader();
       reader.onload = async (e) => {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
@@ -107,7 +81,6 @@ const FinanceDataForm = () => {
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-        // Validate data
         const isValid = jsonData.every((row: any) => {
           return (
             row.store_name &&
@@ -126,26 +99,41 @@ const FinanceDataForm = () => {
           return;
         }
 
-        // Convert to database format
-        const records = jsonData.map((row: any) => {
-          const store = stores?.find(s => s.name === row.store_name);
-          if (!store) throw new Error(`Store not found: ${row.store_name}`);
+        const inputDate = `${selectedYear}-${selectedMonth}-01`;
 
-          return {
-            store_id: store.id,
-            input_date: inputDate,
-            pic: pic,
-            cogs_achieved: Number(row.cogs_achieved),
-            total_sales: Number(row.total_sales),
-            total_opex: Number(row.total_opex),
-          };
-        });
+        for (const row of jsonData) {
+          const store = stores.find(s => s.name === row.store_name);
+          if (!store) continue;
 
-        const { error } = await supabase
-          .from('financial_records')
-          .insert(records);
+          const { data: existingRecords } = await supabase
+            .from('financial_records')
+            .select('id')
+            .eq('store_id', store.id)
+            .eq('input_date', inputDate);
 
-        if (error) throw error;
+          if (existingRecords && existingRecords.length > 0) {
+            const { error: deleteError } = await supabase
+              .from('financial_records')
+              .delete()
+              .eq('store_id', store.id)
+              .eq('input_date', inputDate);
+
+            if (deleteError) throw deleteError;
+          }
+
+          const { error: insertError } = await supabase
+            .from('financial_records')
+            .insert({
+              store_id: store.id,
+              input_date: inputDate,
+              pic,
+              cogs_achieved: Number(row.cogs_achieved),
+              total_sales: Number(row.total_sales),
+              total_opex: Number(row.total_opex),
+            });
+
+          if (insertError) throw insertError;
+        }
 
         toast({
           title: "Success",
@@ -165,10 +153,8 @@ const FinanceDataForm = () => {
     }
   };
 
-  // Generate year options (current year and previous 2 years)
   const yearOptions = Array.from({ length: 3 }, (_, i) => currentYear - i);
 
-  // Generate month options
   const monthOptions = Array.from({ length: 12 }, (_, i) => {
     const month = (i + 1).toString().padStart(2, '0');
     const monthName = new Date(2024, i, 1).toLocaleString('default', { month: 'long' });
