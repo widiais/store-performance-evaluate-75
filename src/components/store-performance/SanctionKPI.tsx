@@ -3,8 +3,6 @@ import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Store } from "./types";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface SanctionKPIProps {
   selectedStores: Store[];
@@ -63,51 +61,26 @@ const StoreSanctionCard = ({
         
         <div className="grid grid-cols-2 gap-4">
           <div className="p-4 bg-gray-50 rounded-lg">
+            <h3 className="font-medium text-lg mb-2">Total Crew</h3>
+            <div className="text-2xl font-bold">{store.total_crew}</div>
+          </div>
+          
+          <div className="p-4 bg-gray-50 rounded-lg">
             <h3 className="font-medium text-lg mb-2">Total Active Sanctions</h3>
             <div className="text-2xl font-bold">{sanctions?.length || 0}</div>
           </div>
-
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <h3 className="font-medium text-lg mb-2">KPI Score</h3>
-            <div className={`text-2xl font-bold ${
-              kpiScore >= 3 ? 'text-green-600' :
-              kpiScore >= 2 ? 'text-yellow-600' :
-              'text-red-600'
-            }`}>
-              {kpiScore.toFixed(2)}
-            </div>
-          </div>
         </div>
 
-        <ScrollArea className="h-[200px] w-full">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Employee</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Violation</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sanctions.map((sanction) => (
-                <TableRow key={sanction.id}>
-                  <TableCell className="font-medium">{sanction.employee_name}</TableCell>
-                  <TableCell>
-                    <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                      ${sanction.sanction_type === 'SP2' ? 'bg-red-100 text-red-800' :
-                        sanction.sanction_type === 'SP1' ? 'bg-orange-100 text-orange-800' :
-                        'bg-yellow-100 text-yellow-800'}`}>
-                      {sanction.sanction_type}
-                    </div>
-                  </TableCell>
-                  <TableCell>{new Date(sanction.sanction_date).toLocaleDateString()}</TableCell>
-                  <TableCell>{sanction.violation_details}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </ScrollArea>
+        <div className="p-4 bg-gray-50 rounded-lg">
+          <h3 className="font-medium text-lg mb-2">KPI Score</h3>
+          <div className={`text-2xl font-bold ${
+            kpiScore >= 3 ? 'text-green-600' :
+            kpiScore >= 2 ? 'text-yellow-600' :
+            'text-red-600'
+          }`}>
+            {kpiScore.toFixed(2)}
+          </div>
+        </div>
       </div>
     </Card>
   );
