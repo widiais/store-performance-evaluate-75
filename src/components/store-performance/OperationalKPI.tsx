@@ -14,23 +14,13 @@ interface OperationalKPIProps {
   selectedYear: number;
 }
 
-interface EvaluationData {
-  id: number;
-  store_name: string;
-  store_city?: string;
-  evaluation_date: string;
-  total_score: number;
-  pic?: string;
-  status?: string;
-}
-
 const PerformanceCard = ({ 
   title, 
   data, 
   selectedStores 
 }: { 
   title: string; 
-  data: EvaluationData[]; 
+  data: EvaluationRecord[]; 
   selectedStores: Store[] 
 }) => {
   // Calculate average score for same-day evaluations
@@ -54,7 +44,7 @@ const PerformanceCard = ({
     acc[date][storeName].records.push(record);
     
     return acc;
-  }, {} as Record<string, Record<string, { total: number; count: number; records: EvaluationData[] }>>);
+  }, {} as Record<string, Record<string, { total: number; count: number; records: EvaluationRecord[] }>>);
 
   // Format data for chart
   const chartData = Object.entries(averagedData).map(([date, stores]) => {
@@ -115,6 +105,7 @@ const PerformanceCard = ({
                 <TableHead>Date</TableHead>
                 <TableHead>Store</TableHead>
                 <TableHead>Score</TableHead>
+                <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -126,6 +117,7 @@ const PerformanceCard = ({
                     <TableCell className={(data.total / data.count) >= 3 ? "text-green-500 font-medium" : "text-red-500 font-medium"}>
                       {(data.total / data.count).toFixed(2)}
                     </TableCell>
+                    <TableCell>{data.records[0].status}</TableCell>
                   </TableRow>
                 ))
               )}
@@ -162,7 +154,7 @@ export const OperationalKPI = ({ selectedStores, selectedMonth, selectedYear }: 
         .in('evaluation_date', filteredDates.map(d => d.evaluation_date));
 
       if (error) throw error;
-      return data as EvaluationData[];
+      return data as EvaluationRecord[];
     },
     enabled: selectedStores.length > 0 && !!filteredDates?.length
   });
@@ -179,7 +171,7 @@ export const OperationalKPI = ({ selectedStores, selectedMonth, selectedYear }: 
         .in('evaluation_date', filteredDates.map(d => d.evaluation_date));
 
       if (error) throw error;
-      return data as EvaluationData[];
+      return data as EvaluationRecord[];
     },
     enabled: selectedStores.length > 0 && !!filteredDates?.length
   });
@@ -196,7 +188,7 @@ export const OperationalKPI = ({ selectedStores, selectedMonth, selectedYear }: 
         .in('evaluation_date', filteredDates.map(d => d.evaluation_date));
 
       if (error) throw error;
-      return data as EvaluationData[];
+      return data as EvaluationRecord[];
     },
     enabled: selectedStores.length > 0 && !!filteredDates?.length
   });
@@ -213,7 +205,7 @@ export const OperationalKPI = ({ selectedStores, selectedMonth, selectedYear }: 
         .in('evaluation_date', filteredDates.map(d => d.evaluation_date));
 
       if (error) throw error;
-      return data as EvaluationData[];
+      return data as EvaluationRecord[];
     },
     enabled: selectedStores.length > 0 && !!filteredDates?.length
   });
