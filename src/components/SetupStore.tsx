@@ -20,8 +20,8 @@ interface Store {
   total_crew: number;
   avg_cu_per_day: number;
   target_sales: number;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 const SetupStore = () => {
@@ -51,7 +51,7 @@ const SetupStore = () => {
   });
 
   const addStoreMutation = useMutation({
-    mutationFn: async (newStore: Omit<Store, 'id'>) => {
+    mutationFn: async (newStore: Omit<Store, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('stores')
         .insert([newStore])
@@ -80,10 +80,10 @@ const SetupStore = () => {
 
   const updateStoreMutation = useMutation({
     mutationFn: async (store: Store) => {
-      const { id, ...storeWithoutId } = store;
+      const { id, created_at, updated_at, ...storeWithoutMetadata } = store;
       const { data, error } = await supabase
         .from('stores')
-        .update(storeWithoutId)
+        .update(storeWithoutMetadata)
         .eq('id', id)
         .select()
         .single();
