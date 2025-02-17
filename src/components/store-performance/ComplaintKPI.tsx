@@ -14,93 +14,85 @@ interface ComplaintKPIProps {
   selectedYear: number;
 }
 
-export const ComplaintKPI = ({ selectedStores, selectedMonth, selectedYear }: ComplaintKPIProps) => {
-  const queryKey = ["complaintData", selectedMonth, selectedYear];
-  
-  const { data: complaintData } = useQuery({
-    queryKey,
-    queryFn: async () => {
-      const { data: filteredDates, error: dateError } = await supabase.rpc('filter_evaluation_by_month_year', {
-        target_month: selectedMonth,
-        target_year: selectedYear
-      });
+const StoreComplaintCard = ({ 
+  store, 
+  data 
+}: { 
+  store: Store; 
+  data: ComplaintRecord[];
+}) => {
+  // Group data by month for the chart
+  const monthlyData = data.reduce((acc, record) => {
+    const monthKey = format(new Date(record.input_date), 'yyyy-MM');
+    if (!acc[monthKey]) {
+      acc[monthKey] = {
+        kpi_score: 0,
+        complaints: 0,
+        count: 0
+      };
+    }
+    acc[monthKey].kpi_score += record.kpi_score;
+    acc[monthKey].complaints += record.total_weighted_complaints;
+    acc[monthKey].count += 1;
+    return acc;
+  }, {} as Record<string, { kpi_score: number; complaints: number; count: number }>);
 
-      if (dateError) throw dateError;
-      if (!filteredDates?.length) return [];
+  // Format data for chart
+  const chartData = Object.entries(monthlyData).map(([month, values]) => ({
+    date: month,
+    'KPI Score': Number((values.kpi_score / values.count).toFixed(2)),
+    'Complaints': values.complaints
+  }));
 
-      const { data, error } = await supabase
-        .from("complaint_records_report")
-        .select("*")
-        .in(
-          "store_name",
-          selectedStores.map((store) => store.name)
-        )
-        .in('input_date', filteredDates.map(d => d.evaluation_date));
-
-      if (error) throw error;
-      return data as ComplaintRecord[];
-    },
-    enabled: selectedStores.length > 0
-  });
-
-  const chartData = complaintData?.map(record => ({
-    date: record.input_date,
-    [record.store_name]: record.kpi_score
-  })) || [];
-
-  const averageKPI = complaintData?.length 
-    ? (complaintData.reduce((sum, record) => sum + record.kpi_score, 0) / complaintData.length).toFixed(2)
+  // Calculate averages
+  const averageKPI = data.length > 0
+    ? (data.reduce((sum, r) => sum + r.kpi_score, 0) / data.length).toFixed(2)
     : '0';
 
-  const totalComplaints = complaintData?.reduce((sum, record) => sum + record.total_weighted_complaints, 0) || 0;
+  const totalComplaints = data.reduce((sum, r) => sum + r.total_weighted_complaints, 0);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      {/* Left Column - KPI Chart */}
-      <Card className="p-6">
-        <div className="space-y-6">
-          {/* KPI Score Box */}
+    <Card className="p-6">
+      <div className="space-y-6">
+        <h2 className="text-xl font-semibold mb-4">{store.name} - {store.city}</h2>
+        
+        {/* KPI Score Box */}
+        <div className="grid grid-cols-2 gap-4">
           <div className="p-4 bg-gray-50 rounded-lg">
-            <h3 className="font-medium text-lg mb-2">KPI Score</h3>
+            <h3 className="font-medium text-lg mb-2">Final KPI Score</h3>
             <div className="text-2xl font-bold">{averageKPI}</div>
           </div>
 
-          {/* Total Complaints Box */}
           <div className="p-4 bg-gray-50 rounded-lg">
             <h3 className="font-medium text-lg mb-2">Total Complaints</h3>
             <div className="text-2xl font-bold">{totalComplaints}</div>
           </div>
-
-          {/* Chart */}
-          <div className="h-[300px] mt-4">
-            <LineChart
-              data={chartData}
-              xField="date"
-              yField={selectedStores.map((store) => store.name)}
-              title="Complaints Trend"
-            />
-          </div>
         </div>
-      </Card>
 
-      {/* Right Column - Detailed Data */}
-      <Card className="p-6">
-        <h3 className="font-medium text-lg mb-4">Complaint Details</h3>
-        <ScrollArea className="h-[500px] w-full">
+        {/* Chart */}
+        <div className="h-[200px] mt-4">
+          <LineChart
+            data={chartData}
+            xField="date"
+            yField={['KPI Score', 'Complaints']}
+            title="Monthly Complaint Trend"
+          />
+        </div>
+
+        {/* Details Table */}
+        <ScrollArea className="h-[200px] w-full">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>
-                <TableHead>Store</TableHead>
-                <TableHead>Total</TableHead>
+                <TableHead>Complaints</TableHead>
                 <TableHead>KPI Score</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {complaintData?.map((record) => (
+              {data.map((record) => (
                 <TableRow key={record.id}>
                   <TableCell>{format(new Date(record.input_date), 'dd/MM/yy')}</TableCell>
-                  <TableCell>{record.store_name}</TableCell>
                   <TableCell>{record.total_weighted_complaints}</TableCell>
                   <TableCell className={record.kpi_score >= 3 ? "text-green-500 font-medium" : "text-red-500 font-medium"}>
                     {record.kpi_score}
@@ -110,7 +102,50 @@ export const ComplaintKPI = ({ selectedStores, selectedMonth, selectedYear }: Co
             </TableBody>
           </Table>
         </ScrollArea>
-      </Card>
+      </div>
+    </Card>
+  );
+};
+
+export const ComplaintKPI = ({ selectedStores, selectedMonth, selectedYear }: ComplaintKPIProps) => {
+  const { data: filteredDates } = useQuery({
+    queryKey: ['filteredDates', selectedMonth, selectedYear],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('filter_evaluation_by_month_year', {
+        target_month: selectedMonth,
+        target_year: selectedYear
+      });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const { data: complaintData } = useQuery({
+    queryKey: ["complaintData", selectedMonth, selectedYear],
+    queryFn: async () => {
+      if (!filteredDates?.length) return [];
+      
+      const { data, error } = await supabase
+        .from("complaint_records_report")
+        .select("*")
+        .in("store_name", selectedStores.map((store) => store.name))
+        .in('input_date', filteredDates.map(d => d.evaluation_date));
+
+      if (error) throw error;
+      return data as ComplaintRecord[];
+    },
+    enabled: selectedStores.length > 0 && !!filteredDates?.length
+  });
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {selectedStores.map(store => (
+        <StoreComplaintCard
+          key={store.id}
+          store={store}
+          data={(complaintData || []).filter(record => record.store_name === store.name)}
+        />
+      ))}
     </div>
   );
 };
