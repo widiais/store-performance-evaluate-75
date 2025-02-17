@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -8,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { FileSpreadsheet } from 'lucide-react';
+import { ComplaintExcelRow } from '@/types/excel';
 import {
   Select,
   SelectContent,
@@ -114,9 +116,10 @@ const ComplaintForm = () => {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        const jsonData = XLSX.utils.sheet_to_json(worksheet) as ComplaintExcelRow[];
 
-        const isValid = jsonData.every((row: any) => {
+        // Validate data
+        const isValid = jsonData.every((row) => {
           return (
             row.store_name &&
             !isNaN(Number(row.whatsapp_count)) &&
@@ -138,16 +141,19 @@ const ComplaintForm = () => {
 
         const inputDate = `${selectedYear}-${selectedMonth}-01`;
 
+        // Process each store's data
         for (const row of jsonData) {
           const store = stores.find(s => s.name === row.store_name);
           if (!store) continue;
 
+          // Check for existing record
           const { data: existingRecords } = await supabase
             .from('complaint_records')
             .select('id')
             .eq('store_id', store.id)
             .eq('input_date', inputDate);
 
+          // Delete existing record if found
           if (existingRecords && existingRecords.length > 0) {
             const { error: deleteError } = await supabase
               .from('complaint_records')
@@ -158,8 +164,10 @@ const ComplaintForm = () => {
             if (deleteError) throw deleteError;
           }
 
+          // Calculate total weighted complaints
           const total_weighted_complaints = calculateTotalComplaints(row, weights);
 
+          // Insert new record
           const { error: insertError } = await supabase
             .from('complaint_records')
             .insert({
