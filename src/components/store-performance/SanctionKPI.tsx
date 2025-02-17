@@ -17,7 +17,7 @@ const StoreSanctionCard = ({
 }: { 
   store: Store;
 }) => {
-  const { data: sanctions } = useQuery({
+  const { data: sanctions = [] } = useQuery({
     queryKey: ["sanctionData", store.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -28,13 +28,13 @@ const StoreSanctionCard = ({
         .order("sanction_date", { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data || [];
     },
   });
 
   // Calculate KPI score based on crew count
   const calculateKPIScore = () => {
-    if (!sanctions || !store.total_crew) return 0;
+    if (!sanctions?.length || !store.total_crew) return 0;
 
     const sanctionWeights = sanctions.reduce((total, sanction) => {
       switch (sanction.sanction_type) {
@@ -90,7 +90,7 @@ const StoreSanctionCard = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sanctions?.map((sanction) => (
+              {sanctions.map((sanction) => (
                 <TableRow key={sanction.id}>
                   <TableCell className="font-medium">{sanction.employee_name}</TableCell>
                   <TableCell>
