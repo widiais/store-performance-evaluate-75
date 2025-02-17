@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import * as XLSX from 'xlsx';
@@ -15,8 +16,7 @@ import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileSpreadsheet, FileText, Trash2 } from "lucide-react";
 import EspPDF from "./EspReportPDF";
-import { useToast, useQueryClient } from "@/components/ui/toast";
-import { useMutation } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast"; // Fixed import
 
 interface Finding {
   id: number;
