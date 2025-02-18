@@ -15,6 +15,9 @@ import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Ban, X, FileSpreadsheet, FileText } from "lucide-react";
 import ChampsPDF from "./ChampReportPDF";
+import { useToast } from "@/hooks/use-toast";
+import { Trash2 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface DetailedQuestion {
   question: string;
@@ -25,6 +28,8 @@ interface DetailedQuestion {
 const ChampReportDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Fetch evaluasi utama
   const { data: evaluation, isLoading } = useQuery({
@@ -76,6 +81,48 @@ const ChampReportDetail = () => {
     },
     enabled: !!id,
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      if (!id) return;
+      
+      // Delete answers first
+      const { error: answersError } = await supabase
+        .from('champs_evaluation_answers')
+        .delete()
+        .eq('evaluation_id', parseInt(id));
+      
+      if (answersError) throw answersError;
+      
+      // Then delete the evaluation
+      const { error: evalError } = await supabase
+        .from('champs_evaluations')
+        .delete()
+        .eq('id', parseInt(id));
+      
+      if (evalError) throw evalError;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Evaluation deleted",
+        description: "The CHAMPS evaluation has been successfully deleted.",
+      });
+      navigate('/champ-report');
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete evaluation: " + error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDelete = () => {
+    if (window.confirm('Are you sure you want to delete this evaluation?')) {
+      deleteMutation.mutate();
+    }
+  };
 
   if (isLoading || isLoadingDetails) {
     return (
@@ -152,16 +199,27 @@ const ChampReportDetail = () => {
   };
 
   return (
-    <div className="p-6 min-h-screen bg-gray-50">
+    <div className="p-4 sm:p-6 min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto">
-        <Button 
-          variant="outline" 
-          onClick={() => navigate(-1)} 
-          className="mb-6 border-gray-200 hover:bg-gray-100"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Reports
-        </Button>
+        <div className="flex justify-between items-center mb-4 sm:mb-6">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate(-1)} 
+            className="mb-4 sm:mb-6 border-gray-200 hover:bg-gray-100 w-full sm:w-auto"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Reports
+          </Button>
+
+          <Button
+            variant="destructive"
+            onClick={handleDelete}
+            className="gap-2"
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete Evaluation
+          </Button>
+        </div>
 
         <h2 className="text-2xl font-semibold mb-6 text-gray-900">
           CHAMPS Evaluation Details

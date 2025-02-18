@@ -1,9 +1,10 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ComplaintWeight {
   channel: string;
@@ -29,6 +30,8 @@ interface ComplaintDetail {
 const ComplaintReportDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: weights } = useQuery<ComplaintWeight[]>({
     queryKey: ['complaint-weights'],
@@ -58,6 +61,37 @@ const ComplaintReportDetail = () => {
       return data;
     },
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('complaint_records')
+        .delete()
+        .eq('id', parseInt(id || '0'));
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Record deleted",
+        description: "The complaint record has been successfully deleted.",
+      });
+      navigate('/complaint-report');
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete record: " + error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDelete = () => {
+    if (window.confirm('Are you sure you want to delete this complaint record?')) {
+      deleteMutation.mutate();
+    }
+  };
 
   if (isLoading || !detail || !weights) {
     return <div className="p-6">Loading...</div>;
@@ -98,7 +132,6 @@ const ComplaintReportDetail = () => {
 
   const kpiPercentage = (detail.total_weighted_complaints / (detail.avg_cu_per_day * 30)) * 100;
   
-  // Fungsi untuk menghitung KPI Score berdasarkan persentase
   const calculateKPIScore = (percentage: number) => {
     if (percentage <= 0.1) return 4;       // <= 0.1% = 4 (Sangat Baik)
     if (percentage <= 0.3) return 3;       // <= 0.3% = 3 (Baik)
@@ -112,17 +145,29 @@ const ComplaintReportDetail = () => {
   return (
     <div className="p-6">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/complaint-report')}
+              className="gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+            <h1 className="text-2xl font-bold">Report Detail Complain</h1>
+          </div>
+          
           <Button
-            variant="outline"
+            variant="destructive"
             size="sm"
-            onClick={() => navigate('/complaint-report')}
+            onClick={handleDelete}
             className="gap-2"
           >
-            <ArrowLeft className="h-4 w-4" />
-            Back
+            <Trash2 className="h-4 w-4" />
+            Delete Record
           </Button>
-          <h1 className="text-2xl font-bold">Report Detail Complain</h1>
         </div>
         
         <div className="bg-white rounded-lg shadow p-6 space-y-6">
