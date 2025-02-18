@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const WorkplaceReportDetail = () => {
   const { id } = useParams();
@@ -53,7 +54,6 @@ const WorkplaceReportDetail = () => {
         .from('employee_sanctions_report')
         .select('*')
         .eq('store_id', parseInt(id || '0'))
-        .eq('is_active', true)
         .order('sanction_date', { ascending: false });
 
       if (error) throw error;
@@ -69,7 +69,10 @@ const WorkplaceReportDetail = () => {
     );
   }
 
-  const totalSanctionScore = sanctions.reduce((total, sanction) => {
+  const activeSanctions = sanctions.filter(sanction => sanction.is_active);
+  const inactiveSanctions = sanctions.filter(sanction => !sanction.is_active);
+
+  const totalSanctionScore = activeSanctions.reduce((total, sanction) => {
     switch (sanction.sanction_type) {
       case 'Peringatan Tertulis':
         return total + 1;
@@ -108,7 +111,7 @@ const WorkplaceReportDetail = () => {
           </Card>
           <Card className="p-4">
             <h3 className="text-sm font-medium text-gray-500">Active Sanctions</h3>
-            <p className="text-2xl font-bold">{sanctions.length}</p>
+            <p className="text-2xl font-bold">{activeSanctions.length}</p>
           </Card>
           <Card className="p-4">
             <h3 className="text-sm font-medium text-gray-500">Total Score</h3>
@@ -126,46 +129,101 @@ const WorkplaceReportDetail = () => {
           </Card>
         </div>
 
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Employee Name</TableHead>
-                <TableHead>Sanction Type</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Duration</TableHead>
-                <TableHead>Violation Details</TableHead>
-                <TableHead>PIC</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sanctions.map((sanction) => (
-                <TableRow key={sanction.id}>
-                  <TableCell className="font-medium">
-                    {sanction.employee_name}
-                  </TableCell>
-                  <TableCell>
-                    <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                      ${sanction.sanction_type === 'SP2' ? 'bg-red-100 text-red-800' :
-                        sanction.sanction_type === 'SP1' ? 'bg-orange-100 text-orange-800' :
-                        'bg-yellow-100 text-yellow-800'}`}>
-                      {sanction.sanction_type}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(sanction.sanction_date).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>{sanction.duration_months} months</TableCell>
-                  <TableCell>{sanction.violation_details}</TableCell>
-                  <TableCell>{sanction.pic}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <Tabs defaultValue="active" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="active">Active Sanctions</TabsTrigger>
+            <TabsTrigger value="inactive">Inactive Sanctions</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="active">
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee Name</TableHead>
+                    <TableHead>Sanction Type</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Duration</TableHead>
+                    <TableHead>Expiry Date</TableHead>
+                    <TableHead>Violation Details</TableHead>
+                    <TableHead>PIC</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {activeSanctions.map((sanction) => (
+                    <TableRow key={sanction.id}>
+                      <TableCell className="font-medium">
+                        {sanction.employee_name}
+                      </TableCell>
+                      <TableCell>
+                        <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                          ${sanction.sanction_type === 'SP2' ? 'bg-red-100 text-red-800' :
+                            sanction.sanction_type === 'SP1' ? 'bg-orange-100 text-orange-800' :
+                            'bg-yellow-100 text-yellow-800'}`}>
+                          {sanction.sanction_type}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {new Date(sanction.sanction_date).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>{sanction.duration_months} months</TableCell>
+                      <TableCell>
+                        {new Date(sanction.expiry_date).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>{sanction.violation_details}</TableCell>
+                      <TableCell>{sanction.pic}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="inactive">
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee Name</TableHead>
+                    <TableHead>Sanction Type</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Duration</TableHead>
+                    <TableHead>Expiry Date</TableHead>
+                    <TableHead>Violation Details</TableHead>
+                    <TableHead>PIC</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {inactiveSanctions.map((sanction) => (
+                    <TableRow key={sanction.id}>
+                      <TableCell className="font-medium">
+                        {sanction.employee_name}
+                      </TableCell>
+                      <TableCell>
+                        <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800`}>
+                          {sanction.sanction_type}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {new Date(sanction.sanction_date).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>{sanction.duration_months} months</TableCell>
+                      <TableCell>
+                        {new Date(sanction.expiry_date).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>{sanction.violation_details}</TableCell>
+                      <TableCell>{sanction.pic}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+        </Tabs>
       </Card>
     </div>
   );
 };
 
 export default WorkplaceReportDetail;
+
