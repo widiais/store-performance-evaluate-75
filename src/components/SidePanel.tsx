@@ -297,12 +297,15 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
       >
         <ScrollArea className="h-full py-6">
           <div className="px-3 py-2">
-            <div className="flex justify-center mb-6">
+            <div className="flex flex-col items-center mb-6">
               <img 
                 src="/public/lovable-uploads/55f017a0-2b77-4206-b461-cb90e838ae22.png" 
                 alt="Labllaik Chicken Logo" 
-                className="h-12 object-contain"
+                className="h-16 object-contain mb-4"
               />
+              <h2 className="text-lg font-semibold tracking-tight">
+                CRS-Store Evaluate Performance
+              </h2>
             </div>
             
             {menuSections.map((section, index) => (
