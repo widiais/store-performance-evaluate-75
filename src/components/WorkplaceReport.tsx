@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -73,7 +74,7 @@ const WorkplaceReport = () => {
         const active_sp2 = storeSanctions.filter(s => s.sanction_type === 'SP2').length;
 
         // Calculate KPI score based on ratio
-        const maxViolationScore = store.total_crew || 0; // Changed to use total crew
+        const maxViolationScore = store.total_crew || 0;
         const kpi_score = maxViolationScore > 0 
           ? Math.max(0, (1 - (totalSanctionScore / maxViolationScore)) * 4)
           : 4;
@@ -86,16 +87,12 @@ const WorkplaceReport = () => {
           active_peringatan,
           active_sp1,
           active_sp2,
-          kpi_score
+          kpi_score: storeSanctions.length === 0 ? 4 : kpi_score // Full score if no sanctions
         };
       });
 
-      // Only return stores that have active sanctions
-      return storesWithKPI.filter(store => 
-        store.active_peringatan > 0 || 
-        store.active_sp1 > 0 || 
-        store.active_sp2 > 0
-      );
+      // Return all stores, no longer filtering by active sanctions
+      return storesWithKPI;
     },
   });
 
@@ -154,11 +151,13 @@ const WorkplaceReport = () => {
                     <TableCell>
                       <div className="space-y-1">
                         <div className="text-sm font-medium">Total: {totalActiveSanctions}</div>
-                        <div className="text-xs text-gray-500">
-                          Peringatan: {store.active_peringatan || 0} |
-                          SP1: {store.active_sp1 || 0} |
-                          SP2: {store.active_sp2 || 0}
-                        </div>
+                        {totalActiveSanctions > 0 && (
+                          <div className="text-xs text-gray-500">
+                            Peringatan: {store.active_peringatan || 0} |
+                            SP1: {store.active_sp1 || 0} |
+                            SP2: {store.active_sp2 || 0}
+                          </div>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
