@@ -15,6 +15,21 @@ const StoreSanctionCard = ({
 }: { 
   store: Store;
 }) => {
+  // First get the complete store data to ensure we have total_crew
+  const { data: storeData } = useQuery({
+    queryKey: ["store-detail", store.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("stores")
+        .select("*")
+        .eq("id", store.id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const { data: sanctions = [] } = useQuery({
     queryKey: ["sanctionData", store.id],
     queryFn: async () => {
@@ -49,7 +64,8 @@ const StoreSanctionCard = ({
   }, 0);
 
   // Calculate KPI score based on ratio
-  const maxViolationScore = store.total_crew ? store.total_crew * 0.5 : 0; // 50% of total crew
+  const total_crew = storeData?.total_crew || 0;
+  const maxViolationScore = total_crew * 0.5; // 50% of total crew
   const kpiScore = maxViolationScore > 0 
     ? Math.max(0, (1 - (totalSanctionScore / maxViolationScore)) * 4)
     : 4;
@@ -64,7 +80,7 @@ const StoreSanctionCard = ({
         <div className="grid grid-cols-2 gap-4">
           <div className="p-4 bg-gray-50 rounded-lg">
             <h3 className="font-medium text-lg mb-2">Total Crew</h3>
-            <div className="text-2xl font-bold">{store.total_crew}</div>
+            <div className="text-2xl font-bold">{total_crew}</div>
           </div>
           
           <div className="p-4 bg-gray-50 rounded-lg">
