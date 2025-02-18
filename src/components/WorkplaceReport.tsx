@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,14 +33,14 @@ const WorkplaceReport = () => {
   const { data: stores = [], isLoading } = useQuery<Store[]>({
     queryKey: ['workplace-stores'],
     queryFn: async () => {
-      // First get all stores with their total_crew
+      // First get all stores with their total employees
       const { data: storesData, error: storesError } = await supabase
         .from('stores')
         .select(`
           id,
           name,
           city,
-          total_crew
+          total_employees
         `);
 
       if (storesError) throw storesError;
@@ -74,8 +73,7 @@ const WorkplaceReport = () => {
         const active_sp2 = storeSanctions.filter(s => s.sanction_type === 'SP2').length;
 
         // Calculate KPI score based on ratio
-        const maxViolationScore = store.total_crew * 0.5; // 50% of total employees
-        const violationRatio = totalSanctionScore / store.total_crew;
+        const maxViolationScore = store.total_employees || 0; // Changed to use total employees
         const kpi_score = maxViolationScore > 0 
           ? Math.max(0, (1 - (totalSanctionScore / maxViolationScore)) * 4)
           : 4;
@@ -84,7 +82,7 @@ const WorkplaceReport = () => {
           store_id: store.id,
           store_name: store.name,
           store_city: store.city,
-          total_employees: store.total_crew,
+          total_employees: store.total_employees,
           active_peringatan,
           active_sp1,
           active_sp2,
