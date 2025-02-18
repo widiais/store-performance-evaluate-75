@@ -22,13 +22,17 @@ const StoreSanctionCard = ({
         .from("employee_sanctions_report")
         .select()
         .eq("store_id", store.id)
-        .eq("is_active", true)
-        .order("sanction_date", { ascending: false });
+        .eq("is_active", true);
 
       if (error) throw error;
       return data || [];
     },
   });
+
+  // Calculate active sanctions by type
+  const active_peringatan = sanctions.filter(s => s.sanction_type === 'Peringatan Tertulis').length;
+  const active_sp1 = sanctions.filter(s => s.sanction_type === 'SP1').length;
+  const active_sp2 = sanctions.filter(s => s.sanction_type === 'SP2').length;
 
   // Calculate total sanction score
   const totalSanctionScore = sanctions.reduce((total, sanction) => {
@@ -44,16 +48,13 @@ const StoreSanctionCard = ({
     }
   }, 0);
 
-  // Calculate KPI score based on crew count
-  const calculateKPIScore = () => {
-    if (!store.total_crew) return 0;
+  // Calculate KPI score based on ratio
+  const maxViolationScore = store.total_crew ? store.total_crew * 0.5 : 0; // 50% of total crew
+  const kpiScore = maxViolationScore > 0 
+    ? Math.max(0, (1 - (totalSanctionScore / maxViolationScore)) * 4)
+    : 4;
 
-    const violationRatio = totalSanctionScore / store.total_crew;
-    const maxViolationRatio = 0.5; // 50% of total crew
-    return Math.max(0, (1 - (violationRatio / maxViolationRatio)) * 4);
-  };
-
-  const kpiScore = calculateKPIScore();
+  const totalActiveSanctions = active_peringatan + active_sp1 + active_sp2;
 
   return (
     <Card className="p-6">
@@ -67,19 +68,34 @@ const StoreSanctionCard = ({
           </div>
           
           <div className="p-4 bg-gray-50 rounded-lg">
-            <h3 className="font-medium text-lg mb-2">Total Score</h3>
-            <div className="text-2xl font-bold">{totalSanctionScore}</div>
+            <h3 className="font-medium text-lg mb-2">Active Sanctions</h3>
+            <div className="text-2xl font-bold">{totalActiveSanctions}</div>
+            <div className="text-sm text-gray-500 mt-1">
+              Peringatan: {active_peringatan} |
+              SP1: {active_sp1} |
+              SP2: {active_sp2}
+            </div>
           </div>
         </div>
 
-        <div className="p-4 bg-gray-50 rounded-lg">
-          <h3 className="font-medium text-lg mb-2">KPI Score</h3>
-          <div className={`text-2xl font-bold ${
-            kpiScore >= 3 ? 'text-green-600' :
-            kpiScore >= 2 ? 'text-yellow-600' :
-            'text-red-600'
-          }`}>
-            {kpiScore.toFixed(2)}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <h3 className="font-medium text-lg mb-2">Violation Score</h3>
+            <div className="text-2xl font-bold">{totalSanctionScore}</div>
+            <div className="text-sm text-gray-500 mt-1">
+              Max allowed: {maxViolationScore.toFixed(1)}
+            </div>
+          </div>
+
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <h3 className="font-medium text-lg mb-2">KPI Score</h3>
+            <div className={`text-2xl font-bold ${
+              kpiScore >= 3 ? 'text-green-600' :
+              kpiScore >= 2 ? 'text-yellow-600' :
+              'text-red-600'
+            }`}>
+              {kpiScore.toFixed(2)}
+            </div>
           </div>
         </div>
       </div>
