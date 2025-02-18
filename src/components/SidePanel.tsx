@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -47,9 +48,10 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [expandedSections, setExpandedSections] = useState({
-    setup: true,
-    forms: true,
-    reports: true
+    main: false,
+    setup: false,
+    forms: false,
+    reports: false
   });
 
   useEffect(() => {
