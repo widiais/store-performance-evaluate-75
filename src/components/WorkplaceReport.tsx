@@ -16,17 +16,42 @@ import { Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 
+interface Store {
+  store_id: number;
+  store_name: string;
+  store_city: string;
+  total_employees: number;
+  active_peringatan: number;
+  active_sp1: number;
+  active_sp2: number;
+  stores: {
+    area: number;
+    regional: number;
+  };
+}
+
 const WorkplaceReport = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: stores = [], isLoading } = useQuery({
+  const { data: stores = [], isLoading } = useQuery<Store[]>({
     queryKey: ['workplace-stores'],
     queryFn: async () => {
-      // First get the stores with sanctions
       const { data: sanctionedStores, error: storesError } = await supabase
         .from('employee_sanctions_kpi')
-        .select('*, stores!inner(*)')
+        .select(`
+          store_id,
+          store_name,
+          store_city,
+          total_employees,
+          active_peringatan,
+          active_sp1,
+          active_sp2,
+          stores (
+            area,
+            regional
+          )
+        `)
         .not('active_peringatan', 'eq', 0)
         .or('active_sp1.gt.0,active_sp2.gt.0');
 
