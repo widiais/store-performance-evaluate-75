@@ -231,6 +231,12 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
           label: "Employee Sanction",
           value: "sanction-report",
           route: "/sanction-report"
+        },
+        {
+          icon: Store,
+          label: "Workplace Evaluation",
+          value: "workplace-report",
+          route: "/workplace-report"
         }
       ]
     }

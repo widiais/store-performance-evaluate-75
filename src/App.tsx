@@ -39,6 +39,8 @@ import FinanceReportDetail from "./components/FinanceReportDetail";
 import EmployeeSanctionForm from "@/components/EmployeeSanctionForm";
 import SanctionReport from "@/components/SanctionReport";
 import SanctionReportDetail from "@/components/SanctionReportDetail";
+import WorkplaceReport from "@/components/WorkplaceReport";
+import WorkplaceReportDetail from "@/components/WorkplaceReportDetail";
 
 const queryClient = new QueryClient();
 
@@ -95,6 +97,8 @@ function App() {
                   <Route path="/complaint-report/:id" element={<ComplaintReportDetail />} />
                   <Route path="/sanction-report" element={<SanctionReport />} />
                   <Route path="/sanction-report/:id" element={<SanctionReportDetail />} />
+                  <Route path="/workplace-report" element={<WorkplaceReport />} />
+                  <Route path="/workplace-report/:id" element={<WorkplaceReportDetail />} />
                 </Routes>
               </div>
             </div>
