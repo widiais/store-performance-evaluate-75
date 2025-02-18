@@ -1,4 +1,3 @@
-
 import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
 import { format } from "date-fns";
 
@@ -14,8 +13,8 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   logo: {
-    width: 150,
-    height: 60,
+    width: 100,
+    height: 'auto',
     objectFit: 'contain',
   },
   title: {
@@ -108,7 +107,7 @@ const SanctionReportPDF = ({ data }: SanctionReportPDFProps) => (
     <Page size="A4" style={styles.page}>
       <View style={styles.header}>
         <Image 
-          src="/public/lovable-uploads/55f017a0-2b77-4206-b461-cb90e838ae22.png"
+          src="/public/lovable-uploads/labbaik.png"
           style={styles.logo}
         />
         <Text style={styles.title}>SURAT PERINGATAN</Text>
