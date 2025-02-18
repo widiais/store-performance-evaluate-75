@@ -65,7 +65,7 @@ const StoreSanctionCard = ({
 
   // Calculate KPI score based on ratio
   const total_crew = storeData?.total_crew || 0;
-  const maxViolationScore = total_crew * 0.5; // 50% of total crew
+  const maxViolationScore = total_crew; // Changed to use total crew
   const kpiScore = maxViolationScore > 0 
     ? Math.max(0, (1 - (totalSanctionScore / maxViolationScore)) * 4)
     : 4;

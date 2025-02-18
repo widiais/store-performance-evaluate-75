@@ -1,13 +1,14 @@
-
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, AlertCircle, Trash2 } from "lucide-react";
+import { ArrowLeft, AlertCircle, Trash2, FileDown } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import SanctionReportPDF from './SanctionReportPDF';
 
 const SanctionReportDetail = () => {
   const { id } = useParams();
@@ -99,7 +100,6 @@ const SanctionReportDetail = () => {
     }
   };
 
-  // Calculate sanction weight
   const getSanctionWeight = (type: string) => {
     switch (type) {
       case 'Peringatan Tertulis':
@@ -123,13 +123,28 @@ const SanctionReportDetail = () => {
     <div className="p-6 min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6 flex justify-between items-center">
-          <Button
-            variant="outline"
-            onClick={() => navigate('/sanction-report')}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Report
-          </Button>
+          <div className="flex gap-4">
+            <Button
+              variant="outline"
+              onClick={() => navigate('/sanction-report')}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Report
+            </Button>
+            
+            <PDFDownloadLink
+              document={<SanctionReportPDF data={sanction} />}
+              fileName={`sanction-${sanction.employee_name}-${format(new Date(sanction.sanction_date), 'yyyy-MM-dd')}.pdf`}
+            >
+              {({ loading }) => (
+                <Button variant="secondary" disabled={loading}>
+                  <FileDown className="h-4 w-4 mr-2" />
+                  {loading ? "Generating PDF..." : "Download PDF"}
+                </Button>
+              )}
+            </PDFDownloadLink>
+          </div>
+
           <Button
             variant="destructive"
             onClick={handleDelete}

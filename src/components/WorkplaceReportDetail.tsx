@@ -70,7 +70,7 @@ const WorkplaceReportDetail = () => {
     }
   }, 0);
 
-  const maxViolationScore = (store?.total_crew || 0) * 0.5;
+  const maxViolationScore = (store?.total_crew || 0);
   const kpiScore = maxViolationScore > 0 
     ? Math.max(0, (1 - (totalSanctionScore / maxViolationScore)) * 4)
     : 4;
