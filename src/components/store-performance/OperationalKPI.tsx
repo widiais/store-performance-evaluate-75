@@ -23,72 +23,74 @@ const PerformanceCard = ({
   data: EvaluationRecord[]; 
   selectedStores: Store[] 
 }) => {
-  // Calculate average score for same-day evaluations
-  const averagedData = data.reduce((acc, record) => {
-    const date = record.evaluation_date;
-    const storeName = record.store_name;
-    
-    if (!acc[date]) {
-      acc[date] = {};
-    }
-    if (!acc[date][storeName]) {
-      acc[date][storeName] = {
-        total: 0,
-        count: 0,
-        records: []
-      };
-    }
-    
-    acc[date][storeName].total += record.total_score;
-    acc[date][storeName].count += 1;
-    acc[date][storeName].records.push(record);
-    
-    return acc;
-  }, {} as Record<string, Record<string, { total: number; count: number; records: EvaluationRecord[] }>>);
+  // Sort data by date first
+  const sortedData = [...data].sort((a, b) => 
+    new Date(a.evaluation_date).getTime() - new Date(b.evaluation_date).getTime()
+  );
 
-  // Format data for chart
-  const chartData = Object.entries(averagedData).map(([date, stores]) => {
-    const point: any = { date };
+  // Get all unique dates
+  const uniqueDates = [...new Set(sortedData.map(record => record.evaluation_date))];
+
+  // Create chart data with all stores for each date
+  const chartData = uniqueDates.map(date => {
+    const point: any = { 
+      date: format(new Date(date), 'dd/MM/yy'),
+      tooltip_date: date // Keep full date for tooltip
+    };
+    
     selectedStores.forEach(store => {
-      const storeData = stores[store.name];
-      if (storeData) {
-        point[store.name] = Number((storeData.total / storeData.count).toFixed(2));
+      const storeRecords = sortedData.filter(
+        record => record.evaluation_date === date && record.store_name === store.name
+      );
+      
+      if (storeRecords.length > 0) {
+        const average = storeRecords.reduce((sum, record) => sum + record.total_score, 0) / storeRecords.length;
+        point[store.name] = Number(average.toFixed(2));
       } else {
-        point[store.name] = null;
+        point[store.name] = null; // Use null for missing data points
       }
     });
+    
     return point;
   });
 
-  // Calculate overall average
-  const overallAverage = data.length > 0
-    ? (data.reduce((sum, record) => sum + record.total_score, 0) / data.length).toFixed(2)
-    : '0';
-
-  // Get unique evaluation dates
-  const evaluationDates = [...new Set(data.map(record => 
-    format(new Date(record.evaluation_date), 'dd/MM/yy')
-  ))].join(', ');
+  // Calculate overall statistics
+  const overallStats = selectedStores.map(store => {
+    const storeData = sortedData.filter(record => record.store_name === store.name);
+    const average = storeData.length > 0
+      ? (storeData.reduce((sum, record) => sum + record.total_score, 0) / storeData.length).toFixed(2)
+      : '0';
+    return { store: store.name, average };
+  });
 
   return (
     <Card className="p-6">
       <div className="space-y-6">
-        <h2 className="text-xl font-semibold mb-4">{title}</h2>
-        
-        {/* KPI Score Box */}
-        <div className="p-4 bg-gray-50 rounded-lg">
-          <h3 className="font-medium text-lg mb-2">KPI Score</h3>
-          <div className="text-2xl font-bold">{overallAverage}</div>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">{title}</h2>
+          <div className="text-sm text-muted-foreground">
+            {format(new Date(uniqueDates[0]), 'MMM dd')} - {format(new Date(uniqueDates[uniqueDates.length - 1]), 'MMM dd, yyyy')}
+          </div>
         </div>
 
-        {/* Date Taken Box */}
-        <div className="p-4 bg-gray-50 rounded-lg">
-          <h3 className="font-medium text-lg mb-2">Evaluation Dates</h3>
-          <div className="text-sm">{evaluationDates}</div>
+        {/* Store Averages */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {overallStats.map(({ store, average }) => (
+            <div key={store} className="p-4 bg-gray-50 rounded-lg">
+              <h3 className="font-medium text-sm mb-1 truncate" title={store}>{store}</h3>
+              <div className={`text-lg font-bold ${
+                Number(average) >= 3 ? 'text-green-600' : 
+                Number(average) >= 2 ? 'text-yellow-600' : 
+                'text-red-600'
+              }`}>
+                {average}
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Chart */}
-        <div className="h-[200px] mt-4">
+        <div className="h-[300px] mt-4">
           <LineChart
             data={chartData}
             xField="date"
@@ -109,18 +111,16 @@ const PerformanceCard = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {Object.entries(averagedData).map(([date, stores]) => 
-                Object.entries(stores).map(([storeName, data]) => (
-                  <TableRow key={`${date}-${storeName}`}>
-                    <TableCell>{format(new Date(date), 'dd/MM/yy')}</TableCell>
-                    <TableCell>{storeName}</TableCell>
-                    <TableCell className={(data.total / data.count) >= 3 ? "text-green-500 font-medium" : "text-red-500 font-medium"}>
-                      {(data.total / data.count).toFixed(2)}
-                    </TableCell>
-                    <TableCell>{data.records[0].status}</TableCell>
-                  </TableRow>
-                ))
-              )}
+              {sortedData.map((record) => (
+                <TableRow key={`${record.evaluation_date}-${record.store_name}`}>
+                  <TableCell>{format(new Date(record.evaluation_date), 'dd/MM/yy')}</TableCell>
+                  <TableCell>{record.store_name}</TableCell>
+                  <TableCell className={record.total_score >= 3 ? "text-green-500 font-medium" : "text-red-500 font-medium"}>
+                    {record.total_score.toFixed(2)}
+                  </TableCell>
+                  <TableCell>{record.status}</TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </ScrollArea>
