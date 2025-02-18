@@ -23,9 +23,10 @@ const WorkplaceReport = () => {
   const { data: stores = [], isLoading } = useQuery({
     queryKey: ['workplace-stores'],
     queryFn: async () => {
+      // First get the stores with sanctions
       const { data: sanctionedStores, error: storesError } = await supabase
         .from('employee_sanctions_kpi')
-        .select('*')
+        .select('*, stores!inner(*)')
         .not('active_peringatan', 'eq', 0)
         .or('active_sp1.gt.0,active_sp2.gt.0');
 
@@ -84,8 +85,8 @@ const WorkplaceReport = () => {
                 return (
                   <TableRow key={store.store_id}>
                     <TableCell className="font-medium">{store.store_name}</TableCell>
-                    <TableCell>{store.area || '-'}</TableCell>
-                    <TableCell>{store.regional || '-'}</TableCell>
+                    <TableCell>{store.stores?.area || '-'}</TableCell>
+                    <TableCell>{store.stores?.regional || '-'}</TableCell>
                     <TableCell>{store.total_employees || 0}</TableCell>
                     <TableCell>{totalSanctionScore}</TableCell>
                     <TableCell className="text-right">

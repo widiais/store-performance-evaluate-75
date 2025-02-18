@@ -24,7 +24,7 @@ const WorkplaceReportDetail = () => {
       const { data, error } = await supabase
         .from('stores')
         .select('*')
-        .eq('id', id)
+        .eq('id', parseInt(id || '0'))
         .single();
 
       if (error) throw error;
@@ -38,7 +38,7 @@ const WorkplaceReportDetail = () => {
       const { data, error } = await supabase
         .from('employee_sanctions_report')
         .select('*')
-        .eq('store_id', id)
+        .eq('store_id', parseInt(id || '0'))
         .eq('is_active', true)
         .order('sanction_date', { ascending: false });
 
