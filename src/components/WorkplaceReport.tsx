@@ -34,26 +34,69 @@ const WorkplaceReport = () => {
   const { data: stores = [], isLoading } = useQuery<Store[]>({
     queryKey: ['workplace-stores'],
     queryFn: async () => {
-      const { data: sanctionedStores, error: storesError } = await supabase
-        .from('employee_sanctions_kpi')
+      // First get all stores with their total_crew
+      const { data: storesData, error: storesError } = await supabase
+        .from('stores')
         .select(`
-          store_id,
-          store_name,
-          store_city,
-          total_employees,
+          id,
+          name,
+          city,
+          total_crew
+        `);
+
+      if (storesError) throw storesError;
+
+      // Then get sanctions data
+      const { data: sanctionsData, error: sanctionsError } = await supabase
+        .from('employee_sanctions_report')
+        .select('*')
+        .eq('is_active', true);
+
+      if (sanctionsError) throw sanctionsError;
+
+      // Calculate KPI for each store
+      const storesWithKPI = storesData.map(store => {
+        const storeSanctions = sanctionsData.filter(s => s.store_id === store.id);
+        
+        // Calculate total sanction score
+        const totalSanctionScore = storeSanctions.reduce((total, sanction) => {
+          switch (sanction.sanction_type) {
+            case 'Peringatan Tertulis': return total + 1;
+            case 'SP1': return total + 2;
+            case 'SP2': return total + 3;
+            default: return total;
+          }
+        }, 0);
+
+        // Count active sanctions by type
+        const active_peringatan = storeSanctions.filter(s => s.sanction_type === 'Peringatan Tertulis').length;
+        const active_sp1 = storeSanctions.filter(s => s.sanction_type === 'SP1').length;
+        const active_sp2 = storeSanctions.filter(s => s.sanction_type === 'SP2').length;
+
+        // Calculate KPI score based on ratio
+        const maxViolationScore = store.total_crew * 0.5; // 50% of total employees
+        const violationRatio = totalSanctionScore / store.total_crew;
+        const kpi_score = maxViolationScore > 0 
+          ? Math.max(0, (1 - (totalSanctionScore / maxViolationScore)) * 4)
+          : 4;
+
+        return {
+          store_id: store.id,
+          store_name: store.name,
+          store_city: store.city,
+          total_employees: store.total_crew,
           active_peringatan,
           active_sp1,
           active_sp2,
           kpi_score
-        `);
+        };
+      });
 
-      if (storesError) throw storesError;
-      
-      // Filter stores that have at least one active sanction
-      return (sanctionedStores || []).filter(store => 
-        (store.active_peringatan || 0) > 0 || 
-        (store.active_sp1 || 0) > 0 || 
-        (store.active_sp2 || 0) > 0
+      // Only return stores that have active sanctions
+      return storesWithKPI.filter(store => 
+        store.active_peringatan > 0 || 
+        store.active_sp1 > 0 || 
+        store.active_sp2 > 0
       );
     },
   });
@@ -92,7 +135,7 @@ const WorkplaceReport = () => {
               <TableRow>
                 <TableHead>Store Name</TableHead>
                 <TableHead>City</TableHead>
-                <TableHead>Total Employees</TableHead>
+                <TableHead>Total Crew</TableHead>
                 <TableHead>Active Sanctions</TableHead>
                 <TableHead>KPI Score</TableHead>
                 <TableHead className="text-right">Action</TableHead>
@@ -151,4 +194,3 @@ const WorkplaceReport = () => {
 };
 
 export default WorkplaceReport;
-

@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,20 +25,6 @@ const WorkplaceReportDetail = () => {
         .from('stores')
         .select('*')
         .eq('id', parseInt(id || '0'))
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const { data: kpiData } = useQuery({
-    queryKey: ['store-kpi', id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('employee_sanctions_kpi')
-        .select('*')
-        .eq('store_id', parseInt(id || '0'))
         .single();
 
       if (error) throw error;
@@ -85,6 +70,11 @@ const WorkplaceReportDetail = () => {
     }
   }, 0);
 
+  const maxViolationScore = (store?.total_crew || 0) * 0.5;
+  const kpiScore = maxViolationScore > 0 
+    ? Math.max(0, (1 - (totalSanctionScore / maxViolationScore)) * 4)
+    : 4;
+
   return (
     <div className="p-8">
       <Button 
@@ -114,17 +104,18 @@ const WorkplaceReportDetail = () => {
             <p className="text-2xl font-bold">{activeSanctions.length}</p>
           </Card>
           <Card className="p-4">
-            <h3 className="text-sm font-medium text-gray-500">Total Score</h3>
+            <h3 className="text-sm font-medium text-gray-500">Violation Score</h3>
             <p className="text-2xl font-bold">{totalSanctionScore}</p>
+            <p className="text-xs text-gray-500 mt-1">Max allowed: {maxViolationScore.toFixed(1)}</p>
           </Card>
           <Card className="p-4">
             <h3 className="text-sm font-medium text-gray-500">KPI Score</h3>
             <p className={`text-2xl font-bold ${
-              (kpiData?.kpi_score || 0) >= 3 ? 'text-green-600' :
-              (kpiData?.kpi_score || 0) >= 2 ? 'text-yellow-600' :
+              kpiScore >= 3 ? 'text-green-600' :
+              kpiScore >= 2 ? 'text-yellow-600' :
               'text-red-600'
             }`}>
-              {kpiData?.kpi_score?.toFixed(2) || '-'}
+              {kpiScore.toFixed(2)}
             </p>
           </Card>
         </div>
@@ -226,4 +217,3 @@ const WorkplaceReportDetail = () => {
 };
 
 export default WorkplaceReportDetail;
-
