@@ -14,8 +14,9 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   logo: {
-    width: 80,
-    height: 60,
+    width: 100,
+    height: 40,
+    objectFit: 'contain',
   },
   title: {
     fontSize: 16,
@@ -63,6 +64,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     marginRight: 10,
   },
+  commitmentBox: {
+    marginTop: 20,
+    minHeight: 100,
+    borderWidth: 1,
+    borderColor: '#000',
+    padding: 10,
+  },
   signatures: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -100,7 +108,7 @@ const SanctionReportPDF = ({ data }: SanctionReportPDFProps) => (
     <Page size="A4" style={styles.page}>
       <View style={styles.header}>
         <Image 
-          src="/public/lovable-uploads/9247e156-920d-480b-a31c-156f1de1963b.png"
+          src="/public/lovable-uploads/55f017a0-2b77-4206-b461-cb90e838ae22.png"
           style={styles.logo}
         />
         <Text style={styles.title}>SURAT PERINGATAN</Text>
@@ -151,6 +159,13 @@ const SanctionReportPDF = ({ data }: SanctionReportPDFProps) => (
           Surat ini berlaku selama {data.duration_months} bulan
         </Text>
 
+        <View style={{ marginTop: 20 }}>
+          <Text>Perbaikan yang akan dilakukan & Komitmen Karyawan:</Text>
+          <View style={styles.commitmentBox}>
+            <Text style={{ color: '#999999' }}>_____________________</Text>
+          </View>
+        </View>
+
         <View style={styles.signatures}>
           <View style={styles.signatureBox}>
             <Text>Karyawan</Text>
@@ -161,7 +176,7 @@ const SanctionReportPDF = ({ data }: SanctionReportPDFProps) => (
           <View style={styles.signatureBox}>
             <Text>(HRD Manager)</Text>
             <View style={styles.signatureLine} />
-            <Text style={{ marginTop: 5 }}>({data.pic})</Text>
+            <Text style={{ marginTop: 5 }}>Arik Rahayu</Text>
           </View>
           
           <View style={styles.signatureBox}>
