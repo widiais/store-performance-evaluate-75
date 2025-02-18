@@ -64,8 +64,8 @@ const StoreSanctionCard = ({
   }, 0);
 
   // Calculate KPI score based on ratio
-  const total_employees = storeData?.total_employees || 0;
-  const maxViolationScore = total_employees; // Changed to use total employees instead of 50% of total crew
+  const total_crew = storeData?.total_crew || 0;
+  const maxViolationScore = total_crew; // Changed to use total crew
   const kpiScore = maxViolationScore > 0 
     ? Math.max(0, (1 - (totalSanctionScore / maxViolationScore)) * 4)
     : 4;
@@ -79,8 +79,8 @@ const StoreSanctionCard = ({
         
         <div className="grid grid-cols-2 gap-4">
           <div className="p-4 bg-gray-50 rounded-lg">
-            <h3 className="font-medium text-lg mb-2">Total Employees</h3>
-            <div className="text-2xl font-bold">{total_employees}</div>
+            <h3 className="font-medium text-lg mb-2">Total Crew</h3>
+            <div className="text-2xl font-bold">{total_crew}</div>
           </div>
           
           <div className="p-4 bg-gray-50 rounded-lg">

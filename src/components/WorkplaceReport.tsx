@@ -33,14 +33,14 @@ const WorkplaceReport = () => {
   const { data: stores = [], isLoading } = useQuery<Store[]>({
     queryKey: ['workplace-stores'],
     queryFn: async () => {
-      // First get all stores with their total employees
+      // First get all stores with their total crew
       const { data: storesData, error: storesError } = await supabase
         .from('stores')
         .select(`
           id,
           name,
           city,
-          total_employees
+          total_crew
         `);
 
       if (storesError) throw storesError;
@@ -73,7 +73,7 @@ const WorkplaceReport = () => {
         const active_sp2 = storeSanctions.filter(s => s.sanction_type === 'SP2').length;
 
         // Calculate KPI score based on ratio
-        const maxViolationScore = store.total_employees || 0; // Changed to use total employees
+        const maxViolationScore = store.total_crew || 0; // Changed to use total crew
         const kpi_score = maxViolationScore > 0 
           ? Math.max(0, (1 - (totalSanctionScore / maxViolationScore)) * 4)
           : 4;
@@ -82,7 +82,7 @@ const WorkplaceReport = () => {
           store_id: store.id,
           store_name: store.name,
           store_city: store.city,
-          total_employees: store.total_employees,
+          total_employees: store.total_crew,
           active_peringatan,
           active_sp1,
           active_sp2,
