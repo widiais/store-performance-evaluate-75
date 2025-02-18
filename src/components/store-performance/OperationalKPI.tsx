@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,19 +22,36 @@ const PerformanceCard = ({
   data: EvaluationRecord[]; 
   selectedStores: Store[] 
 }) => {
-  // Sort data by date first
-  const sortedData = [...data].sort((a, b) => 
-    new Date(a.evaluation_date).getTime() - new Date(b.evaluation_date).getTime()
-  );
+  // Sort data by date first and ensure valid dates
+  const sortedData = [...data]
+    .filter(record => record.evaluation_date) // Filter out records with null dates
+    .sort((a, b) => 
+      new Date(a.evaluation_date).getTime() - new Date(b.evaluation_date).getTime()
+    );
 
-  // Get all unique dates
-  const uniqueDates = [...new Set(sortedData.map(record => record.evaluation_date))];
+  // Get all unique valid dates
+  const uniqueDates = [...new Set(sortedData
+    .map(record => record.evaluation_date)
+    .filter(date => date && !isNaN(new Date(date).getTime()))
+  )];
+
+  // If no valid dates, show empty state
+  if (uniqueDates.length === 0) {
+    return (
+      <Card className="p-6">
+        <div className="space-y-6">
+          <h2 className="text-xl font-semibold">{title}</h2>
+          <p className="text-muted-foreground">No data available for selected period</p>
+        </div>
+      </Card>
+    );
+  }
 
   // Create chart data with all stores for each date
   const chartData = uniqueDates.map(date => {
     const point: any = { 
       date: format(new Date(date), 'dd/MM/yy'),
-      tooltip_date: date // Keep full date for tooltip
+      tooltip_date: date
     };
     
     selectedStores.forEach(store => {
@@ -47,7 +63,7 @@ const PerformanceCard = ({
         const average = storeRecords.reduce((sum, record) => sum + record.total_score, 0) / storeRecords.length;
         point[store.name] = Number(average.toFixed(2));
       } else {
-        point[store.name] = null; // Use null for missing data points
+        point[store.name] = null;
       }
     });
     
@@ -63,14 +79,20 @@ const PerformanceCard = ({
     return { store: store.name, average };
   });
 
+  // Safely format dates for display
+  const startDate = new Date(uniqueDates[0]);
+  const endDate = new Date(uniqueDates[uniqueDates.length - 1]);
+
   return (
     <Card className="p-6">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">{title}</h2>
-          <div className="text-sm text-muted-foreground">
-            {format(new Date(uniqueDates[0]), 'MMM dd')} - {format(new Date(uniqueDates[uniqueDates.length - 1]), 'MMM dd, yyyy')}
-          </div>
+          {!isNaN(startDate.getTime()) && !isNaN(endDate.getTime()) && (
+            <div className="text-sm text-muted-foreground">
+              {format(startDate, 'MMM dd')} - {format(endDate, 'MMM dd, yyyy')}
+            </div>
+          )}
         </div>
 
         {/* Store Averages */}
