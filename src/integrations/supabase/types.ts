@@ -100,13 +100,6 @@ export type Database = {
             foreignKeyName: "champs_evaluations_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
-            referencedRelation: "employee_sanctions_kpi"
-            referencedColumns: ["store_id"]
-          },
-          {
-            foreignKeyName: "champs_evaluations_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
             referencedRelation: "store_performance_metrics"
             referencedColumns: ["store_id"]
           },
@@ -234,13 +227,6 @@ export type Database = {
             foreignKeyName: "cleanliness_evaluations_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
-            referencedRelation: "employee_sanctions_kpi"
-            referencedColumns: ["store_id"]
-          },
-          {
-            foreignKeyName: "cleanliness_evaluations_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
             referencedRelation: "store_performance_metrics"
             referencedColumns: ["store_id"]
           },
@@ -318,13 +304,6 @@ export type Database = {
           whatsapp_count?: number
         }
         Relationships: [
-          {
-            foreignKeyName: "complaint_records_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
-            referencedRelation: "employee_sanctions_kpi"
-            referencedColumns: ["store_id"]
-          },
           {
             foreignKeyName: "complaint_records_store_id_fkey"
             columns: ["store_id"]
@@ -410,13 +389,6 @@ export type Database = {
             foreignKeyName: "employee_sanctions_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
-            referencedRelation: "employee_sanctions_kpi"
-            referencedColumns: ["store_id"]
-          },
-          {
-            foreignKeyName: "employee_sanctions_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
             referencedRelation: "store_performance_metrics"
             referencedColumns: ["store_id"]
           },
@@ -467,13 +439,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "esp_evaluations_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
-            referencedRelation: "employee_sanctions_kpi"
-            referencedColumns: ["store_id"]
-          },
           {
             foreignKeyName: "esp_evaluations_store_id_fkey"
             columns: ["store_id"]
@@ -574,13 +539,6 @@ export type Database = {
             foreignKeyName: "financial_records_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
-            referencedRelation: "employee_sanctions_kpi"
-            referencedColumns: ["store_id"]
-          },
-          {
-            foreignKeyName: "financial_records_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
             referencedRelation: "store_performance_metrics"
             referencedColumns: ["store_id"]
           },
@@ -631,13 +589,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "performance_kpis_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
-            referencedRelation: "employee_sanctions_kpi"
-            referencedColumns: ["store_id"]
-          },
           {
             foreignKeyName: "performance_kpis_store_id_fkey"
             columns: ["store_id"]
@@ -741,13 +692,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "product_quality_evaluations_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
-            referencedRelation: "employee_sanctions_kpi"
-            referencedColumns: ["store_id"]
-          },
           {
             foreignKeyName: "product_quality_evaluations_store_id_fkey"
             columns: ["store_id"]
@@ -875,13 +819,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "service_evaluations_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
-            referencedRelation: "employee_sanctions_kpi"
-            referencedColumns: ["store_id"]
-          },
           {
             foreignKeyName: "service_evaluations_store_id_fkey"
             columns: ["store_id"]
@@ -1025,7 +962,22 @@ export type Database = {
           store_name: string | null
           total_employees: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "employee_sanctions_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "store_performance_metrics"
+            referencedColumns: ["store_id"]
+          },
+          {
+            foreignKeyName: "employee_sanctions_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       employee_sanctions_report: {
         Row: {
@@ -1045,13 +997,6 @@ export type Database = {
           violation_details: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "employee_sanctions_store_id_fkey"
-            columns: ["store_id"]
-            isOneToOne: false
-            referencedRelation: "employee_sanctions_kpi"
-            referencedColumns: ["store_id"]
-          },
           {
             foreignKeyName: "employee_sanctions_store_id_fkey"
             columns: ["store_id"]

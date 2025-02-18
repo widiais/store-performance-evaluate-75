@@ -130,3 +130,4 @@ const WorkplaceReport = () => {
 };
 
 export default WorkplaceReport;
+
