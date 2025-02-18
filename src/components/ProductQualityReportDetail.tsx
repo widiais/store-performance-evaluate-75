@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import * as XLSX from 'xlsx';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import {
@@ -13,11 +13,9 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Ban, X, FileSpreadsheet, FileText } from "lucide-react";
+import { ArrowLeft, Ban, X, FileSpreadsheet, FileText, Trash2 } from "lucide-react";
 import ProductQualityReportPDF from "./ProductQualityReportPDF";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2 } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
 
 const ProductQualityReportDetail = () => {
   const { id } = useParams();

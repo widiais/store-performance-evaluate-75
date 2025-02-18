@@ -17,7 +17,7 @@ import { ArrowLeft, Ban, X, FileSpreadsheet, FileText } from "lucide-react";
 import ChampsPDF from "./ChampReportPDF";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2 } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 
 interface DetailedQuestion {
   question: string;
