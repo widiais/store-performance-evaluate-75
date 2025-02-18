@@ -45,12 +45,16 @@ const WorkplaceReport = () => {
           active_sp1,
           active_sp2,
           kpi_score
-        `)
-        .not('active_peringatan', 'eq', 0)
-        .or('active_sp1.gt.0,active_sp2.gt.0');
+        `);
 
       if (storesError) throw storesError;
-      return sanctionedStores || [];
+      
+      // Filter stores that have at least one active sanction
+      return (sanctionedStores || []).filter(store => 
+        (store.active_peringatan || 0) > 0 || 
+        (store.active_sp1 || 0) > 0 || 
+        (store.active_sp2 || 0) > 0
+      );
     },
   });
 
@@ -88,26 +92,43 @@ const WorkplaceReport = () => {
               <TableRow>
                 <TableHead>Store Name</TableHead>
                 <TableHead>City</TableHead>
-                <TableHead>Total Crew</TableHead>
-                <TableHead>Total Sanction Score</TableHead>
+                <TableHead>Total Employees</TableHead>
+                <TableHead>Active Sanctions</TableHead>
                 <TableHead>KPI Score</TableHead>
                 <TableHead className="text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredStores.map((store) => {
-                const totalSanctionScore = 
+                const totalActiveSanctions = 
                   (store.active_peringatan || 0) + 
-                  ((store.active_sp1 || 0) * 2) + 
-                  ((store.active_sp2 || 0) * 3);
+                  (store.active_sp1 || 0) + 
+                  (store.active_sp2 || 0);
 
                 return (
                   <TableRow key={store.store_id}>
                     <TableCell className="font-medium">{store.store_name}</TableCell>
                     <TableCell>{store.store_city}</TableCell>
                     <TableCell>{store.total_employees || 0}</TableCell>
-                    <TableCell>{totalSanctionScore}</TableCell>
-                    <TableCell>{store.kpi_score?.toFixed(2) || '-'}</TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div className="text-sm font-medium">Total: {totalActiveSanctions}</div>
+                        <div className="text-xs text-gray-500">
+                          Peringatan: {store.active_peringatan || 0} |
+                          SP1: {store.active_sp1 || 0} |
+                          SP2: {store.active_sp2 || 0}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className={`font-medium ${
+                        (store.kpi_score || 0) >= 3 ? 'text-green-600' :
+                        (store.kpi_score || 0) >= 2 ? 'text-yellow-600' :
+                        'text-red-600'
+                      }`}>
+                        {store.kpi_score?.toFixed(2) || '-'}
+                      </span>
+                    </TableCell>
                     <TableCell className="text-right">
                       <Button
                         variant="outline"
