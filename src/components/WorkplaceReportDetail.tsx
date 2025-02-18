@@ -32,6 +32,20 @@ const WorkplaceReportDetail = () => {
     },
   });
 
+  const { data: kpiData } = useQuery({
+    queryKey: ['store-kpi', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('employee_sanctions_kpi')
+        .select('*')
+        .eq('store_id', parseInt(id || '0'))
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const { data: sanctions = [], isLoading } = useQuery({
     queryKey: ['store-sanctions', id],
     queryFn: async () => {
@@ -55,6 +69,19 @@ const WorkplaceReportDetail = () => {
     );
   }
 
+  const totalSanctionScore = sanctions.reduce((total, sanction) => {
+    switch (sanction.sanction_type) {
+      case 'Peringatan Tertulis':
+        return total + 1;
+      case 'SP1':
+        return total + 2;
+      case 'SP2':
+        return total + 3;
+      default:
+        return total;
+    }
+  }, 0);
+
   return (
     <div className="p-8">
       <Button 
@@ -74,7 +101,7 @@ const WorkplaceReportDetail = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card className="p-4">
             <h3 className="text-sm font-medium text-gray-500">Total Crew</h3>
             <p className="text-2xl font-bold">{store?.total_crew || 0}</p>
@@ -85,19 +112,16 @@ const WorkplaceReportDetail = () => {
           </Card>
           <Card className="p-4">
             <h3 className="text-sm font-medium text-gray-500">Total Score</h3>
-            <p className="text-2xl font-bold">
-              {sanctions.reduce((total, sanction) => {
-                switch (sanction.sanction_type) {
-                  case 'Peringatan Tertulis':
-                    return total + 1;
-                  case 'SP1':
-                    return total + 2;
-                  case 'SP2':
-                    return total + 3;
-                  default:
-                    return total;
-                }
-              }, 0)}
+            <p className="text-2xl font-bold">{totalSanctionScore}</p>
+          </Card>
+          <Card className="p-4">
+            <h3 className="text-sm font-medium text-gray-500">KPI Score</h3>
+            <p className={`text-2xl font-bold ${
+              (kpiData?.kpi_score || 0) >= 3 ? 'text-green-600' :
+              (kpiData?.kpi_score || 0) >= 2 ? 'text-yellow-600' :
+              'text-red-600'
+            }`}>
+              {kpiData?.kpi_score?.toFixed(2) || '-'}
             </p>
           </Card>
         </div>

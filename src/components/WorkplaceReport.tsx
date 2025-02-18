@@ -24,6 +24,7 @@ interface Store {
   active_peringatan: number;
   active_sp1: number;
   active_sp2: number;
+  kpi_score: number;
   stores: {
     area: number;
     regional: number;
@@ -47,7 +48,8 @@ const WorkplaceReport = () => {
           active_peringatan,
           active_sp1,
           active_sp2,
-          stores (
+          kpi_score,
+          stores!inner (
             area,
             regional
           )
@@ -56,7 +58,15 @@ const WorkplaceReport = () => {
         .or('active_sp1.gt.0,active_sp2.gt.0');
 
       if (storesError) throw storesError;
-      return sanctionedStores || [];
+      
+      // Transform the data to match our Store interface
+      return (sanctionedStores || []).map(store => ({
+        ...store,
+        stores: {
+          area: store.stores.area,
+          regional: store.stores.regional
+        }
+      }));
     },
   });
 
@@ -97,6 +107,7 @@ const WorkplaceReport = () => {
                 <TableHead>Region</TableHead>
                 <TableHead>Total Crew</TableHead>
                 <TableHead>Total Sanction Score</TableHead>
+                <TableHead>KPI Score</TableHead>
                 <TableHead className="text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
@@ -110,10 +121,11 @@ const WorkplaceReport = () => {
                 return (
                   <TableRow key={store.store_id}>
                     <TableCell className="font-medium">{store.store_name}</TableCell>
-                    <TableCell>{store.stores?.area || '-'}</TableCell>
-                    <TableCell>{store.stores?.regional || '-'}</TableCell>
+                    <TableCell>{store.stores.area || '-'}</TableCell>
+                    <TableCell>{store.stores.regional || '-'}</TableCell>
                     <TableCell>{store.total_employees || 0}</TableCell>
                     <TableCell>{totalSanctionScore}</TableCell>
+                    <TableCell>{store.kpi_score?.toFixed(2) || '-'}</TableCell>
                     <TableCell className="text-right">
                       <Button
                         variant="outline"
