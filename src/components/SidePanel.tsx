@@ -1,6 +1,9 @@
-import { Link } from "react-router-dom";
+
+import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   UserPlus, 
@@ -49,7 +52,7 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
   const navigate = useNavigate();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [expandedSections, setExpandedSections] = useState({
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     main: false,
     setup: false,
     forms: false,
@@ -259,10 +262,10 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
     }
   };
 
-  const toggleSection = (section: keyof typeof expandedSections) => {
+  const toggleSection = (section: string) => {
     setExpandedSections(prev => ({
       ...prev,
-      [section.toLowerCase()]: !prev[section.toLowerCase()]
+      [section]: !prev[section]
     }));
   };
 
@@ -294,7 +297,7 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
           fixed top-0 left-0 z-40 h-full w-64 bg-white border-r border-gray-200
           transform transition-transform duration-300 ease-in-out
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-          md:translate-x-
+          md:translate-x-0
         `}
       >
         <ScrollArea className="h-full py-6">
@@ -313,18 +316,18 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
             {menuSections.map((section, index) => (
               <div key={index} className="mb-4">
                 <button
-                  onClick={() => toggleSection(section.title as keyof typeof expandedSections)}
+                  onClick={() => toggleSection(section.title)}
                   className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 rounded-lg"
                 >
                   {section.title}
-                  {expandedSections[section.title.toLowerCase() as keyof typeof expandedSections] ? (
+                  {expandedSections[section.title] ? (
                     <ChevronUp className="h-4 w-4" />
                   ) : (
                     <ChevronDown className="h-4 w-4" />
                   )}
                 </button>
                 
-                {expandedSections[section.title.toLowerCase() as keyof typeof expandedSections] && (
+                {expandedSections[section.title] && (
                   <div className="mt-1 space-y-1">
                     {section.items.map((item, itemIndex) => {
                       const Icon = item.icon;
