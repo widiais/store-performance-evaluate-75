@@ -9,6 +9,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import SidePanel from "@/components/SidePanel";
 import Auth from "@/pages/Auth";
 import Index from "./pages/Index";
+import UserManagement from "@/pages/users/UserManagement";
+import RoleManagement from "@/pages/roles/RoleManagement";
 import SetupChamps from "@/components/SetupChamps";
 import SetupService from "@/components/SetupService";
 import SetupCleanliness from "@/components/SetupCleanliness";
@@ -82,6 +84,18 @@ function AppContent() {
               <Route path="/" element={
                 <ProtectedRoute>
                   <Index />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/users" element={
+                <ProtectedRoute>
+                  <UserManagement />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/roles" element={
+                <ProtectedRoute>
+                  <RoleManagement />
                 </ProtectedRoute>
               } />
               

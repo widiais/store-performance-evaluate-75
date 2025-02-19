@@ -1,10 +1,11 @@
-
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import {
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { 
+  UserPlus, 
+  Shield,
+  ChevronRight,
   LayoutDashboard,
   Store,
   Award,
@@ -28,7 +29,7 @@ import {
 } from "lucide-react";
 
 interface SidePanelProps {
-  onTabChange: (value: string) => void;
+  onTabChange: (tab: string) => void;
 }
 
 interface MenuItem {
@@ -44,6 +45,7 @@ interface MenuSection {
 }
 
 const SidePanel = ({ onTabChange }: SidePanelProps) => {
+  const { signOut, hasPermission } = useAuth();
   const navigate = useNavigate();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
