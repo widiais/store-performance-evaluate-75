@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -21,26 +22,41 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Shield, Pencil, Trash2 } from "lucide-react";
-import type { PermissionType } from "@/types/auth";
+import { Shield, Pencil, Info } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
-const SETUP_RESOURCES = [
-  'setup-store',
-  'setup-champs',
-  'setup-cleanliness',
-  'setup-service',
-  'setup-product-quality',
-  'setup-complain'
+const RESOURCES = {
+  'setup-store': 'Store Setup',
+  'setup-champs': 'CHAMPS Setup',
+  'setup-cleanliness': 'Cleanliness Setup',
+  'setup-service': 'Service Setup',
+  'setup-product-quality': 'Product Quality Setup',
+  'setup-complain': 'Complaint Setup'
+};
+
+const ROLE_LEVELS = [
+  { value: 'admin', label: 'Administrator' },
+  { value: 'manager', label: 'Manager' },
+  { value: 'supervisor', label: 'Supervisor' },
+  { value: 'staff', label: 'Staff' }
 ];
-
-const PERMISSIONS: PermissionType[] = ['create', 'read', 'update', 'delete'];
 
 const RoleManagement = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedRole, setSelectedRole] = useState<any>(null);
-  const [permissionState, setPermissionState] = useState<Record<string, Record<string, boolean>>>({});
   const { toast } = useToast();
 
   const { data: roles, refetch } = useQuery({
@@ -48,101 +64,58 @@ const RoleManagement = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('roles')
-        .select('*, role_permissions(*)');
+        .select(`
+          *,
+          role_permissions (
+            resource,
+            can_create,
+            can_read,
+            can_update,
+            can_delete
+          )
+        `)
+        .order('role_level');
+      
       if (error) throw error;
       return data;
     }
   });
-
-  useEffect(() => {
-    if (isOpen) {
-      const initialState: Record<string, Record<string, boolean>> = {};
-      SETUP_RESOURCES.forEach(resource => {
-        initialState[resource] = {
-          create: false,
-          read: false,
-          update: false,
-          delete: false
-        };
-      });
-
-      if (isEditMode && selectedRole) {
-        selectedRole.role_permissions?.forEach((perm: any) => {
-          if (initialState[perm.resource]) {
-            initialState[perm.resource][perm.permission] = true;
-          }
-        });
-      }
-
-      setPermissionState(initialState);
-    }
-  }, [isOpen, isEditMode, selectedRole]);
-
-  const handlePermissionChange = (resource: string, permission: PermissionType, checked: boolean) => {
-    setPermissionState(prev => {
-      const newState = { ...prev };
-      
-      if (checked && permission !== 'read') {
-        newState[resource] = {
-          ...newState[resource],
-          [permission]: checked,
-          read: true
-        };
-      }
-      else if (!checked && permission === 'read') {
-        newState[resource] = {
-          create: false,
-          read: false,
-          update: false,
-          delete: false
-        };
-      }
-      else {
-        newState[resource] = {
-          ...newState[resource],
-          [permission]: checked
-        };
-      }
-      
-      return newState;
-    });
-  };
 
   const handleCreateRole = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
     const description = formData.get('description') as string;
+    const roleLevel = formData.get('roleLevel') as string;
 
     try {
       const { data: role, error: roleError } = await supabase
         .from('roles')
-        .insert({ name, description })
+        .insert({ 
+          name, 
+          description,
+          role_level: roleLevel
+        })
         .select()
         .single();
 
       if (roleError) throw roleError;
 
-      const permissions = [];
-      for (const resource of SETUP_RESOURCES) {
-        for (const permission of PERMISSIONS) {
-          if (permissionState[resource]?.[permission]) {
-            permissions.push({
-              role_id: role.id,
-              resource,
-              permission,
-            });
-          }
-        }
-      }
+      // Insert default permissions based on role level
+      const permissions = Object.keys(RESOURCES).map(resource => ({
+        role_id: role.id,
+        resource,
+        can_create: roleLevel === 'admin',
+        can_read: true,
+        can_update: ['admin', 'manager'].includes(roleLevel),
+        can_delete: roleLevel === 'admin'
+      }));
 
-      if (permissions.length > 0) {
-        const { error: permError } = await supabase
-          .from('role_permissions')
-          .insert(permissions);
-        
-        if (permError) throw permError;
-      }
+      const { error: permError } = await supabase
+        .from('role_permissions')
+        .insert(permissions);
+      
+      if (permError) throw permError;
 
       toast({
         title: "Success",
@@ -173,34 +146,6 @@ const RoleManagement = () => {
 
       if (roleError) throw roleError;
 
-      const { error: deleteError } = await supabase
-        .from('role_permissions')
-        .delete()
-        .eq('role_id', selectedRole.id);
-
-      if (deleteError) throw deleteError;
-
-      const permissions = [];
-      for (const resource of SETUP_RESOURCES) {
-        for (const permission of PERMISSIONS) {
-          if (permissionState[resource]?.[permission]) {
-            permissions.push({
-              role_id: selectedRole.id,
-              resource,
-              permission,
-            });
-          }
-        }
-      }
-
-      if (permissions.length > 0) {
-        const { error: permError } = await supabase
-          .from('role_permissions')
-          .insert(permissions);
-        
-        if (permError) throw permError;
-      }
-
       toast({
         title: "Success",
         description: "Role updated successfully",
@@ -216,34 +161,21 @@ const RoleManagement = () => {
     }
   };
 
-  const handleDeleteRole = async (roleId: string) => {
-    try {
-      const { error } = await supabase
-        .from('roles')
-        .delete()
-        .eq('id', roleId);
-      
-      if (error) throw error;
+  const getPermissionSummary = (permissions: any[]) => {
+    const summary = permissions.reduce((acc, perm) => {
+      if (!acc[perm.resource]) {
+        acc[perm.resource] = [];
+      }
+      if (perm.can_create) acc[perm.resource].push('C');
+      if (perm.can_read) acc[perm.resource].push('R');
+      if (perm.can_update) acc[perm.resource].push('U');
+      if (perm.can_delete) acc[perm.resource].push('D');
+      return acc;
+    }, {});
 
-      toast({
-        title: "Success",
-        description: "Role deleted successfully",
-      });
-      refetch();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const getResourceDisplayName = (resource: string) => {
-    return resource
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+    return Object.entries(summary)
+      .map(([resource, perms]) => `${RESOURCES[resource as keyof typeof RESOURCES]}: ${perms.join('')}`)
+      .join('\n');
   };
 
   return (
@@ -260,7 +192,7 @@ const RoleManagement = () => {
               Add Role
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-3xl">
+          <DialogContent>
             <DialogHeader>
               <DialogTitle>{isEditMode ? 'Edit Role' : 'Create New Role'}</DialogTitle>
             </DialogHeader>
@@ -282,45 +214,23 @@ const RoleManagement = () => {
                   defaultValue={selectedRole?.description}
                 />
               </div>
-              <div>
-                <Label>Setup Permissions</Label>
-                <div className="mt-4">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[200px]">Resource</TableHead>
-                        <TableHead>Create</TableHead>
-                        <TableHead>Read</TableHead>
-                        <TableHead>Update</TableHead>
-                        <TableHead>Delete</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {SETUP_RESOURCES.map(resource => (
-                        <TableRow key={resource}>
-                          <TableCell className="font-medium">
-                            {getResourceDisplayName(resource)}
-                          </TableCell>
-                          {PERMISSIONS.map(permission => (
-                            <TableCell key={`${resource}-${permission}`}>
-                              <Checkbox
-                                checked={permissionState[resource]?.[permission] || false}
-                                onCheckedChange={(checked) => 
-                                  handlePermissionChange(resource, permission, checked as boolean)
-                                }
-                                disabled={
-                                  permission !== 'read' && 
-                                  !permissionState[resource]?.['read']
-                                }
-                              />
-                            </TableCell>
-                          ))}
-                        </TableRow>
+              {!isEditMode && (
+                <div>
+                  <Label htmlFor="roleLevel">Role Level</Label>
+                  <Select name="roleLevel" required defaultValue="staff">
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select role level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ROLE_LEVELS.map(level => (
+                        <SelectItem key={level.value} value={level.value}>
+                          {level.label}
+                        </SelectItem>
                       ))}
-                    </TableBody>
-                  </Table>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
+              )}
               <Button type="submit" className="w-full">
                 {isEditMode ? 'Update Role' : 'Create Role'}
               </Button>
@@ -335,6 +245,8 @@ const RoleManagement = () => {
           <TableRow>
             <TableHead>Name</TableHead>
             <TableHead>Description</TableHead>
+            <TableHead>Level</TableHead>
+            <TableHead>Permissions</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -343,7 +255,24 @@ const RoleManagement = () => {
             <TableRow key={role.id}>
               <TableCell>{role.name}</TableCell>
               <TableCell>{role.description}</TableCell>
-              <TableCell className="flex space-x-2">
+              <TableCell className="capitalize">{role.role_level}</TableCell>
+              <TableCell>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <Info className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <pre className="text-xs whitespace-pre-wrap">
+                        {getPermissionSummary(role.role_permissions)}
+                      </pre>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </TableCell>
+              <TableCell>
                 <Button
                   variant="outline"
                   size="icon"
@@ -354,13 +283,6 @@ const RoleManagement = () => {
                   }}
                 >
                   <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  onClick={() => handleDeleteRole(role.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
                 </Button>
               </TableCell>
             </TableRow>
