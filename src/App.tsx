@@ -48,8 +48,23 @@ import WorkplaceReportDetail from "@/components/WorkplaceReportDetail";
 
 const queryClient = new QueryClient();
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  requiredPermission?: {
+    resource: string;
+    action: 'create' | 'read' | 'update' | 'delete';
+  };
+}
+
+const ProtectedRoute = ({ children, requiredPermission }: ProtectedRouteProps) => {
+  const { user, loading, hasPermission } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth');
+    }
+  }, [user, loading, navigate]);
 
   if (loading) {
     return (
@@ -60,9 +75,23 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!user) {
-    return <Navigate to="/auth" />;
+    return null;
   }
 
+  if (requiredPermission && !hasPermission(requiredPermission.resource, requiredPermission.action)) {
+    return <Navigate to="/" />;
+  }
+
+  return <>{children}</>;
+};
+
+const PublicRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user } = useAuth();
+  
+  if (user) {
+    return <Navigate to="/" />;
+  }
+  
   return <>{children}</>;
 };
 
@@ -79,7 +108,11 @@ function AppContent() {
           {user && <SidePanel onTabChange={setActiveTab} />}
           <div className={user ? "flex-1 md:pl-64" : "flex-1"}>
             <Routes>
-              <Route path="/auth" element={<Auth />} />
+              <Route path="/auth" element={
+                <PublicRoute>
+                  <Auth />
+                </PublicRoute>
+              } />
               
               <Route path="/" element={
                 <ProtectedRoute>
@@ -88,13 +121,13 @@ function AppContent() {
               } />
 
               <Route path="/users" element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredPermission={{ resource: 'users', action: 'read' }}>
                   <UserManagement />
                 </ProtectedRoute>
               } />
 
               <Route path="/roles" element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredPermission={{ resource: 'roles', action: 'read' }}>
                   <RoleManagement />
                 </ProtectedRoute>
               } />

@@ -1,4 +1,3 @@
-
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -28,7 +27,8 @@ import {
   DollarSign,
   ClipboardList,
   Star,
-  AlertTriangle
+  AlertTriangle,
+  LogOut
 } from "lucide-react";
 
 interface SidePanelProps {
@@ -91,6 +91,23 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
           label: "Store Performance",
           value: "store-performance",
           route: "/store-performance"
+        }
+      ]
+    },
+    {
+      title: "Company Policy",
+      items: [
+        {
+          icon: UserPlus,
+          label: "User Management",
+          value: "user-management",
+          route: "/users"
+        },
+        {
+          icon: Shield,
+          label: "Role Management",
+          value: "role-management",
+          route: "/roles"
         }
       ]
     },
@@ -271,7 +288,6 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
 
   return (
     <>
-      {/* Burger Menu Button - Fixed Position */}
       <button
         onClick={() => setSidebarOpen(!isSidebarOpen)}
         className="md:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-md border border-gray-200"
@@ -283,7 +299,6 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
         )}
       </button>
 
-      {/* Black Overlay */}
       {isMobile && isSidebarOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-30"
@@ -291,7 +306,6 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={`
           fixed top-0 left-0 z-40 h-full w-64 bg-white border-r border-gray-200
@@ -347,6 +361,17 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
                 )}
               </div>
             ))}
+
+            <div className="mt-auto pt-4 px-2">
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50"
+                onClick={signOut}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </Button>
+            </div>
           </div>
         </ScrollArea>
       </aside>
