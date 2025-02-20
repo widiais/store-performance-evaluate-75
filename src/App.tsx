@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useEffect, useState } from "react";
 import SidePanel from "@/components/SidePanel";
 import Auth from "@/pages/Auth";
 import Index from "./pages/Index";
@@ -32,7 +33,6 @@ import ProductQualityReportDetail from "@/components/ProductQualityReportDetail"
 import EspReport from "@/components/EspReport";
 import EspReportDetail from "@/components/EspReportDetail";
 import FinanceReport from "@/components/FinanceReport";
-import { useState } from "react";
 import SetupStore from "./components/SetupStore";
 import SetupComplain from "./components/SetupComplain";
 import ComplaintForm from "./components/ComplaintForm";
