@@ -2,7 +2,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import type { User } from '@/types/auth';
+import type { User, Role, RolePermission } from '@/types/auth';
 import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
@@ -45,36 +45,55 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchUserData = async (userId: string) => {
     try {
-      const { data: profile, error: profileError } = await supabase
+      // First, get the profile and role data
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('*, roles:role_id(*)')
+        .select(`
+          id,
+          email,
+          role_id
+        `)
         .eq('id', userId)
         .single();
 
       if (profileError) throw profileError;
 
-      if (profile.roles) {
+      // If profile has a role, fetch the role details
+      let roleData: Role | null = null;
+      let permissionsData: RolePermission[] = [];
+
+      if (profileData.role_id) {
+        const { data: role, error: roleError } = await supabase
+          .from('roles')
+          .select('*')
+          .eq('id', profileData.role_id)
+          .single();
+
+        if (roleError) throw roleError;
+        roleData = role;
+
+        // Fetch permissions for the role
         const { data: permissions, error: permissionsError } = await supabase
           .from('role_permissions')
           .select('*')
-          .eq('role_id', profile.roles.id);
+          .eq('role_id', profileData.role_id);
 
         if (permissionsError) throw permissionsError;
-
-        setUser({
-          id: userId,
-          email: profile.email,
-          profile,
-          role: profile.roles,
-          permissions: permissions
-        });
-      } else {
-        setUser({
-          id: userId,
-          email: profile.email,
-          profile
-        });
+        permissionsData = permissions;
       }
+
+      setUser({
+        id: userId,
+        email: profileData.email,
+        profile: {
+          id: profileData.id,
+          email: profileData.email,
+          role_id: profileData.role_id,
+          roles: roleData
+        },
+        role: roleData,
+        permissions: permissionsData
+      });
     } catch (error) {
       console.error('Error fetching user data:', error);
       toast({

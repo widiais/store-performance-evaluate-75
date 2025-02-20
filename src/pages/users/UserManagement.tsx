@@ -39,11 +39,27 @@ const UserManagement = () => {
   const { data: users, refetch } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('*, roles:role_id(*)');
-      if (error) throw error;
-      return data;
+        .select('*');
+      
+      if (profilesError) throw profilesError;
+
+      const profilesWithRoles = await Promise.all(
+        profiles.map(async (profile) => {
+          if (profile.role_id) {
+            const { data: role } = await supabase
+              .from('roles')
+              .select('*')
+              .eq('id', profile.role_id)
+              .single();
+            return { ...profile, roles: role };
+          }
+          return { ...profile, roles: null };
+        })
+      );
+
+      return profilesWithRoles;
     }
   });
 
