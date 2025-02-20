@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,7 +66,7 @@ const RoleManagement = () => {
   const [selectedRole, setSelectedRole] = useState<RoleWithPermissions | null>(null);
   const { toast } = useToast();
 
-  const { data: roles, refetch } = useQuery({
+  const { data: roles = [], isLoading } = useQuery({
     queryKey: ['roles'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -80,6 +81,25 @@ const RoleManagement = () => {
       return data as RoleWithPermissions[];
     }
   });
+
+  const getPermissionSummary = (permissions: RolePermission[] = []) => {
+    if (!permissions || permissions.length === 0) return '';
+    
+    const summary = permissions.reduce((acc, perm) => {
+      if (!acc[perm.resource]) {
+        acc[perm.resource] = [];
+      }
+      if (perm.can_create) acc[perm.resource].push('C');
+      if (perm.can_read) acc[perm.resource].push('R');
+      if (perm.can_update) acc[perm.resource].push('U');
+      if (perm.can_delete) acc[perm.resource].push('D');
+      return acc;
+    }, {} as Record<string, string[]>);
+
+    return Object.entries(summary)
+      .map(([resource, perms]) => `${RESOURCES[resource as keyof typeof RESOURCES] || resource}: ${perms.sort().join('')}`)
+      .join('\n');
+  };
 
   const handleCreateRole = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -124,7 +144,6 @@ const RoleManagement = () => {
         description: "Role created successfully",
       });
       setIsOpen(false);
-      refetch();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -155,7 +174,6 @@ const RoleManagement = () => {
         description: "Role updated successfully",
       });
       setIsOpen(false);
-      refetch();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -165,22 +183,13 @@ const RoleManagement = () => {
     }
   };
 
-  const getPermissionSummary = (permissions: RolePermission[]) => {
-    const summary = permissions.reduce((acc, perm) => {
-      if (!acc[perm.resource]) {
-        acc[perm.resource] = [];
-      }
-      if (perm.can_create) acc[perm.resource].push('C');
-      if (perm.can_read) acc[perm.resource].push('R');
-      if (perm.can_update) acc[perm.resource].push('U');
-      if (perm.can_delete) acc[perm.resource].push('D');
-      return acc;
-    }, {} as Record<string, string[]>);
-
-    return Object.entries(summary)
-      .map(([resource, perms]) => `${RESOURCES[resource as keyof typeof RESOURCES]}: ${perms.sort().join('')}`)
-      .join('\n');
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-10">
@@ -255,7 +264,7 @@ const RoleManagement = () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {roles?.map((role) => (
+          {roles.map((role) => (
             <TableRow key={role.id}>
               <TableCell>{role.name}</TableCell>
               <TableCell>{role.description}</TableCell>
