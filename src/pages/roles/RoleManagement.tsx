@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,7 +56,7 @@ const ROLE_LEVELS: { value: UserRole; label: string }[] = [
 ];
 
 interface RoleWithPermissions extends Role {
-  role_permissions: RolePermission[];
+  role_permissions: RolePermission[] | null;
 }
 
 const RoleManagement = () => {
@@ -66,7 +65,7 @@ const RoleManagement = () => {
   const [selectedRole, setSelectedRole] = useState<RoleWithPermissions | null>(null);
   const { toast } = useToast();
 
-  const { data: roles = [], isLoading } = useQuery({
+  const { data: roles = [], isLoading, isError } = useQuery({
     queryKey: ['roles'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -78,27 +77,36 @@ const RoleManagement = () => {
         .order('role_level');
       
       if (error) throw error;
-      return data as RoleWithPermissions[];
+      return (data || []) as RoleWithPermissions[];
     }
   });
 
-  const getPermissionSummary = (permissions: RolePermission[] = []) => {
-    if (!permissions || permissions.length === 0) return '';
+  const getPermissionSummary = (role: RoleWithPermissions) => {
+    const permissions = role.role_permissions;
     
-    const summary = permissions.reduce((acc, perm) => {
-      if (!acc[perm.resource]) {
-        acc[perm.resource] = [];
-      }
-      if (perm.can_create) acc[perm.resource].push('C');
-      if (perm.can_read) acc[perm.resource].push('R');
-      if (perm.can_update) acc[perm.resource].push('U');
-      if (perm.can_delete) acc[perm.resource].push('D');
-      return acc;
-    }, {} as Record<string, string[]>);
+    if (!permissions || !Array.isArray(permissions) || permissions.length === 0) {
+      return 'No permissions set';
+    }
+    
+    try {
+      const summary = permissions.reduce((acc, perm) => {
+        if (!acc[perm.resource]) {
+          acc[perm.resource] = [];
+        }
+        if (perm.can_create) acc[perm.resource].push('C');
+        if (perm.can_read) acc[perm.resource].push('R');
+        if (perm.can_update) acc[perm.resource].push('U');
+        if (perm.can_delete) acc[perm.resource].push('D');
+        return acc;
+      }, {} as Record<string, string[]>);
 
-    return Object.entries(summary)
-      .map(([resource, perms]) => `${RESOURCES[resource as keyof typeof RESOURCES] || resource}: ${perms.sort().join('')}`)
-      .join('\n');
+      return Object.entries(summary)
+        .map(([resource, perms]) => `${RESOURCES[resource as keyof typeof RESOURCES] || resource}: ${perms.sort().join('')}`)
+        .join('\n');
+    } catch (error) {
+      console.error('Error processing permissions:', error);
+      return 'Error processing permissions';
+    }
   };
 
   const handleCreateRole = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -121,7 +129,6 @@ const RoleManagement = () => {
 
       if (roleError) throw roleError;
 
-      // Insert default permissions for the new role
       const permissionsToInsert = Object.keys(RESOURCES).map(resource => ({
         role_id: role.id,
         resource,
@@ -187,6 +194,14 @@ const RoleManagement = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-red-600">
+        Error loading roles
       </div>
     );
   }
@@ -279,7 +294,7 @@ const RoleManagement = () => {
                     </TooltipTrigger>
                     <TooltipContent>
                       <pre className="text-xs whitespace-pre-wrap">
-                        {getPermissionSummary(role.role_permissions)}
+                        {getPermissionSummary(role)}
                       </pre>
                     </TooltipContent>
                   </Tooltip>
