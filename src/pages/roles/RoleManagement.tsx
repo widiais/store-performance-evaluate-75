@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -26,13 +26,22 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Shield, Pencil, Trash2 } from "lucide-react";
 import type { PermissionType } from "@/types/auth";
 
-const RESOURCES = ['users', 'roles', 'stores', 'reports', 'evaluations'];
+const SETUP_RESOURCES = [
+  'setup-store',
+  'setup-champs',
+  'setup-cleanliness',
+  'setup-service',
+  'setup-product-quality',
+  'setup-complain'
+];
+
 const PERMISSIONS: PermissionType[] = ['create', 'read', 'update', 'delete'];
 
 const RoleManagement = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedRole, setSelectedRole] = useState<any>(null);
+  const [permissionState, setPermissionState] = useState<Record<string, Record<string, boolean>>>({});
   const { toast } = useToast();
 
   const { data: roles, refetch } = useQuery({
@@ -45,6 +54,64 @@ const RoleManagement = () => {
       return data;
     }
   });
+
+  // Initialize or reset permission state when opening dialog
+  useEffect(() => {
+    if (isOpen) {
+      const initialState: Record<string, Record<string, boolean>> = {};
+      SETUP_RESOURCES.forEach(resource => {
+        initialState[resource] = {
+          create: false,
+          read: false,
+          update: false,
+          delete: false
+        };
+      });
+
+      if (isEditMode && selectedRole) {
+        selectedRole.role_permissions?.forEach((perm: any) => {
+          if (initialState[perm.resource]) {
+            initialState[perm.resource][perm.permission] = true;
+          }
+        });
+      }
+
+      setPermissionState(initialState);
+    }
+  }, [isOpen, isEditMode, selectedRole]);
+
+  const handlePermissionChange = (resource: string, permission: PermissionType, checked: boolean) => {
+    setPermissionState(prev => {
+      const newState = { ...prev };
+      
+      // If checking a non-read permission, ensure read is also checked
+      if (checked && permission !== 'read') {
+        newState[resource] = {
+          ...newState[resource],
+          [permission]: checked,
+          read: true
+        };
+      }
+      // If unchecking read, uncheck all other permissions
+      else if (!checked && permission === 'read') {
+        newState[resource] = {
+          create: false,
+          read: false,
+          update: false,
+          delete: false
+        };
+      }
+      // Normal toggle for other cases
+      else {
+        newState[resource] = {
+          ...newState[resource],
+          [permission]: checked
+        };
+      }
+      
+      return newState;
+    });
+  };
 
   const handleCreateRole = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -61,12 +128,11 @@ const RoleManagement = () => {
 
       if (roleError) throw roleError;
 
-      // Insert permissions
+      // Insert permissions based on permissionState
       const permissions = [];
-      for (const resource of RESOURCES) {
+      for (const resource of SETUP_RESOURCES) {
         for (const permission of PERMISSIONS) {
-          const isChecked = formData.get(`${resource}-${permission}`);
-          if (isChecked) {
+          if (permissionState[resource]?.[permission]) {
             permissions.push({
               role_id: role.id,
               resource,
@@ -106,7 +172,6 @@ const RoleManagement = () => {
     const description = formData.get('description') as string;
 
     try {
-      // Update role
       const { error: roleError } = await supabase
         .from('roles')
         .update({ name, description })
@@ -122,12 +187,11 @@ const RoleManagement = () => {
 
       if (deleteError) throw deleteError;
 
-      // Insert new permissions
+      // Insert new permissions based on permissionState
       const permissions = [];
-      for (const resource of RESOURCES) {
+      for (const resource of SETUP_RESOURCES) {
         for (const permission of PERMISSIONS) {
-          const isChecked = formData.get(`${resource}-${permission}`);
-          if (isChecked) {
+          if (permissionState[resource]?.[permission]) {
             permissions.push({
               role_id: selectedRole.id,
               resource,
@@ -183,10 +247,11 @@ const RoleManagement = () => {
     }
   };
 
-  const hasPermission = (role: any, resource: string, permission: PermissionType) => {
-    return role.role_permissions?.some((p: any) => 
-      p.resource === resource && p.permission === permission
-    );
+  const getResourceDisplayName = (resource: string) => {
+    return resource
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   };
 
   return (
@@ -226,26 +291,36 @@ const RoleManagement = () => {
                 />
               </div>
               <div>
-                <Label>Permissions</Label>
+                <Label>Setup Permissions</Label>
                 <div className="mt-4">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Resource</TableHead>
-                        {PERMISSIONS.map(permission => (
-                          <TableHead key={permission}>{permission}</TableHead>
-                        ))}
+                        <TableHead className="w-[200px]">Resource</TableHead>
+                        <TableHead>Create</TableHead>
+                        <TableHead>Read</TableHead>
+                        <TableHead>Update</TableHead>
+                        <TableHead>Delete</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {RESOURCES.map(resource => (
+                      {SETUP_RESOURCES.map(resource => (
                         <TableRow key={resource}>
-                          <TableCell className="font-medium">{resource}</TableCell>
+                          <TableCell className="font-medium">
+                            {getResourceDisplayName(resource)}
+                          </TableCell>
                           {PERMISSIONS.map(permission => (
                             <TableCell key={`${resource}-${permission}`}>
                               <Checkbox
-                                name={`${resource}-${permission}`}
-                                defaultChecked={selectedRole && hasPermission(selectedRole, resource, permission)}
+                                checked={permissionState[resource]?.[permission] || false}
+                                onCheckedChange={(checked) => 
+                                  handlePermissionChange(resource, permission, checked as boolean)
+                                }
+                                disabled={
+                                  permission !== 'read' && 
+                                  !permissionState[resource]?.['read'] && 
+                                  !checked
+                                }
                               />
                             </TableCell>
                           ))}
