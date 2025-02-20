@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,7 +41,7 @@ const UserManagement = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('*, roles(*)');
+        .select('*, roles:role_id(*)');
       if (error) throw error;
       return data;
     }

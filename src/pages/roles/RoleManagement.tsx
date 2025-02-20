@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,6 +35,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { Role, RolePermission } from "@/types/auth";
 
 type UserRole = 'admin' | 'manager' | 'supervisor' | 'staff';
 
@@ -55,26 +55,14 @@ const ROLE_LEVELS: { value: UserRole; label: string }[] = [
   { value: 'staff', label: 'Staff' }
 ];
 
-interface RolePermission {
-  resource: string;
-  permission: string;
-  role_id: string;
-}
-
-interface Role {
-  id: string;
-  name: string;
-  description: string | null;
-  role_level: UserRole;
-  created_at: string;
-  updated_at: string;
+interface RoleWithPermissions extends Role {
   role_permissions: RolePermission[];
 }
 
 const RoleManagement = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [selectedRole, setSelectedRole] = useState<RoleWithPermissions | null>(null);
   const { toast } = useToast();
 
   const { data: roles, refetch } = useQuery({
@@ -84,16 +72,12 @@ const RoleManagement = () => {
         .from('roles')
         .select(`
           *,
-          role_permissions (
-            resource,
-            permission,
-            role_id
-          )
+          role_permissions (*)
         `)
         .order('role_level');
       
       if (error) throw error;
-      return data as Role[];
+      return data as RoleWithPermissions[];
     }
   });
 
@@ -118,26 +102,16 @@ const RoleManagement = () => {
       if (roleError) throw roleError;
 
       // Insert default permissions for the new role
-      const permissionsToInsert = Object.keys(RESOURCES).flatMap(resource => {
-        const permissions: string[] = ['read']; // Everyone gets read by default
-        
-        if (roleLevel === 'admin') {
-          permissions.push('create', 'update', 'delete');
-        } else if (roleLevel === 'manager' && ['setup-store', 'setup-champs', 'setup-cleanliness'].includes(resource)) {
-          permissions.push('create', 'update');
-          if (['setup-store', 'setup-champs'].includes(resource)) {
-            permissions.push('delete');
-          }
-        } else if (roleLevel === 'supervisor' && ['setup-cleanliness', 'setup-service'].includes(resource)) {
-          permissions.push('update');
-        }
-
-        return permissions.map(permission => ({
-          role_id: role.id,
-          resource,
-          permission
-        }));
-      });
+      const permissionsToInsert = Object.keys(RESOURCES).map(resource => ({
+        role_id: role.id,
+        resource,
+        can_create: roleLevel === 'admin' || (roleLevel === 'manager' && ['setup-store', 'setup-champs', 'setup-cleanliness'].includes(resource)),
+        can_read: true,
+        can_update: roleLevel === 'admin' || 
+                   (roleLevel === 'manager' && ['setup-store', 'setup-champs', 'setup-cleanliness'].includes(resource)) ||
+                   (roleLevel === 'supervisor' && ['setup-cleanliness', 'setup-service'].includes(resource)),
+        can_delete: roleLevel === 'admin' || (roleLevel === 'manager' && ['setup-store', 'setup-champs'].includes(resource))
+      }));
 
       const { error: permError } = await supabase
         .from('role_permissions')
@@ -196,8 +170,10 @@ const RoleManagement = () => {
       if (!acc[perm.resource]) {
         acc[perm.resource] = [];
       }
-      const permissionChar = perm.permission.charAt(0).toUpperCase();
-      acc[perm.resource].push(permissionChar);
+      if (perm.can_create) acc[perm.resource].push('C');
+      if (perm.can_read) acc[perm.resource].push('R');
+      if (perm.can_update) acc[perm.resource].push('U');
+      if (perm.can_delete) acc[perm.resource].push('D');
       return acc;
     }, {} as Record<string, string[]>);
 

@@ -11,7 +11,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  hasPermission: (resource: string, permission: 'create' | 'read' | 'update' | 'delete') => boolean;
+  hasPermission: (resource: string, action: 'create' | 'read' | 'update' | 'delete') => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,7 +23,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check active sessions and subscribe to auth changes
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         fetchUserData(session.user.id);
@@ -140,11 +139,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const hasPermission = (resource: string, permission: 'create' | 'read' | 'update' | 'delete'): boolean => {
+  const hasPermission = (resource: string, action: 'create' | 'read' | 'update' | 'delete'): boolean => {
     if (!user?.permissions) return false;
-    return user.permissions.some(p => 
-      p.resource === resource && p.permission === permission
-    );
+    const permission = user.permissions.find(p => p.resource === resource);
+    if (!permission) return false;
+    
+    switch (action) {
+      case 'create':
+        return permission.can_create;
+      case 'read':
+        return permission.can_read;
+      case 'update':
+        return permission.can_update;
+      case 'delete':
+        return permission.can_delete;
+      default:
+        return false;
+    }
   };
 
   return (
