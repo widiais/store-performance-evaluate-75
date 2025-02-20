@@ -37,6 +37,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+type UserRole = 'admin' | 'manager' | 'supervisor' | 'staff';
+
 const RESOURCES = {
   'setup-store': 'Store Setup',
   'setup-champs': 'CHAMPS Setup',
@@ -46,17 +48,33 @@ const RESOURCES = {
   'setup-complain': 'Complaint Setup'
 };
 
-const ROLE_LEVELS = [
+const ROLE_LEVELS: { value: UserRole; label: string }[] = [
   { value: 'admin', label: 'Administrator' },
   { value: 'manager', label: 'Manager' },
   { value: 'supervisor', label: 'Supervisor' },
   { value: 'staff', label: 'Staff' }
 ];
 
+interface RolePermission {
+  resource: string;
+  can_create: boolean;
+  can_read: boolean;
+  can_update: boolean;
+  can_delete: boolean;
+}
+
+interface Role {
+  id: string;
+  name: string;
+  description: string | null;
+  role_level: UserRole;
+  role_permissions: RolePermission[];
+}
+
 const RoleManagement = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<any>(null);
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const { toast } = useToast();
 
   const { data: roles, refetch } = useQuery({
@@ -77,7 +95,7 @@ const RoleManagement = () => {
         .order('role_level');
       
       if (error) throw error;
-      return data;
+      return data as Role[];
     }
   });
 
@@ -86,7 +104,7 @@ const RoleManagement = () => {
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
     const description = formData.get('description') as string;
-    const roleLevel = formData.get('roleLevel') as string;
+    const roleLevel = formData.get('roleLevel') as UserRole;
 
     try {
       const { data: role, error: roleError } = await supabase
@@ -105,10 +123,12 @@ const RoleManagement = () => {
       const permissions = Object.keys(RESOURCES).map(resource => ({
         role_id: role.id,
         resource,
-        can_create: roleLevel === 'admin',
+        can_create: roleLevel === 'admin' || (roleLevel === 'manager' && ['setup-store', 'setup-champs', 'setup-cleanliness'].includes(resource)),
         can_read: true,
-        can_update: ['admin', 'manager'].includes(roleLevel),
-        can_delete: roleLevel === 'admin'
+        can_update: roleLevel === 'admin' || 
+                   (roleLevel === 'manager' && ['setup-store', 'setup-champs', 'setup-cleanliness'].includes(resource)) ||
+                   (roleLevel === 'supervisor' && ['setup-cleanliness', 'setup-service'].includes(resource)),
+        can_delete: roleLevel === 'admin' || (roleLevel === 'manager' && ['setup-store', 'setup-champs'].includes(resource))
       }));
 
       const { error: permError } = await supabase
@@ -138,6 +158,8 @@ const RoleManagement = () => {
     const name = formData.get('name') as string;
     const description = formData.get('description') as string;
 
+    if (!selectedRole) return;
+
     try {
       const { error: roleError } = await supabase
         .from('roles')
@@ -161,7 +183,7 @@ const RoleManagement = () => {
     }
   };
 
-  const getPermissionSummary = (permissions: any[]) => {
+  const getPermissionSummary = (permissions: RolePermission[]) => {
     const summary = permissions.reduce((acc, perm) => {
       if (!acc[perm.resource]) {
         acc[perm.resource] = [];
@@ -171,7 +193,7 @@ const RoleManagement = () => {
       if (perm.can_update) acc[perm.resource].push('U');
       if (perm.can_delete) acc[perm.resource].push('D');
       return acc;
-    }, {});
+    }, {} as Record<string, string[]>);
 
     return Object.entries(summary)
       .map(([resource, perms]) => `${RESOURCES[resource as keyof typeof RESOURCES]}: ${perms.join('')}`)
@@ -211,7 +233,7 @@ const RoleManagement = () => {
                 <Input 
                   id="description" 
                   name="description" 
-                  defaultValue={selectedRole?.description}
+                  defaultValue={selectedRole?.description || ''}
                 />
               </div>
               {!isEditMode && (
