@@ -57,10 +57,8 @@ const ROLE_LEVELS: { value: UserRole; label: string }[] = [
 
 interface RolePermission {
   resource: string;
-  can_create: boolean;
-  can_read: boolean;
-  can_update: boolean;
-  can_delete: boolean;
+  permission: string;
+  role_id: string;
 }
 
 interface Role {
@@ -68,6 +66,8 @@ interface Role {
   name: string;
   description: string | null;
   role_level: UserRole;
+  created_at: string;
+  updated_at: string;
   role_permissions: RolePermission[];
 }
 
@@ -86,10 +86,8 @@ const RoleManagement = () => {
           *,
           role_permissions (
             resource,
-            can_create,
-            can_read,
-            can_update,
-            can_delete
+            permission,
+            role_id
           )
         `)
         .order('role_level');
@@ -119,22 +117,32 @@ const RoleManagement = () => {
 
       if (roleError) throw roleError;
 
-      // Insert default permissions based on role level
-      const permissions = Object.keys(RESOURCES).map(resource => ({
-        role_id: role.id,
-        resource,
-        can_create: roleLevel === 'admin' || (roleLevel === 'manager' && ['setup-store', 'setup-champs', 'setup-cleanliness'].includes(resource)),
-        can_read: true,
-        can_update: roleLevel === 'admin' || 
-                   (roleLevel === 'manager' && ['setup-store', 'setup-champs', 'setup-cleanliness'].includes(resource)) ||
-                   (roleLevel === 'supervisor' && ['setup-cleanliness', 'setup-service'].includes(resource)),
-        can_delete: roleLevel === 'admin' || (roleLevel === 'manager' && ['setup-store', 'setup-champs'].includes(resource))
-      }));
+      // Insert default permissions for the new role
+      const permissionsToInsert = Object.keys(RESOURCES).flatMap(resource => {
+        const permissions: string[] = ['read']; // Everyone gets read by default
+        
+        if (roleLevel === 'admin') {
+          permissions.push('create', 'update', 'delete');
+        } else if (roleLevel === 'manager' && ['setup-store', 'setup-champs', 'setup-cleanliness'].includes(resource)) {
+          permissions.push('create', 'update');
+          if (['setup-store', 'setup-champs'].includes(resource)) {
+            permissions.push('delete');
+          }
+        } else if (roleLevel === 'supervisor' && ['setup-cleanliness', 'setup-service'].includes(resource)) {
+          permissions.push('update');
+        }
+
+        return permissions.map(permission => ({
+          role_id: role.id,
+          resource,
+          permission
+        }));
+      });
 
       const { error: permError } = await supabase
         .from('role_permissions')
-        .insert(permissions);
-      
+        .insert(permissionsToInsert);
+
       if (permError) throw permError;
 
       toast({
@@ -188,15 +196,13 @@ const RoleManagement = () => {
       if (!acc[perm.resource]) {
         acc[perm.resource] = [];
       }
-      if (perm.can_create) acc[perm.resource].push('C');
-      if (perm.can_read) acc[perm.resource].push('R');
-      if (perm.can_update) acc[perm.resource].push('U');
-      if (perm.can_delete) acc[perm.resource].push('D');
+      const permissionChar = perm.permission.charAt(0).toUpperCase();
+      acc[perm.resource].push(permissionChar);
       return acc;
     }, {} as Record<string, string[]>);
 
     return Object.entries(summary)
-      .map(([resource, perms]) => `${RESOURCES[resource as keyof typeof RESOURCES]}: ${perms.join('')}`)
+      .map(([resource, perms]) => `${RESOURCES[resource as keyof typeof RESOURCES]}: ${perms.sort().join('')}`)
       .join('\n');
   };
 

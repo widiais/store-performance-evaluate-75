@@ -754,37 +754,38 @@ export type Database = {
           role_id?: string | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_role_id_fkey"
-            columns: ["role_id"]
-            isOneToOne: false
-            referencedRelation: "roles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       role_permissions: {
         Row: {
+          can_create: boolean | null
+          can_delete: boolean | null
+          can_read: boolean | null
+          can_update: boolean | null
           created_at: string
           id: string
-          permission: Database["public"]["Enums"]["permission_type"]
           resource: string
           role_id: string | null
           updated_at: string
         }
         Insert: {
+          can_create?: boolean | null
+          can_delete?: boolean | null
+          can_read?: boolean | null
+          can_update?: boolean | null
           created_at?: string
           id?: string
-          permission: Database["public"]["Enums"]["permission_type"]
           resource: string
           role_id?: string | null
           updated_at?: string
         }
         Update: {
+          can_create?: boolean | null
+          can_delete?: boolean | null
+          can_read?: boolean | null
+          can_update?: boolean | null
           created_at?: string
           id?: string
-          permission?: Database["public"]["Enums"]["permission_type"]
           resource?: string
           role_id?: string | null
           updated_at?: string
@@ -805,6 +806,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          role_level: Database["public"]["Enums"]["user_role"]
           updated_at: string
         }
         Insert: {
@@ -812,6 +814,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          role_level: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
         Update: {
@@ -819,6 +822,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          role_level?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
         Relationships: []
@@ -1193,6 +1197,7 @@ export type Database = {
     }
     Enums: {
       permission_type: "create" | "read" | "update" | "delete"
+      user_role: "admin" | "manager" | "supervisor" | "staff"
     }
     CompositeTypes: {
       [_ in never]: never
