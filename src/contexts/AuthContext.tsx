@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -45,7 +44,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchUserData = async (userId: string) => {
     try {
-      // First, get the profile and role data
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select(`
@@ -58,7 +56,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (profileError) throw profileError;
 
-      // If profile has a role, fetch the role details
       let roleData: Role | null = null;
       let permissionsData: RolePermission[] = [];
 
@@ -72,7 +69,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (roleError) throw roleError;
         roleData = role;
 
-        // Fetch permissions for the role
         const { data: permissions, error: permissionsError } = await supabase
           .from('role_permissions')
           .select('*')
