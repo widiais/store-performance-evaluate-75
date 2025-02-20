@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -55,7 +54,6 @@ const RoleManagement = () => {
     }
   });
 
-  // Initialize or reset permission state when opening dialog
   useEffect(() => {
     if (isOpen) {
       const initialState: Record<string, Record<string, boolean>> = {};
@@ -84,7 +82,6 @@ const RoleManagement = () => {
     setPermissionState(prev => {
       const newState = { ...prev };
       
-      // If checking a non-read permission, ensure read is also checked
       if (checked && permission !== 'read') {
         newState[resource] = {
           ...newState[resource],
@@ -92,7 +89,6 @@ const RoleManagement = () => {
           read: true
         };
       }
-      // If unchecking read, uncheck all other permissions
       else if (!checked && permission === 'read') {
         newState[resource] = {
           create: false,
@@ -101,7 +97,6 @@ const RoleManagement = () => {
           delete: false
         };
       }
-      // Normal toggle for other cases
       else {
         newState[resource] = {
           ...newState[resource],
@@ -128,7 +123,6 @@ const RoleManagement = () => {
 
       if (roleError) throw roleError;
 
-      // Insert permissions based on permissionState
       const permissions = [];
       for (const resource of SETUP_RESOURCES) {
         for (const permission of PERMISSIONS) {
@@ -179,7 +173,6 @@ const RoleManagement = () => {
 
       if (roleError) throw roleError;
 
-      // Delete existing permissions
       const { error: deleteError } = await supabase
         .from('role_permissions')
         .delete()
@@ -187,7 +180,6 @@ const RoleManagement = () => {
 
       if (deleteError) throw deleteError;
 
-      // Insert new permissions based on permissionState
       const permissions = [];
       for (const resource of SETUP_RESOURCES) {
         for (const permission of PERMISSIONS) {
@@ -318,8 +310,7 @@ const RoleManagement = () => {
                                 }
                                 disabled={
                                   permission !== 'read' && 
-                                  !permissionState[resource]?.['read'] && 
-                                  !checked
+                                  !permissionState[resource]?.['read']
                                 }
                               />
                             </TableCell>
