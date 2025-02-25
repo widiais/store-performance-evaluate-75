@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -22,7 +22,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, Pencil, Info } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Shield, Pencil, Trash2, Info } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -31,53 +32,27 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { menuSections } from "@/config/menuItems";
 import type { Role, RolePermission } from "@/types/auth";
 
 type UserRole = 'admin' | 'manager' | 'supervisor' | 'staff';
-
-const RESOURCES = {
-  // Main menus
-  'dashboard': 'Dashboard',
-  'store-performance': 'Store Performance',
-  
-  // Company Policy
-  'user-management': 'User Management',
-  'role-management': 'Role Management',
-  
-  // Setup menus
-  'setup-store': 'Store Setup',
-  'setup-champs': 'CHAMPS Setup',
-  'setup-cleanliness': 'Cleanliness Setup',
-  'setup-service': 'Service Setup',
-  'setup-product-quality': 'Product Quality Setup',
-  'setup-complain': 'Complaint Setup',
-  
-  // Forms
-  'champs-form': 'CHAMPS Form',
-  'cleanliness-form': 'Cleanliness Form',
-  'service-form': 'Service Form',
-  'product-quality-form': 'Product Quality Form',
-  'esp-form': 'ESP Form',
-  'finance-form': 'Finance Form',
-  'complaint-form': 'Complaint Form',
-  'employee-sanction-form': 'Employee Sanction Form',
-  
-  // Reports
-  'champs-report': 'CHAMPS Report',
-  'cleanliness-report': 'Cleanliness Report',
-  'service-report': 'Service Report',
-  'product-quality-report': 'Product Quality Report',
-  'esp-report': 'ESP Report',
-  'finance-report': 'Finance Report',
-  'complaint-report': 'Complaint Report',
-  'sanction-report': 'Sanction Report',
-  'workplace-report': 'Workplace Report'
-};
 
 const ROLE_LEVELS: { value: UserRole; label: string }[] = [
   { value: 'admin', label: 'Administrator' },
@@ -85,6 +60,15 @@ const ROLE_LEVELS: { value: UserRole; label: string }[] = [
   { value: 'supervisor', label: 'Supervisor' },
   { value: 'staff', label: 'Staff' }
 ];
+
+// Flatten menu items for permissions
+const ALL_MENU_ITEMS = menuSections.flatMap(section => 
+  section.items.map(item => ({
+    resource: item.resource,
+    label: item.label,
+    section: section.title
+  }))
+).filter(item => item.resource);
 
 interface RoleWithPermissions extends Role {
   role_permissions: RolePermission[] | null;
@@ -94,9 +78,12 @@ const RoleManagement = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedRole, setSelectedRole] = useState<RoleWithPermissions | null>(null);
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const { data: roles = [], isLoading, isError } = useQuery({
+  const { data: roles = [], isLoading } = useQuery({
     queryKey: ['roles'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -112,6 +99,31 @@ const RoleManagement = () => {
     }
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (roleId: string) => {
+      const { error } = await supabase
+        .from('roles')
+        .delete()
+        .eq('id', roleId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      toast({
+        title: "Success",
+        description: "Role deleted successfully",
+      });
+      setIsDeleteDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
   const getPermissionSummary = (role: RoleWithPermissions) => {
     const permissions = role.role_permissions;
     
@@ -119,25 +131,22 @@ const RoleManagement = () => {
       return 'No permissions set';
     }
     
-    try {
-      const summary = permissions.reduce((acc, perm) => {
-        if (!acc[perm.resource]) {
-          acc[perm.resource] = [];
-        }
-        if (perm.can_create) acc[perm.resource].push('C');
-        if (perm.can_read) acc[perm.resource].push('R');
-        if (perm.can_update) acc[perm.resource].push('U');
-        if (perm.can_delete) acc[perm.resource].push('D');
-        return acc;
-      }, {} as Record<string, string[]>);
+    const permissionsByResource = permissions.reduce((acc, perm) => {
+      const menuItem = ALL_MENU_ITEMS.find(item => item.resource === perm.resource);
+      if (!menuItem) return acc;
+      
+      const section = menuItem.section;
+      if (!acc[section]) {
+        acc[section] = [];
+      }
+      
+      acc[section].push(menuItem.label);
+      return acc;
+    }, {} as Record<string, string[]>);
 
-      return Object.entries(summary)
-        .map(([resource, perms]) => `${RESOURCES[resource as keyof typeof RESOURCES] || resource}: ${perms.sort().join('')}`)
-        .join('\n');
-    } catch (error) {
-      console.error('Error processing permissions:', error);
-      return 'Error processing permissions';
-    }
+    return Object.entries(permissionsByResource)
+      .map(([section, items]) => `${section}:\n${items.join('\n')}`)
+      .join('\n\n');
   };
 
   const handleCreateRole = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -160,30 +169,30 @@ const RoleManagement = () => {
 
       if (roleError) throw roleError;
 
-      const permissionsToInsert = Object.keys(RESOURCES).map(resource => ({
+      const permissionsToInsert = selectedPermissions.map(resource => ({
         role_id: role.id,
         resource,
-        can_create: roleLevel === 'admin' || 
-                   (roleLevel === 'manager' && ['setup-store', 'setup-champs', 'setup-cleanliness'].includes(resource)),
+        can_create: true,
         can_read: true,
-        can_update: roleLevel === 'admin' || 
-                   (roleLevel === 'manager' && ['setup-store', 'setup-champs', 'setup-cleanliness'].includes(resource)) ||
-                   (roleLevel === 'supervisor' && ['setup-cleanliness', 'setup-service'].includes(resource)),
-        can_delete: roleLevel === 'admin' || 
-                   (roleLevel === 'manager' && ['setup-store', 'setup-champs'].includes(resource))
+        can_update: true,
+        can_delete: true
       }));
 
-      const { error: permError } = await supabase
-        .from('role_permissions')
-        .insert(permissionsToInsert);
+      if (permissionsToInsert.length > 0) {
+        const { error: permError } = await supabase
+          .from('role_permissions')
+          .insert(permissionsToInsert);
 
-      if (permError) throw permError;
+        if (permError) throw permError;
+      }
 
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
       toast({
         title: "Success",
         description: "Role created successfully",
       });
       setIsOpen(false);
+      setSelectedPermissions([]);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -209,11 +218,39 @@ const RoleManagement = () => {
 
       if (roleError) throw roleError;
 
+      // Delete existing permissions
+      const { error: deleteError } = await supabase
+        .from('role_permissions')
+        .delete()
+        .eq('role_id', selectedRole.id);
+
+      if (deleteError) throw deleteError;
+
+      // Insert new permissions
+      const permissionsToInsert = selectedPermissions.map(resource => ({
+        role_id: selectedRole.id,
+        resource,
+        can_create: true,
+        can_read: true,
+        can_update: true,
+        can_delete: true
+      }));
+
+      if (permissionsToInsert.length > 0) {
+        const { error: permError } = await supabase
+          .from('role_permissions')
+          .insert(permissionsToInsert);
+
+        if (permError) throw permError;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
       toast({
         title: "Success",
         description: "Role updated successfully",
       });
       setIsOpen(false);
+      setSelectedPermissions([]);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -221,6 +258,25 @@ const RoleManagement = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleDelete = async (roleId: string) => {
+    await deleteMutation.mutateAsync(roleId);
+  };
+
+  const handleOpenDialog = (role?: RoleWithPermissions) => {
+    if (role) {
+      setIsEditMode(true);
+      setSelectedRole(role);
+      setSelectedPermissions(
+        role.role_permissions?.map(p => p.resource) || []
+      );
+    } else {
+      setIsEditMode(false);
+      setSelectedRole(null);
+      setSelectedPermissions([]);
+    }
+    setIsOpen(true);
   };
 
   if (isLoading) {
@@ -231,67 +287,95 @@ const RoleManagement = () => {
     );
   }
 
-  if (isError) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-red-600">
-        Error loading roles
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto py-10">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Role Management</h1>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => {
-              setIsEditMode(false);
-              setSelectedRole(null);
-            }}>
+            <Button onClick={() => handleOpenDialog()}>
               <Shield className="mr-2 h-4 w-4" />
               Add Role
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>{isEditMode ? 'Edit Role' : 'Create New Role'}</DialogTitle>
             </DialogHeader>
             <form onSubmit={isEditMode ? handleUpdateRole : handleCreateRole} className="space-y-4">
-              <div>
-                <Label htmlFor="name">Role Name</Label>
-                <Input 
-                  id="name" 
-                  name="name" 
-                  required 
-                  defaultValue={selectedRole?.name}
-                />
-              </div>
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Input 
-                  id="description" 
-                  name="description" 
-                  defaultValue={selectedRole?.description || ''}
-                />
-              </div>
-              {!isEditMode && (
-                <div>
-                  <Label htmlFor="roleLevel">Role Level</Label>
-                  <Select name="roleLevel" required defaultValue="staff">
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select role level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ROLE_LEVELS.map(level => (
-                        <SelectItem key={level.value} value={level.value}>
-                          {level.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Role Name</Label>
+                  <Input 
+                    id="name" 
+                    name="name" 
+                    required 
+                    defaultValue={selectedRole?.name}
+                  />
                 </div>
-              )}
+                {!isEditMode && (
+                  <div className="space-y-2">
+                    <Label htmlFor="roleLevel">Role Level</Label>
+                    <Select name="roleLevel" required defaultValue="staff">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select role level" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ROLE_LEVELS.map(level => (
+                          <SelectItem key={level.value} value={level.value}>
+                            {level.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div className="col-span-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Input 
+                    id="description" 
+                    name="description" 
+                    defaultValue={selectedRole?.description || ''}
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Menu Permissions</Label>
+                <ScrollArea className="h-[300px] border rounded-md p-4">
+                  {menuSections.map((section) => (
+                    <div key={section.title} className="mb-4">
+                      <h3 className="font-medium mb-2">{section.title}</h3>
+                      <div className="space-y-2">
+                        {section.items.map((item) => item.resource && (
+                          <div key={item.resource} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={item.resource}
+                              checked={selectedPermissions.includes(item.resource)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedPermissions(prev => [...prev, item.resource!]);
+                                } else {
+                                  setSelectedPermissions(prev => 
+                                    prev.filter(p => p !== item.resource)
+                                  );
+                                }
+                              }}
+                            />
+                            <label
+                              htmlFor={item.resource}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                              {item.label}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </ScrollArea>
+              </div>
+              
               <Button type="submit" className="w-full">
                 {isEditMode ? 'Update Role' : 'Create Role'}
               </Button>
@@ -326,25 +410,50 @@ const RoleManagement = () => {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <pre className="text-xs whitespace-pre-wrap">
+                      <pre className="text-xs whitespace-pre-wrap max-w-[300px]">
                         {getPermissionSummary(role)}
                       </pre>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </TableCell>
-              <TableCell>
+              <TableCell className="space-x-2">
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => {
-                    setIsEditMode(true);
-                    setSelectedRole(role);
-                    setIsOpen(true);
-                  }}
+                  onClick={() => handleOpenDialog(role)}
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
+                <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete the role
+                        and remove it from all users who have it assigned.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-red-600 hover:bg-red-700"
+                        onClick={() => handleDelete(role.id)}
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </TableCell>
             </TableRow>
           ))}
