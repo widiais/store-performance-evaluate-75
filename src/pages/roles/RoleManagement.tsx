@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,12 +41,42 @@ import type { Role, RolePermission } from "@/types/auth";
 type UserRole = 'admin' | 'manager' | 'supervisor' | 'staff';
 
 const RESOURCES = {
+  // Main menus
+  'dashboard': 'Dashboard',
+  'store-performance': 'Store Performance',
+  
+  // Company Policy
+  'user-management': 'User Management',
+  'role-management': 'Role Management',
+  
+  // Setup menus
   'setup-store': 'Store Setup',
   'setup-champs': 'CHAMPS Setup',
   'setup-cleanliness': 'Cleanliness Setup',
   'setup-service': 'Service Setup',
   'setup-product-quality': 'Product Quality Setup',
-  'setup-complain': 'Complaint Setup'
+  'setup-complain': 'Complaint Setup',
+  
+  // Forms
+  'champs-form': 'CHAMPS Form',
+  'cleanliness-form': 'Cleanliness Form',
+  'service-form': 'Service Form',
+  'product-quality-form': 'Product Quality Form',
+  'esp-form': 'ESP Form',
+  'finance-form': 'Finance Form',
+  'complaint-form': 'Complaint Form',
+  'employee-sanction-form': 'Employee Sanction Form',
+  
+  // Reports
+  'champs-report': 'CHAMPS Report',
+  'cleanliness-report': 'Cleanliness Report',
+  'service-report': 'Service Report',
+  'product-quality-report': 'Product Quality Report',
+  'esp-report': 'ESP Report',
+  'finance-report': 'Finance Report',
+  'complaint-report': 'Complaint Report',
+  'sanction-report': 'Sanction Report',
+  'workplace-report': 'Workplace Report'
 };
 
 const ROLE_LEVELS: { value: UserRole; label: string }[] = [
@@ -132,12 +163,14 @@ const RoleManagement = () => {
       const permissionsToInsert = Object.keys(RESOURCES).map(resource => ({
         role_id: role.id,
         resource,
-        can_create: roleLevel === 'admin' || (roleLevel === 'manager' && ['setup-store', 'setup-champs', 'setup-cleanliness'].includes(resource)),
+        can_create: roleLevel === 'admin' || 
+                   (roleLevel === 'manager' && ['setup-store', 'setup-champs', 'setup-cleanliness'].includes(resource)),
         can_read: true,
         can_update: roleLevel === 'admin' || 
                    (roleLevel === 'manager' && ['setup-store', 'setup-champs', 'setup-cleanliness'].includes(resource)) ||
                    (roleLevel === 'supervisor' && ['setup-cleanliness', 'setup-service'].includes(resource)),
-        can_delete: roleLevel === 'admin' || (roleLevel === 'manager' && ['setup-store', 'setup-champs'].includes(resource))
+        can_delete: roleLevel === 'admin' || 
+                   (roleLevel === 'manager' && ['setup-store', 'setup-champs'].includes(resource))
       }));
 
       const { error: permError } = await supabase
