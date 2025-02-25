@@ -5,6 +5,7 @@ export interface Role {
   id: string;
   name: string;
   description?: string;
+  role_level: 'admin' | 'manager' | 'supervisor' | 'staff';
 }
 
 export interface RolePermission {
@@ -31,3 +32,4 @@ export interface User {
   role?: Role;
   permissions?: RolePermission[];
 }
+

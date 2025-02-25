@@ -144,6 +144,7 @@ const RoleManagement = () => {
         .insert({ 
           name, 
           description,
+          role_level: 'staff' // Set default role_level to 'staff'
         })
         .select()
         .single();
@@ -426,3 +427,4 @@ const RoleManagement = () => {
 };
 
 export default RoleManagement;
+
