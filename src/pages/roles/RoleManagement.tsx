@@ -25,13 +25,6 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Shield, Pencil, Trash2, Info } from "lucide-react";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -51,15 +44,6 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { menuSections } from "@/config/menuItems";
 import type { Role, RolePermission } from "@/types/auth";
-
-type UserRole = 'admin' | 'manager' | 'supervisor' | 'staff';
-
-const ROLE_LEVELS: { value: UserRole; label: string }[] = [
-  { value: 'admin', label: 'Administrator' },
-  { value: 'manager', label: 'Manager' },
-  { value: 'supervisor', label: 'Supervisor' },
-  { value: 'staff', label: 'Staff' }
-];
 
 // Flatten menu items for permissions
 const ALL_MENU_ITEMS = menuSections.flatMap(section => 
@@ -91,8 +75,7 @@ const RoleManagement = () => {
         .select(`
           *,
           role_permissions (*)
-        `)
-        .order('role_level');
+        `);
       
       if (error) throw error;
       return (data || []) as RoleWithPermissions[];
@@ -154,7 +137,6 @@ const RoleManagement = () => {
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
     const description = formData.get('description') as string;
-    const roleLevel = formData.get('roleLevel') as UserRole;
 
     try {
       const { data: role, error: roleError } = await supabase
@@ -162,7 +144,6 @@ const RoleManagement = () => {
         .insert({ 
           name, 
           description,
-          role_level: roleLevel
         })
         .select()
         .single();
@@ -313,23 +294,6 @@ const RoleManagement = () => {
                     defaultValue={selectedRole?.name}
                   />
                 </div>
-                {!isEditMode && (
-                  <div className="space-y-2">
-                    <Label htmlFor="roleLevel">Role Level</Label>
-                    <Select name="roleLevel" required defaultValue="staff">
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select role level" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ROLE_LEVELS.map(level => (
-                          <SelectItem key={level.value} value={level.value}>
-                            {level.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
                 <div className="col-span-2">
                   <Label htmlFor="description">Description</Label>
                   <Input 
@@ -390,7 +354,6 @@ const RoleManagement = () => {
           <TableRow>
             <TableHead>Name</TableHead>
             <TableHead>Description</TableHead>
-            <TableHead>Level</TableHead>
             <TableHead>Permissions</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
@@ -400,7 +363,6 @@ const RoleManagement = () => {
             <TableRow key={role.id}>
               <TableCell>{role.name}</TableCell>
               <TableCell>{role.description}</TableCell>
-              <TableCell className="capitalize">{role.role_level}</TableCell>
               <TableCell>
                 <TooltipProvider>
                   <Tooltip>
