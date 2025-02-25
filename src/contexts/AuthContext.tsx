@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +12,7 @@ interface AuthContextType {
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   hasPermission: (resource: string, action: 'create' | 'read' | 'update' | 'delete') => boolean;
+  isSuperAdmin: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,6 +22,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const isSuperAdmin = () => {
+    return user?.profile?.email === 'widi@admin.com';
+  };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -156,6 +162,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const hasPermission = (resource: string, action: 'create' | 'read' | 'update' | 'delete'): boolean => {
     if (!user?.permissions) return false;
+    if (isSuperAdmin()) return true;
+    
     const permission = user.permissions.find(p => p.resource === resource);
     if (!permission) return false;
     
@@ -174,7 +182,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, hasPermission }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      signIn, 
+      signUp, 
+      signOut, 
+      hasPermission,
+      isSuperAdmin 
+    }}>
       {children}
     </AuthContext.Provider>
   );
