@@ -1,57 +1,20 @@
 
-import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { Link, useNavigate } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMenuAccess } from "@/hooks/useMenuAccess";
-import { 
-  UserPlus, 
-  Shield,
-  ChevronRight,
-  LayoutDashboard,
-  Store,
-  Award,
-  ClipboardCheck,
-  Sparkles,
-  Coffee,
-  FileText,
-  ChevronDown,
-  ChevronUp,
-  Menu,
-  MessageSquare,
-  X,
-  LineChart,
-  UtensilsCrossed,
-  HeartHandshake,
-  ShieldCheck,
-  DollarSign,
-  ClipboardList,
-  Star,
-  AlertTriangle,
-  LogOut
-} from "lucide-react";
+import { LogOut } from "lucide-react";
+import { menuSections } from "@/config/menuItems";
+import { MenuSection } from "./sidebar/MenuSection";
+import { MobileToggle } from "./sidebar/MobileToggle";
 
 interface SidePanelProps {
   onTabChange: (tab: string) => void;
 }
 
-interface MenuItem {
-  icon: typeof LayoutDashboard;
-  label: string;
-  value: string;
-  route?: string;
-  resource?: string; // Added resource key for permission checking
-}
-
-interface MenuSection {
-  title: string;
-  items: MenuItem[];
-}
-
 const SidePanel = ({ onTabChange }: SidePanelProps) => {
   const { signOut } = useAuth();
-  const { canAccessMenu } = useMenuAccess();
   const navigate = useNavigate();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -79,223 +42,6 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const menuSections: MenuSection[] = [
-    {
-      title: "Main",
-      items: [
-        {
-          icon: LayoutDashboard,
-          label: "Dashboard",
-          value: "dashboard",
-          route: "/",
-          resource: "dashboard"
-        },
-        {
-          icon: LineChart,
-          label: "Store Performance",
-          value: "store-performance",
-          route: "/store-performance",
-          resource: "store-performance"
-        }
-      ]
-    },
-    {
-      title: "Company Policy",
-      items: [
-        {
-          icon: UserPlus,
-          label: "User Management",
-          value: "user-management",
-          route: "/users",
-          resource: "user-management"
-        },
-        {
-          icon: Shield,
-          label: "Role Management",
-          value: "role-management",
-          route: "/roles",
-          resource: "role-management"
-        }
-      ]
-    },
-    {
-      title: "Setup",
-      items: [
-        {
-          icon: Store,
-          label: "Store",
-          value: "setup-store",
-          route: "/setup-store",
-          resource: "setup-store"
-        },
-        {
-          icon: Star,
-          label: "CHAMPS",
-          value: "setup-champs",
-          route: "/setup-champs",
-          resource: "setup-champs"
-        },
-        {
-          icon: Sparkles,
-          label: "Cleanliness",
-          value: "setup-cleanliness",
-          route: "/setup-cleanliness",
-          resource: "setup-cleanliness"
-        },
-        {
-          icon: HeartHandshake,
-          label: "Service",
-          value: "setup-service",
-          route: "/setup-service",
-          resource: "setup-service"
-        },
-        {
-          icon: UtensilsCrossed,
-          label: "Product Quality",
-          value: "setup-product-quality",
-          route: "/setup-product-quality",
-          resource: "setup-product-quality"
-        },
-        {
-          icon: MessageSquare,
-          label: "Complaint",
-          value: "setup-complain",
-          route: "/setup-complain",
-          resource: "setup-complain"
-        }
-      ]
-    },
-    {
-      title: "Forms",
-      items: [
-        {
-          icon: Star,
-          label: "CHAMPS",
-          value: "champs-form",
-          route: "/champs-form",
-          resource: "champs-form"
-        },
-        {
-          icon: Sparkles,
-          label: "Cleanliness",
-          value: "cleanliness-form",
-          route: "/cleanliness-form",
-          resource: "cleanliness-form"
-        },
-        {
-          icon: HeartHandshake,
-          label: "Service",
-          value: "service-form",
-          route: "/service-form",
-          resource: "service-form"
-        },
-        {
-          icon: UtensilsCrossed,
-          label: "Product Quality",
-          value: "product-quality-form",
-          route: "/product-quality-form",
-          resource: "product-quality-form"
-        },
-        {
-          icon: ClipboardCheck,
-          label: "ESP",
-          value: "esp-form",
-          route: "/esp-form",
-          resource: "esp-form"
-        },
-        {
-          icon: DollarSign,
-          label: "Finance",
-          value: "finance-form",
-          route: "/finance-form",
-          resource: "finance-form"
-        },
-        {
-          icon: MessageSquare,
-          label: "Complaint",
-          value: "complaint-form",
-          route: "/complaint-form",
-          resource: "complaint-form"
-        },
-        {
-          icon: AlertTriangle,
-          label: "Employee Sanction",
-          value: "employee-sanction-form",
-          route: "/employee-sanction-form",
-          resource: "employee-sanction-form"
-        }
-      ]
-    },
-    {
-      title: "Reports",
-      items: [
-        {
-          icon: Star,
-          label: "CHAMPS",
-          value: "champs-report",
-          route: "/report",
-          resource: "champs-report"
-        },
-        {
-          icon: Sparkles,
-          label: "Cleanliness",
-          value: "cleanliness-report",
-          route: "/cleanliness-report",
-          resource: "cleanliness-report"
-        },
-        {
-          icon: HeartHandshake,
-          label: "Service",
-          value: "service-report",
-          route: "/service-report",
-          resource: "service-report"
-        },
-        {
-          icon: UtensilsCrossed,
-          label: "Product Quality",
-          value: "product-quality-report",
-          route: "/product-quality-report",
-          resource: "product-quality-report"
-        },
-        {
-          icon: ClipboardCheck,
-          label: "ESP",
-          value: "esp-report",
-          route: "/esp-report",
-          resource: "esp-report"
-        },
-        {
-          icon: DollarSign,
-          label: "Finance",
-          value: "finance-report",
-          route: "/finance-report",
-          resource: "finance-report"
-        },
-        {
-          icon: MessageSquare,
-          label: "Complaint",
-          value: "complaint-report",
-          route: "/complaint-report",
-          resource: "complaint-report"
-        },
-        {
-          icon: AlertTriangle,
-          label: "Employee Sanction",
-          value: "sanction-report",
-          route: "/sanction-report",
-          resource: "sanction-report"
-        },
-        {
-          icon: Store,
-          label: "Workplace Evaluation",
-          value: "workplace-report",
-          route: "/workplace-report",
-          resource: "workplace-report"
-        }
-      ]
-    }
-  ];
-
   const handleTabChange = (value: string) => {
     onTabChange(value);
     const menuItem = menuSections.flatMap(section => section.items)
@@ -318,16 +64,10 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
 
   return (
     <>
-      <button
-        onClick={() => setSidebarOpen(!isSidebarOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-md border border-gray-200"
-      >
-        {isSidebarOpen ? (
-          <X className="h-6 w-6 text-gray-600" />
-        ) : (
-          <Menu className="h-6 w-6 text-gray-600" />
-        )}
-      </button>
+      <MobileToggle 
+        isOpen={isSidebarOpen} 
+        onToggle={() => setSidebarOpen(!isSidebarOpen)} 
+      />
 
       {isMobile && isSidebarOpen && (
         <div
@@ -357,50 +97,15 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
               </h2>
             </div>
             
-            {menuSections.map((section, index) => {
-              // Filter items based on permissions
-              const accessibleItems = section.items.filter(item => 
-                !item.resource || canAccessMenu(item.resource)
-              );
-
-              // Only show section if it has accessible items
-              if (accessibleItems.length === 0) return null;
-
-              return (
-                <div key={index} className="mb-4">
-                  <button
-                    onClick={() => toggleSection(section.title)}
-                    className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 rounded-lg"
-                  >
-                    {section.title}
-                    {expandedSections[section.title] ? (
-                      <ChevronUp className="h-4 w-4" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4" />
-                    )}
-                  </button>
-                  
-                  {expandedSections[section.title] && (
-                    <div className="mt-1 space-y-1">
-                      {accessibleItems.map((item, itemIndex) => {
-                        const Icon = item.icon;
-                        return (
-                          <Button
-                            key={itemIndex}
-                            variant="ghost"
-                            className="w-full justify-start gap-2"
-                            onClick={() => handleTabChange(item.value)}
-                          >
-                            <Icon className="h-4 w-4" />
-                            {item.label}
-                          </Button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            {menuSections.map((section, index) => (
+              <MenuSection
+                key={index}
+                section={section}
+                isExpanded={expandedSections[section.title.toLowerCase()]}
+                onToggle={() => toggleSection(section.title.toLowerCase())}
+                onItemClick={handleTabChange}
+              />
+            ))}
 
             <div className="mt-auto pt-4 px-2">
               <Button
