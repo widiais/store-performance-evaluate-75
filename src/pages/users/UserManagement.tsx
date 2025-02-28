@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,14 +37,18 @@ const UserManagement = () => {
   const [isPasswordMode, setIsPasswordMode] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const { toast } = useToast();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, isSuperAdmin } = useAuth();
 
   const { data: users, refetch } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*');
+      let query = supabase.from('profiles').select('*');
+      
+      if (!isSuperAdmin()) {
+        query = query.eq('id', currentUser?.id);
+      }
+      
+      const { data: profiles, error: profilesError } = await query;
       
       if (profilesError) throw profilesError;
 
@@ -86,7 +89,6 @@ const UserManagement = () => {
     const roleId = formData.get('role') as string;
 
     try {
-      // Use regular signUp instead of admin.createUser
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -156,20 +158,17 @@ const UserManagement = () => {
 
     try {
       if (currentUser?.id === selectedUser.id) {
-        // If changing own password, use updateUser
         const { error } = await supabase.auth.updateUser({
           password: newPassword,
         });
         
         if (error) throw error;
       } else {
-        // For other users, inform that direct password reset isn't possible
         toast({
           title: "Information",
           description: "Password reset email has been sent to the user's email address.",
         });
         
-        // This would normally trigger a password reset email
         await supabase.auth.resetPasswordForEmail(selectedUser.email, {
           redirectTo: window.location.origin,
         });
@@ -191,14 +190,9 @@ const UserManagement = () => {
 
   const handleDeleteUser = async (userId: string) => {
     try {
-      // Cannot directly delete users with client credentials
-      // Instead, mark the user as inactive or implement a soft delete
       const { error } = await supabase
         .from('profiles')
         .update({
-          // Cast the update object to any to bypass TypeScript's type checking
-          // This is necessary because the database schema has been updated to include is_active
-          // but the TypeScript types haven't caught up yet
           is_active: false
         } as any)
         .eq('id', userId);
