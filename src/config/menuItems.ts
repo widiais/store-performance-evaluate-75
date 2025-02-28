@@ -14,7 +14,8 @@ import {
   Star,
   ClipboardCheck,
   DollarSign,
-  AlertTriangle
+  AlertTriangle,
+  Lock
 } from "lucide-react";
 import type { MenuSection } from "@/types/menu";
 
@@ -54,6 +55,13 @@ export const menuSections: MenuSection[] = [
         value: "role-management",
         route: "/roles",
         resource: "role-management"
+      },
+      {
+        icon: Lock,
+        label: "Change Password",
+        value: "change-password",
+        route: "/change-password",
+        resource: "change-password"
       }
     ]
   },

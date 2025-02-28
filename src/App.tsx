@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/components/ui/theme-provider";
@@ -12,6 +13,7 @@ import Auth from "@/pages/Auth";
 import Index from "./pages/Index";
 import UserManagement from "@/pages/users/UserManagement";
 import RoleManagement from "@/pages/roles/RoleManagement";
+import ChangeMyPassword from "@/pages/users/ChangeMyPassword";
 import SetupChamps from "@/components/SetupChamps";
 import SetupService from "@/components/SetupService";
 import SetupCleanliness from "@/components/SetupCleanliness";
@@ -129,6 +131,12 @@ function AppContent() {
               <Route path="/roles" element={
                 <ProtectedRoute requiredPermission={{ resource: 'roles', action: 'read' }}>
                   <RoleManagement />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/change-password" element={
+                <ProtectedRoute>
+                  <ChangeMyPassword />
                 </ProtectedRoute>
               } />
               

@@ -11,6 +11,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  changePassword: (newPassword: string) => Promise<void>;
   hasPermission: (resource: string, action: 'create' | 'read' | 'update' | 'delete') => boolean;
   isSuperAdmin: () => boolean;
 }
@@ -160,6 +161,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const changePassword = async (newPassword: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Password changed successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error changing password",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const hasPermission = (resource: string, action: 'create' | 'read' | 'update' | 'delete'): boolean => {
     if (!user?.permissions) return false;
     if (isSuperAdmin()) return true;
@@ -187,7 +209,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       loading, 
       signIn, 
       signUp, 
-      signOut, 
+      signOut,
+      changePassword,
       hasPermission,
       isSuperAdmin 
     }}>

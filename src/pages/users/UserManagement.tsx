@@ -29,11 +29,12 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Pencil, Trash2 } from "lucide-react";
+import { UserPlus, Pencil, Trash2, Lock } from "lucide-react";
 
 const UserManagement = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isPasswordMode, setIsPasswordMode] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const { toast } = useToast();
 
@@ -83,10 +84,13 @@ const UserManagement = () => {
     const roleId = formData.get('role') as string;
 
     try {
-      const { data, error } = await supabase.auth.signUp({
+      // Use signUp and set data.options.data to include the role_id
+      const { data, error } = await supabase.auth.admin.createUser({
         email,
         password,
+        email_confirm: true, // Skip email confirmation
       });
+      
       if (error) throw error;
 
       if (data.user) {
@@ -141,6 +145,33 @@ const UserManagement = () => {
     }
   };
 
+  const handleChangePassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const newPassword = formData.get('password') as string;
+
+    try {
+      const { error } = await supabase.auth.admin.updateUserById(
+        selectedUser.id,
+        { password: newPassword }
+      );
+      
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Password changed successfully",
+      });
+      setIsOpen(false);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDeleteUser = async (userId: string) => {
     try {
       const { error } = await supabase.auth.admin.deleteUser(userId);
@@ -168,6 +199,7 @@ const UserManagement = () => {
           <DialogTrigger asChild>
             <Button onClick={() => {
               setIsEditMode(false);
+              setIsPasswordMode(false);
               setSelectedUser(null);
             }}>
               <UserPlus className="mr-2 h-4 w-4" />
@@ -176,40 +208,54 @@ const UserManagement = () => {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{isEditMode ? 'Edit User' : 'Create New User'}</DialogTitle>
+              <DialogTitle>
+                {isPasswordMode ? 'Change Password' : isEditMode ? 'Edit User' : 'Create New User'}
+              </DialogTitle>
             </DialogHeader>
-            <form onSubmit={isEditMode ? handleUpdateUser : handleCreateUser} className="space-y-4">
-              {!isEditMode && (
-                <>
-                  <div>
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" name="email" type="email" required />
-                  </div>
-                  <div>
-                    <Label htmlFor="password">Password</Label>
-                    <Input id="password" name="password" type="password" required />
-                  </div>
-                </>
-              )}
-              <div>
-                <Label htmlFor="role">Role</Label>
-                <Select name="role" defaultValue={selectedUser?.role_id}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {roles?.map((role) => (
-                      <SelectItem key={role.id} value={role.id}>
-                        {role.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button type="submit" className="w-full">
-                {isEditMode ? 'Update User' : 'Create User'}
-              </Button>
-            </form>
+            {isPasswordMode ? (
+              <form onSubmit={handleChangePassword} className="space-y-4">
+                <div>
+                  <Label htmlFor="password">New Password</Label>
+                  <Input id="password" name="password" type="password" required />
+                </div>
+                <Button type="submit" className="w-full">
+                  Change Password
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={isEditMode ? handleUpdateUser : handleCreateUser} className="space-y-4">
+                {!isEditMode && (
+                  <>
+                    <div>
+                      <Label htmlFor="email">Email</Label>
+                      <Input id="email" name="email" type="email" required />
+                    </div>
+                    <div>
+                      <Label htmlFor="password">Password</Label>
+                      <Input id="password" name="password" type="password" required />
+                    </div>
+                  </>
+                )}
+                <div>
+                  <Label htmlFor="role">Role</Label>
+                  <Select name="role" defaultValue={selectedUser?.role_id}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roles?.map((role) => (
+                        <SelectItem key={role.id} value={role.id}>
+                          {role.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button type="submit" className="w-full">
+                  {isEditMode ? 'Update User' : 'Create User'}
+                </Button>
+              </form>
+            )}
           </DialogContent>
         </Dialog>
       </div>
@@ -234,11 +280,24 @@ const UserManagement = () => {
                   size="icon"
                   onClick={() => {
                     setIsEditMode(true);
+                    setIsPasswordMode(false);
                     setSelectedUser(user);
                     setIsOpen(true);
                   }}
                 >
                   <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    setIsPasswordMode(true);
+                    setIsEditMode(false);
+                    setSelectedUser(user);
+                    setIsOpen(true);
+                  }}
+                >
+                  <Lock className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="destructive"
