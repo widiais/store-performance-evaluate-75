@@ -32,7 +32,7 @@ import { Label } from "@/components/ui/label";
 import { UserPlus, Pencil, Trash2, Lock, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
-import { Profile } from "@/types/auth";
+import { Profile, Role } from "@/types/auth";
 
 const UserManagement = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -45,7 +45,7 @@ const UserManagement = () => {
   const { data: users, refetch } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      let query = supabase.from('profiles').select('*, roles:role_id(*)');
+      let query = supabase.from('profiles').select('*');
       
       if (!isSuperAdmin()) {
         query = query.eq('id', currentUser?.id);
@@ -55,7 +55,27 @@ const UserManagement = () => {
       
       if (profilesError) throw profilesError;
 
-      return profiles as Profile[];
+      // Fetch roles for each profile in a separate query
+      const profilesWithRoles = await Promise.all(
+        profiles.map(async (profile) => {
+          if (profile.role_id) {
+            const { data: roleData, error: roleError } = await supabase
+              .from('roles')
+              .select('*')
+              .eq('id', profile.role_id)
+              .single();
+            
+            if (roleError) {
+              return { ...profile, roles: null };
+            }
+            
+            return { ...profile, roles: roleData as Role };
+          }
+          return { ...profile, roles: null };
+        })
+      );
+
+      return profilesWithRoles as Profile[];
     }
   });
 
@@ -91,7 +111,10 @@ const UserManagement = () => {
       if (data.user) {
         const { error: profileError } = await supabase
           .from('profiles')
-          .update({ role_id: roleId, is_active: true })
+          .update({ 
+            role_id: roleId, 
+            is_active: true 
+          })
           .eq('id', data.user.id);
         
         if (profileError) throw profileError;

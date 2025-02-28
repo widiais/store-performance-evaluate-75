@@ -14,7 +14,7 @@ export interface Profile {
   id: string;
   email: string;
   role_id?: string;
-  roles?: Role;
+  roles?: Role | null;
   is_active?: boolean;
   created_at?: string;
   updated_at?: string;
