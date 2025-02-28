@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,8 +29,9 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Pencil, Trash2, Lock } from "lucide-react";
+import { UserPlus, Pencil, Trash2, Lock, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { Badge } from "@/components/ui/badge";
 
 const UserManagement = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -213,6 +215,31 @@ const UserManagement = () => {
     }
   };
 
+  const handleReactivateUser = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          is_active: true
+        } as any)
+        .eq('id', userId);
+      
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "User has been reactivated",
+      });
+      refetch();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto py-10">
       <div className="flex justify-between items-center mb-6">
@@ -288,14 +315,26 @@ const UserManagement = () => {
           <TableRow>
             <TableHead>Email</TableHead>
             <TableHead>Role</TableHead>
+            <TableHead>Status</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {users?.map((user) => (
-            <TableRow key={user.id}>
+            <TableRow key={user.id} className={user.is_active === false ? "bg-gray-100" : ""}>
               <TableCell>{user.email}</TableCell>
               <TableCell>{user.roles?.name || 'No role'}</TableCell>
+              <TableCell>
+                {user.is_active === false ? (
+                  <Badge variant="destructive" className="flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> Inactive
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                    Active
+                  </Badge>
+                )}
+              </TableCell>
               <TableCell className="flex space-x-2">
                 <Button
                   variant="outline"
@@ -321,13 +360,24 @@ const UserManagement = () => {
                 >
                   <Lock className="h-4 w-4" />
                 </Button>
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  onClick={() => handleDeleteUser(user.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                {user.is_active === false ? (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="text-green-600 hover:text-green-800 border-green-200 hover:border-green-400"
+                    onClick={() => handleReactivateUser(user.id)}
+                  >
+                    <UserPlus className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => handleDeleteUser(user.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
               </TableCell>
             </TableRow>
           ))}
