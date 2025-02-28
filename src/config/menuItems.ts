@@ -15,7 +15,8 @@ import {
   ClipboardCheck,
   DollarSign,
   AlertTriangle,
-  Lock
+  Lock,
+  UserCheck
 } from "lucide-react";
 import type { MenuSection } from "@/types/menu";
 
@@ -48,6 +49,13 @@ export const menuSections: MenuSection[] = [
         value: "user-management",
         route: "/users",
         resource: "user-management"
+      },
+      {
+        icon: UserCheck,
+        label: "User Register",
+        value: "user-register",
+        route: "/user-register",
+        resource: "user-register"
       },
       {
         icon: Shield,

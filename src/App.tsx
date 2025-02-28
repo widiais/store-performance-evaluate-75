@@ -12,6 +12,7 @@ import SidePanel from "@/components/SidePanel";
 import Auth from "@/pages/Auth";
 import Index from "./pages/Index";
 import UserManagement from "@/pages/users/UserManagement";
+import UserRegister from "@/pages/users/UserRegister";
 import RoleManagement from "@/pages/roles/RoleManagement";
 import ChangeMyPassword from "@/pages/users/ChangeMyPassword";
 import SetupChamps from "@/components/SetupChamps";
@@ -125,6 +126,12 @@ function AppContent() {
               <Route path="/users" element={
                 <ProtectedRoute requiredPermission={{ resource: 'users', action: 'read' }}>
                   <UserManagement />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/user-register" element={
+                <ProtectedRoute requiredPermission={{ resource: 'user-register', action: 'read' }}>
+                  <UserRegister />
                 </ProtectedRoute>
               } />
 
