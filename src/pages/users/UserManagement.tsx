@@ -46,13 +46,19 @@ const UserManagement = () => {
   const { data: users, refetch, isLoading } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
+      console.log("Fetching users...");
       // Fetch all profiles from the profiles table
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*');
       
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+        throw profilesError;
+      }
 
+      console.log("Fetched profiles:", profiles);
+      
       // Fetch roles for each profile in a separate query
       const profilesWithRoles = await Promise.all(
         profiles.map(async (profile) => {
@@ -64,6 +70,7 @@ const UserManagement = () => {
               .single();
             
             if (roleError) {
+              console.log(`No role found for profile ${profile.id}`);
               return { ...profile, roles: null };
             }
             
@@ -73,6 +80,7 @@ const UserManagement = () => {
         })
       );
 
+      console.log("Profiles with roles:", profilesWithRoles);
       return profilesWithRoles as Profile[];
     }
   });
@@ -248,10 +256,15 @@ const UserManagement = () => {
     }
   };
 
-  // Show all users if superadmin, otherwise only show current user
+  // Display all users for superadmin, otherwise only show current user
   const displayUsers = isSuperAdmin() 
     ? users
     : users?.filter(user => user.id === currentUser?.id);
+
+  console.log("Current user:", currentUser);
+  console.log("Is superadmin:", isSuperAdmin());
+  console.log("All users:", users);
+  console.log("Display users:", displayUsers);
 
   return (
     <div className="container mx-auto py-10">
@@ -347,7 +360,7 @@ const UserManagement = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {displayUsers?.length ? (
+              {displayUsers && displayUsers.length > 0 ? (
                 displayUsers.map((user) => (
                   <TableRow key={user.id} className={user.is_active === false ? "bg-gray-100" : ""}>
                     <TableCell>{user.email}</TableCell>
