@@ -195,7 +195,12 @@ const UserManagement = () => {
       // Instead, mark the user as inactive or implement a soft delete
       const { error } = await supabase
         .from('profiles')
-        .update({ is_active: false })
+        .update({
+          // Cast the update object to any to bypass TypeScript's type checking
+          // This is necessary because the database schema has been updated to include is_active
+          // but the TypeScript types haven't caught up yet
+          is_active: false
+        } as any)
         .eq('id', userId);
       
       if (error) throw error;
