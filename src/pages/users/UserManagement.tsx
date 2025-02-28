@@ -29,10 +29,11 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Pencil, Trash2, Lock, AlertCircle } from "lucide-react";
+import { UserPlus, Pencil, Lock, AlertCircle, UserX, UserCheck, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Profile, Role } from "@/types/auth";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const UserManagement = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -42,16 +43,13 @@ const UserManagement = () => {
   const { toast } = useToast();
   const { user: currentUser, isSuperAdmin } = useAuth();
 
-  const { data: users, refetch } = useQuery({
+  const { data: users, refetch, isLoading } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      let query = supabase.from('profiles').select('*');
-      
-      if (!isSuperAdmin()) {
-        query = query.eq('id', currentUser?.id);
-      }
-      
-      const { data: profiles, error: profilesError } = await query;
+      // Fetch all profiles
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*');
       
       if (profilesError) throw profilesError;
 
@@ -250,149 +248,180 @@ const UserManagement = () => {
     }
   };
 
+  // Filter users based on permissions
+  const displayUsers = isSuperAdmin() 
+    ? users 
+    : users?.filter(user => user.id === currentUser?.id);
+
   return (
     <div className="container mx-auto py-10">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">User Management</h1>
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => {
-              setIsEditMode(false);
-              setIsPasswordMode(false);
-              setSelectedUser(null);
-            }}>
-              <UserPlus className="mr-2 h-4 w-4" />
-              Add User
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {isPasswordMode ? 'Change Password' : isEditMode ? 'Edit User' : 'Create New User'}
-              </DialogTitle>
-            </DialogHeader>
-            {isPasswordMode ? (
-              <form onSubmit={handleChangePassword} className="space-y-4">
-                <div>
-                  <Label htmlFor="password">New Password</Label>
-                  <Input id="password" name="password" type="password" required />
-                </div>
-                <Button type="submit" className="w-full">
-                  Change Password
-                </Button>
-              </form>
-            ) : (
-              <form onSubmit={isEditMode ? handleUpdateUser : handleCreateUser} className="space-y-4">
-                {!isEditMode && (
-                  <>
-                    <div>
-                      <Label htmlFor="email">Email</Label>
-                      <Input id="email" name="email" type="email" required />
-                    </div>
-                    <div>
-                      <Label htmlFor="password">Password</Label>
-                      <Input id="password" name="password" type="password" required />
-                    </div>
-                  </>
-                )}
-                <div>
-                  <Label htmlFor="role">Role</Label>
-                  <Select name="role" defaultValue={selectedUser?.role_id}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {roles?.map((role) => (
-                        <SelectItem key={role.id} value={role.id}>
-                          {role.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button type="submit" className="w-full">
-                  {isEditMode ? 'Update User' : 'Create User'}
-                </Button>
-              </form>
-            )}
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold">User Management</h1>
+          <Badge variant="outline" className="ml-2">
+            <Users className="h-4 w-4 mr-1" />
+            {users?.length || 0} Registered Users
+          </Badge>
+        </div>
+        {isSuperAdmin() && (
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => {
+                setIsEditMode(false);
+                setIsPasswordMode(false);
+                setSelectedUser(null);
+              }}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Add User
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  {isPasswordMode ? 'Change Password' : isEditMode ? 'Edit User' : 'Create New User'}
+                </DialogTitle>
+              </DialogHeader>
+              {isPasswordMode ? (
+                <form onSubmit={handleChangePassword} className="space-y-4">
+                  <div>
+                    <Label htmlFor="password">New Password</Label>
+                    <Input id="password" name="password" type="password" required />
+                  </div>
+                  <Button type="submit" className="w-full">
+                    Change Password
+                  </Button>
+                </form>
+              ) : (
+                <form onSubmit={isEditMode ? handleUpdateUser : handleCreateUser} className="space-y-4">
+                  {!isEditMode && (
+                    <>
+                      <div>
+                        <Label htmlFor="email">Email</Label>
+                        <Input id="email" name="email" type="email" required />
+                      </div>
+                      <div>
+                        <Label htmlFor="password">Password</Label>
+                        <Input id="password" name="password" type="password" required />
+                      </div>
+                    </>
+                  )}
+                  <div>
+                    <Label htmlFor="role">Role</Label>
+                    <Select name="role" defaultValue={selectedUser?.role_id}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {roles?.map((role) => (
+                          <SelectItem key={role.id} value={role.id}>
+                            {role.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button type="submit" className="w-full">
+                    {isEditMode ? 'Update User' : 'Create User'}
+                  </Button>
+                </form>
+              )}
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
-      <Table>
-        <TableCaption>List of users</TableCaption>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Email</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {users?.map((user) => (
-            <TableRow key={user.id} className={user.is_active === false ? "bg-gray-100" : ""}>
-              <TableCell>{user.email}</TableCell>
-              <TableCell>{user.roles?.name || 'No role'}</TableCell>
-              <TableCell>
-                {user.is_active === false ? (
-                  <Badge variant="destructive" className="flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" /> Inactive
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    Active
-                  </Badge>
-                )}
-              </TableCell>
-              <TableCell className="flex space-x-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    setIsEditMode(true);
-                    setIsPasswordMode(false);
-                    setSelectedUser(user);
-                    setIsOpen(true);
-                  }}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    setIsPasswordMode(true);
-                    setIsEditMode(false);
-                    setSelectedUser(user);
-                    setIsOpen(true);
-                  }}
-                >
-                  <Lock className="h-4 w-4" />
-                </Button>
-                {user.is_active === false ? (
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="text-green-600 hover:text-green-800 border-green-200 hover:border-green-400"
-                    onClick={() => handleReactivateUser(user.id)}
-                  >
-                    <UserPlus className="h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    onClick={() => handleDeleteUser(user.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      {isLoading ? (
+        <div className="flex justify-center my-8">
+          <p>Loading users...</p>
+        </div>
+      ) : (
+        <ScrollArea className="h-[calc(100vh-200px)]">
+          <Table>
+            <TableCaption>List of users in the system</TableCaption>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Email</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Status</TableHead>
+                {isSuperAdmin() && <TableHead>Actions</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {displayUsers?.length ? (
+                displayUsers.map((user) => (
+                  <TableRow key={user.id} className={user.is_active === false ? "bg-gray-100" : ""}>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{user.roles?.name || 'No role'}</TableCell>
+                    <TableCell>
+                      {user.is_active === false ? (
+                        <Badge variant="destructive" className="flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" /> Inactive
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                          Active
+                        </Badge>
+                      )}
+                    </TableCell>
+                    {isSuperAdmin() && (
+                      <TableCell className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => {
+                            setIsEditMode(true);
+                            setIsPasswordMode(false);
+                            setSelectedUser(user);
+                            setIsOpen(true);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => {
+                            setIsPasswordMode(true);
+                            setIsEditMode(false);
+                            setSelectedUser(user);
+                            setIsOpen(true);
+                          }}
+                        >
+                          <Lock className="h-4 w-4" />
+                        </Button>
+                        {user.is_active === false ? (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="text-green-600 hover:text-green-800 border-green-200 hover:border-green-400"
+                            onClick={() => handleReactivateUser(user.id)}
+                          >
+                            <UserCheck className="h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => handleDeleteUser(user.id)}
+                          >
+                            <UserX className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={isSuperAdmin() ? 4 : 3} className="text-center py-8">
+                    No users found
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </ScrollArea>
+      )}
     </div>
   );
 };
