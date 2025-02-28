@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -26,38 +26,57 @@ const UserRegister = () => {
     queryKey: ['all-users'],
     queryFn: async () => {
       console.log("Fetching all users for User Register page...");
-      // Fetch all profiles from the profiles table
+      
+      // Fetch all profiles from the profiles table without any filtering
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*');
       
       if (profilesError) {
         console.error("Error fetching profiles:", profilesError);
+        toast({
+          title: "Error",
+          description: "Failed to fetch users. " + profilesError.message,
+          variant: "destructive"
+        });
         throw profilesError;
       }
 
       console.log("Fetched profiles:", profiles);
       
-      // Fetch roles for each profile in a separate query
-      const profilesWithRoles = await Promise.all(
-        profiles.map(async (profile) => {
-          if (profile.role_id) {
-            const { data: roleData, error: roleError } = await supabase
-              .from('roles')
-              .select('*')
-              .eq('id', profile.role_id)
-              .single();
-            
-            if (roleError) {
-              console.log(`No role found for profile ${profile.id}`);
-              return { ...profile, roles: null };
-            }
-            
-            return { ...profile, roles: roleData as Role };
-          }
-          return { ...profile, roles: null };
-        })
-      );
+      if (!profiles || profiles.length === 0) {
+        console.log("No profiles found in the database");
+        return [];
+      }
+      
+      // Fetch roles for each profile in a single query to improve performance
+      const roleIds = profiles.filter(p => p.role_id).map(p => p.role_id);
+      let rolesMap = {};
+      
+      if (roleIds.length > 0) {
+        const { data: roles, error: rolesError } = await supabase
+          .from('roles')
+          .select('*')
+          .in('id', roleIds);
+        
+        if (rolesError) {
+          console.error("Error fetching roles:", rolesError);
+        } else if (roles) {
+          // Create a map of role_id to role object for faster lookup
+          rolesMap = roles.reduce((acc, role) => {
+            acc[role.id] = role;
+            return acc;
+          }, {});
+        }
+      }
+      
+      // Map profiles with their roles
+      const profilesWithRoles = profiles.map(profile => {
+        if (profile.role_id && rolesMap[profile.role_id]) {
+          return { ...profile, roles: rolesMap[profile.role_id] as Role };
+        }
+        return { ...profile, roles: null };
+      });
 
       console.log("Profiles with roles:", profilesWithRoles);
       return profilesWithRoles as Profile[];
