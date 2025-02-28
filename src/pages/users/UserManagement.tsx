@@ -32,19 +32,20 @@ import { Label } from "@/components/ui/label";
 import { UserPlus, Pencil, Trash2, Lock, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
+import { Profile } from "@/types/auth";
 
 const UserManagement = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isPasswordMode, setIsPasswordMode] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
   const { toast } = useToast();
   const { user: currentUser, isSuperAdmin } = useAuth();
 
   const { data: users, refetch } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      let query = supabase.from('profiles').select('*');
+      let query = supabase.from('profiles').select('*, roles:role_id(*)');
       
       if (!isSuperAdmin()) {
         query = query.eq('id', currentUser?.id);
@@ -54,21 +55,7 @@ const UserManagement = () => {
       
       if (profilesError) throw profilesError;
 
-      const profilesWithRoles = await Promise.all(
-        profiles.map(async (profile) => {
-          if (profile.role_id) {
-            const { data: role } = await supabase
-              .from('roles')
-              .select('*')
-              .eq('id', profile.role_id)
-              .single();
-            return { ...profile, roles: role };
-          }
-          return { ...profile, roles: null };
-        })
-      );
-
-      return profilesWithRoles;
+      return profiles as Profile[];
     }
   });
 
@@ -104,7 +91,7 @@ const UserManagement = () => {
       if (data.user) {
         const { error: profileError } = await supabase
           .from('profiles')
-          .update({ role_id: roleId })
+          .update({ role_id: roleId, is_active: true })
           .eq('id', data.user.id);
         
         if (profileError) throw profileError;
@@ -134,7 +121,7 @@ const UserManagement = () => {
       const { error } = await supabase
         .from('profiles')
         .update({ role_id: roleId })
-        .eq('id', selectedUser.id);
+        .eq('id', selectedUser?.id);
       
       if (error) throw error;
 
@@ -159,7 +146,7 @@ const UserManagement = () => {
     const newPassword = formData.get('password') as string;
 
     try {
-      if (currentUser?.id === selectedUser.id) {
+      if (currentUser?.id === selectedUser?.id) {
         const { error } = await supabase.auth.updateUser({
           password: newPassword,
         });
@@ -171,7 +158,7 @@ const UserManagement = () => {
           description: "Password reset email has been sent to the user's email address.",
         });
         
-        await supabase.auth.resetPasswordForEmail(selectedUser.email, {
+        await supabase.auth.resetPasswordForEmail(selectedUser?.email || '', {
           redirectTo: window.location.origin,
         });
       }
@@ -196,7 +183,7 @@ const UserManagement = () => {
         .from('profiles')
         .update({
           is_active: false
-        } as any)
+        })
         .eq('id', userId);
       
       if (error) throw error;
@@ -221,7 +208,7 @@ const UserManagement = () => {
         .from('profiles')
         .update({
           is_active: true
-        } as any)
+        })
         .eq('id', userId);
       
       if (error) throw error;

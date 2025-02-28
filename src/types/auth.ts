@@ -6,6 +6,26 @@ export interface Role {
   name: string;
   description?: string;
   role_level: 'admin' | 'manager' | 'supervisor' | 'staff';
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Profile {
+  id: string;
+  email: string;
+  role_id?: string;
+  roles?: Role;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface User {
+  id: string;
+  email?: string;
+  profile?: Profile;
+  role?: Role;
+  permissions?: RolePermission[];
 }
 
 export interface RolePermission {
@@ -16,20 +36,4 @@ export interface RolePermission {
   can_read: boolean;
   can_update: boolean;
   can_delete: boolean;
-}
-
-export interface Profile {
-  id: string;
-  email: string;
-  role_id?: string;
-  roles?: Role;
-  is_active?: boolean;
-}
-
-export interface User {
-  id: string;
-  email?: string;
-  profile?: Profile;
-  role?: Role;
-  permissions?: RolePermission[];
 }
