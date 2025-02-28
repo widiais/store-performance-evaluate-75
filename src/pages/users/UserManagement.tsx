@@ -46,7 +46,7 @@ const UserManagement = () => {
   const { data: users, refetch, isLoading } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      // Fetch all profiles
+      // Fetch all profiles from the profiles table
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*');
@@ -248,9 +248,9 @@ const UserManagement = () => {
     }
   };
 
-  // Filter users based on permissions
+  // Show all users if superadmin, otherwise only show current user
   const displayUsers = isSuperAdmin() 
-    ? users 
+    ? users
     : users?.filter(user => user.id === currentUser?.id);
 
   return (
