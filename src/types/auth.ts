@@ -23,6 +23,7 @@ export interface Profile {
   email: string;
   role_id?: string;
   roles?: Role;
+  is_active?: boolean;
 }
 
 export interface User {
@@ -32,4 +33,3 @@ export interface User {
   role?: Role;
   permissions?: RolePermission[];
 }
-

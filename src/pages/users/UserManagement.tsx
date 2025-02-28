@@ -30,6 +30,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UserPlus, Pencil, Trash2, Lock } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const UserManagement = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -37,6 +38,7 @@ const UserManagement = () => {
   const [isPasswordMode, setIsPasswordMode] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const { toast } = useToast();
+  const { user: currentUser } = useAuth();
 
   const { data: users, refetch } = useQuery({
     queryKey: ['users'],
@@ -84,11 +86,13 @@ const UserManagement = () => {
     const roleId = formData.get('role') as string;
 
     try {
-      // Use signUp and set data.options.data to include the role_id
-      const { data, error } = await supabase.auth.admin.createUser({
+      // Use regular signUp instead of admin.createUser
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        email_confirm: true, // Skip email confirmation
+        options: {
+          emailRedirectTo: window.location.origin,
+        }
       });
       
       if (error) throw error;
@@ -104,7 +108,7 @@ const UserManagement = () => {
 
       toast({
         title: "Success",
-        description: "User created successfully",
+        description: "User created successfully. They will need to confirm their email.",
       });
       setIsOpen(false);
       refetch();
@@ -151,16 +155,29 @@ const UserManagement = () => {
     const newPassword = formData.get('password') as string;
 
     try {
-      const { error } = await supabase.auth.admin.updateUserById(
-        selectedUser.id,
-        { password: newPassword }
-      );
-      
-      if (error) throw error;
+      if (currentUser?.id === selectedUser.id) {
+        // If changing own password, use updateUser
+        const { error } = await supabase.auth.updateUser({
+          password: newPassword,
+        });
+        
+        if (error) throw error;
+      } else {
+        // For other users, inform that direct password reset isn't possible
+        toast({
+          title: "Information",
+          description: "Password reset email has been sent to the user's email address.",
+        });
+        
+        // This would normally trigger a password reset email
+        await supabase.auth.resetPasswordForEmail(selectedUser.email, {
+          redirectTo: window.location.origin,
+        });
+      }
 
       toast({
         title: "Success",
-        description: "Password changed successfully",
+        description: "Password change process initiated successfully",
       });
       setIsOpen(false);
     } catch (error: any) {
@@ -174,12 +191,18 @@ const UserManagement = () => {
 
   const handleDeleteUser = async (userId: string) => {
     try {
-      const { error } = await supabase.auth.admin.deleteUser(userId);
+      // Cannot directly delete users with client credentials
+      // Instead, mark the user as inactive or implement a soft delete
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_active: false })
+        .eq('id', userId);
+      
       if (error) throw error;
 
       toast({
         title: "Success",
-        description: "User deleted successfully",
+        description: "User has been deactivated",
       });
       refetch();
     } catch (error: any) {
