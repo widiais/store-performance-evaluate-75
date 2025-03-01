@@ -28,12 +28,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, UsersRound, Store, CheckCircle, XCircle } from "lucide-react";
+import { User, UsersRound, Store, CheckCircle, XCircle, ShieldAlert, Shield, UserX, UserCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import type { MontazUser, Role } from "@/types/auth";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 
 const MontazUserManagement = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -41,6 +42,7 @@ const MontazUserManagement = () => {
   const [availableStores, setAvailableStores] = useState<any[]>([]);
   const [selectedStores, setSelectedStores] = useState<string[]>([]);
   const [selectedRole, setSelectedRole] = useState<string>("");
+  const [isActive, setIsActive] = useState<boolean>(true);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -64,6 +66,7 @@ const MontazUserManagement = () => {
         role_id: profile.role_id,
         assigned_stores: profile.assigned_stores || [],
         profile_completed: profile.profile_completed || false,
+        is_active: profile.is_active !== false, // Default to true if not specified
         created_at: profile.created_at,
         updated_at: profile.updated_at
       })) as MontazUser[];
@@ -98,13 +101,24 @@ const MontazUserManagement = () => {
 
   // Update user mutation
   const updateUserMutation = useMutation({
-    mutationFn: async ({ userId, roleId, assignedStores }: { userId: string, roleId: string, assignedStores: string[] }) => {
+    mutationFn: async ({ 
+      userId, 
+      roleId, 
+      assignedStores, 
+      isActive 
+    }: { 
+      userId: string, 
+      roleId: string, 
+      assignedStores: string[],
+      isActive: boolean 
+    }) => {
       const { error } = await supabase
         .from('profiles')
         .update({
           role_id: roleId,
           assigned_stores: assignedStores,
-          profile_completed: true
+          profile_completed: true,
+          is_active: isActive
         })
         .eq('id', userId);
       
@@ -128,6 +142,33 @@ const MontazUserManagement = () => {
     }
   });
 
+  // Toggle user active status
+  const toggleUserStatus = useMutation({
+    mutationFn: async ({ userId, isActive }: { userId: string, isActive: boolean }) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_active: isActive })
+        .eq('id', userId);
+      
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['montaz-users'] });
+      toast({
+        title: "Success",
+        description: `User ${variables.isActive ? 'enabled' : 'disabled'} successfully`,
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
   useEffect(() => {
     if (stores) {
       setAvailableStores(stores);
@@ -137,10 +178,16 @@ const MontazUserManagement = () => {
   useEffect(() => {
     if (selectedUser) {
       setSelectedRole(selectedUser.role_id || "");
-      setSelectedStores(selectedUser.assigned_stores || []);
+      setSelectedStores(
+        Array.isArray(selectedUser.assigned_stores) 
+          ? selectedUser.assigned_stores.map(store => String(store))
+          : []
+      );
+      setIsActive(selectedUser.is_active !== false); // Default to true if not specified
     } else {
       setSelectedRole("");
       setSelectedStores([]);
+      setIsActive(true);
     }
   }, [selectedUser]);
 
@@ -162,7 +209,16 @@ const MontazUserManagement = () => {
     await updateUserMutation.mutateAsync({
       userId: selectedUser.id,
       roleId: selectedRole,
-      assignedStores: selectedStores
+      assignedStores: selectedStores,
+      isActive: isActive
+    });
+  };
+
+  const handleToggleUserStatus = async (user: MontazUser) => {
+    const newStatus = !user.is_active;
+    await toggleUserStatus.mutateAsync({
+      userId: user.id,
+      isActive: newStatus
     });
   };
 
@@ -189,7 +245,7 @@ const MontazUserManagement = () => {
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Complete User Profile</DialogTitle>
+            <DialogTitle>Manage Montaz User Access</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -210,6 +266,16 @@ const MontazUserManagement = () => {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch 
+                id="user-active-status" 
+                checked={isActive} 
+                onCheckedChange={setIsActive} 
+              />
+              <Label htmlFor="user-active-status">
+                User is {isActive ? 'active' : 'disabled'}
+              </Label>
             </div>
             <div>
               <Label className="mb-2 block">Assigned Stores</Label>
@@ -253,7 +319,8 @@ const MontazUserManagement = () => {
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Assigned Stores</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>Profile Status</TableHead>
+              <TableHead>Account Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -264,7 +331,7 @@ const MontazUserManagement = () => {
                 const userRole = roles?.find(role => role.id === user.role_id);
                 
                 return (
-                  <TableRow key={user.id}>
+                  <TableRow key={user.id} className={!user.is_active ? "bg-gray-50 opacity-60" : ""}>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{userRole?.name || 'Not assigned'}</TableCell>
                     <TableCell>
@@ -291,20 +358,43 @@ const MontazUserManagement = () => {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOpenDialog(user)}
-                      >
-                        {user.profile_completed ? 'Edit' : 'Complete Profile'}
-                      </Button>
+                      {user.is_active !== false ? (
+                        <Badge variant="outline" className="bg-green-50 text-green-700">
+                          <ShieldAlert className="h-3 w-3 mr-1" />
+                          Active
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-red-50 text-red-700">
+                          <Shield className="h-3 w-3 mr-1" />
+                          Disabled
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenDialog(user)}
+                        >
+                          {user.profile_completed ? 'Edit' : 'Complete Profile'}
+                        </Button>
+                        <Button
+                          variant={user.is_active !== false ? "destructive" : "default"}
+                          size="icon"
+                          onClick={() => handleToggleUserStatus(user)}
+                          title={user.is_active !== false ? "Disable user" : "Enable user"}
+                        >
+                          {user.is_active !== false ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8">
+                <TableCell colSpan={6} className="text-center py-8">
                   No Montaz users found
                 </TableCell>
               </TableRow>

@@ -50,6 +50,7 @@ export interface MontazUser {
   montaz_id: string;
   montaz_data: any;
   profile_completed: boolean;
+  is_active?: boolean;
   role_id?: string;
   assigned_stores?: string[];
   created_at?: string;

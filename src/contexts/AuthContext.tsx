@@ -98,6 +98,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
+      // If user is inactive, sign them out
+      if (profileData && profileData.is_active === false) {
+        console.log('User account is disabled');
+        await signOut();
+        toast({
+          title: "Access Denied",
+          description: "Your account has been disabled. Please contact an administrator.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       let roleData: Role | null = null;
       let permissionsData: RolePermission[] = [];
 
@@ -270,12 +282,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // First check if there's a profile with this email
       const { data: existingProfile, error: checkError } = await supabase
         .from('profiles')
-        .select('*')
+        .select('*, roles(name)')
         .eq('email', montazData.user.email)
         .maybeSingle();
 
       if (checkError) {
         console.error('Error checking for existing profile:', checkError);
+      }
+
+      // Check if user is disabled
+      if (existingProfile && existingProfile.is_active === false) {
+        throw new Error('Your account has been disabled. Please contact an administrator.');
       }
 
       let authUser;
@@ -320,6 +337,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           if (updateError) {
             console.error('Error updating new profile:', updateError);
           }
+          
+          // Automatically navigate to Montaz user management for new users
+          toast({
+            title: "New Montaz User",
+            description: "Your account has been created. An admin will set up your access rights.",
+          });
+          
+          navigate('/montaz-users');
+          return;
         }
       } else {
         // If profile exists, sign in with existing credentials
