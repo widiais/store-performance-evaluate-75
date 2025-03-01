@@ -46,24 +46,31 @@ const MontazUserManagement = () => {
   const [isActive, setIsActive] = useState<boolean>(true);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, isSuperAdmin } = useAuth();
 
   // Check if current user is the one viewing their incomplete profile
   const isCurrentUserViewing = () => {
     if (!currentUser || !currentUser.profile) return false;
-    return !currentUser.profile.profile_completed;
+    if (isSuperAdmin()) return false; // Super admin never needs profile completion
+    return !!currentUser.profile?.montaz_id && !currentUser.profile.profile_completed;
   };
 
   // Fetch Montaz users
   const { data: montazUsers, isLoading: loadingUsers } = useQuery({
     queryKey: ['montaz-users'],
     queryFn: async () => {
+      console.log('Fetching Montaz users...');
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .not('montaz_id', 'is', null);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching Montaz users:', error);
+        throw error;
+      }
+      
+      console.log('Montaz users data:', data);
       
       // Transform to MontazUser[] type and ensure assigned_stores is always an array of strings
       return data.map((profile: any) => ({
@@ -82,18 +89,26 @@ const MontazUserManagement = () => {
         created_at: profile.created_at,
         updated_at: profile.updated_at
       })) as MontazUser[];
-    }
+    },
+    refetchOnWindowFocus: true,
+    refetchOnMount: true
   });
 
   // Fetch roles
   const { data: roles } = useQuery({
     queryKey: ['roles'],
     queryFn: async () => {
+      console.log('Fetching roles...');
       const { data, error } = await supabase
         .from('roles')
         .select('*');
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching roles:', error);
+        throw error;
+      }
+      
+      console.log('Roles data:', data);
       return data as Role[];
     }
   });
@@ -102,11 +117,17 @@ const MontazUserManagement = () => {
   const { data: stores } = useQuery({
     queryKey: ['stores'],
     queryFn: async () => {
+      console.log('Fetching stores...');
       const { data, error } = await supabase
         .from('stores')
         .select('id, name, city');
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching stores:', error);
+        throw error;
+      }
+      
+      console.log('Stores data:', data);
       return data;
     }
   });
@@ -212,6 +233,13 @@ const MontazUserManagement = () => {
       }
     }
   }, [currentUser, montazUsers]);
+
+  // Log current data for debugging
+  useEffect(() => {
+    console.log('Current montaz users:', montazUsers);
+    console.log('Current user:', currentUser);
+    console.log('Is current user viewing:', isCurrentUserViewing());
+  }, [montazUsers, currentUser]);
 
   const handleOpenDialog = (user: MontazUser) => {
     setSelectedUser(user);
@@ -337,21 +365,25 @@ const MontazUserManagement = () => {
             <div>
               <Label className="mb-2 block">Assigned Stores</Label>
               <ScrollArea className="h-48 border rounded-md p-2">
-                {availableStores.map(store => (
-                  <div key={store.id} className="flex items-center space-x-2 py-1">
-                    <Checkbox 
-                      id={`store-${store.id}`}
-                      checked={selectedStores.includes(store.id.toString())}
-                      onCheckedChange={() => toggleStoreSelection(store.id.toString())}
-                    />
-                    <label 
-                      htmlFor={`store-${store.id}`}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      {store.name} ({store.city})
-                    </label>
-                  </div>
-                ))}
+                {availableStores.length > 0 ? (
+                  availableStores.map(store => (
+                    <div key={store.id} className="flex items-center space-x-2 py-1">
+                      <Checkbox 
+                        id={`store-${store.id}`}
+                        checked={selectedStores.includes(store.id.toString())}
+                        onCheckedChange={() => toggleStoreSelection(store.id.toString())}
+                      />
+                      <label 
+                        htmlFor={`store-${store.id}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        {store.name} ({store.city})
+                      </label>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center text-gray-500 py-4">No stores found</div>
+                )}
               </ScrollArea>
             </div>
             <Button 
@@ -454,7 +486,7 @@ const MontazUserManagement = () => {
             ) : (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8">
-                  No Montaz users found
+                  No Montaz users found. {montazUsers === undefined ? "Error loading data." : "Try logging in with a Montaz account first."}
                 </TableCell>
               </TableRow>
             )}

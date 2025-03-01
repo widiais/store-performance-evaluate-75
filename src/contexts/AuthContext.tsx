@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { loginWithMontaz } from '@/integrations/montaz/client';
-import type { User, Role, RolePermission, SUPER_ADMIN_EMAIL } from '@/types/auth';
+import { User, Role, RolePermission, SUPER_ADMIN_EMAIL } from '@/types/auth';
 import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { toast } = useToast();
 
   const isSuperAdmin = () => {
-    return user?.profile?.email === 'widi@admin.com';
+    return user?.profile?.email === SUPER_ADMIN_EMAIL;
   };
 
   const needsProfileCompletion = () => {
@@ -273,6 +273,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signInWithMontaz = async (email: string, password: string) => {
     try {
       setLoading(true);
+      console.log("Starting Montaz login for:", email);
+      
       const montazData = await loginWithMontaz(email, password);
       
       if (!montazData || !montazData.user) {
@@ -291,6 +293,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (checkError) {
         console.error('Error checking for existing profile:', checkError);
       }
+
+      console.log("Existing profile check result:", existingProfile);
 
       // Check if user is disabled
       if (existingProfile && existingProfile.is_active === false) {
@@ -330,29 +334,92 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             });
             
             if (signInError) {
-              console.error('Failed automatic sign in, showing error to user:', signInError);
-              throw new Error(`This Montaz account exists but we couldn't log you in automatically. Please contact an administrator.`);
-            }
-            
-            authUser = signInData.user;
-            
-            // Create profile for existing auth user that's missing a profile
-            if (authUser) {
-              const { error: createProfileError } = await supabase
-                .from('profiles')
-                .insert({
-                  id: authUser.id,
-                  email: montazData.user.email,
-                  montaz_id: montazData.user.id,
-                  montaz_data: montazData.user,
-                  montaz_password: defaultPassword,
-                  last_montaz_login: new Date().toISOString(),
-                  profile_completed: false,
-                  assigned_stores: []
+              console.error('Failed automatic sign in, trying with reset password flow', signInError);
+              
+              // Try sign in with reset password
+              const resetPassword = `Montaz${Date.now()}`;
+              
+              try {
+                // Try to get the user ID from auth.users
+                const { data: adminAuthData, error: adminAuthError } = await supabase.rpc('get_user_id_by_email', {
+                  email_param: montazData.user.email
                 });
                 
-              if (createProfileError) {
-                console.error('Error creating profile for existing auth user:', createProfileError);
+                if (adminAuthError || !adminAuthData) {
+                  console.error('Failed to get user ID:', adminAuthError);
+                  throw new Error(`This Montaz account exists but we couldn't log you in automatically. Please contact an administrator.`);
+                }
+                
+                // Try to update password using admin functions
+                const userId = adminAuthData;
+                console.log("Got user ID:", userId);
+                
+                // Update auth password and try to sign in
+                const { data: updateUserData, error: updateUserError } = await supabase.auth.admin.updateUserById(
+                  userId,
+                  { password: resetPassword }
+                );
+                
+                if (updateUserError) {
+                  console.error('Failed to update password:', updateUserError);
+                  throw new Error(`Authentication failed. Please contact an administrator.`);
+                }
+                
+                const { data: resetSignInData, error: resetSignInError } = await supabase.auth.signInWithPassword({
+                  email: montazData.user.email,
+                  password: resetPassword
+                });
+                
+                if (resetSignInError) {
+                  console.error('Still failed to sign in after password reset:', resetSignInError);
+                  throw new Error(`Authentication failed after password reset. Please contact an administrator.`);
+                }
+                
+                authUser = resetSignInData.user;
+                
+                // Create profile for existing auth user that's missing a profile
+                const { error: createProfileError } = await supabase
+                  .from('profiles')
+                  .insert({
+                    id: authUser.id,
+                    email: montazData.user.email,
+                    montaz_id: montazData.user.id,
+                    montaz_data: montazData.user,
+                    montaz_password: resetPassword,
+                    last_montaz_login: new Date().toISOString(),
+                    profile_completed: false,
+                    assigned_stores: []
+                  });
+                  
+                if (createProfileError) {
+                  console.error('Error creating profile for existing auth user:', createProfileError);
+                }
+                
+              } catch (innerError: any) {
+                console.error('Error in reset password flow:', innerError);
+                throw innerError;
+              }
+            } else {
+              authUser = signInData.user;
+              
+              // Create profile for existing auth user that's missing a profile
+              if (authUser) {
+                const { error: createProfileError } = await supabase
+                  .from('profiles')
+                  .insert({
+                    id: authUser.id,
+                    email: montazData.user.email,
+                    montaz_id: montazData.user.id,
+                    montaz_data: montazData.user,
+                    montaz_password: defaultPassword,
+                    last_montaz_login: new Date().toISOString(),
+                    profile_completed: false,
+                    assigned_stores: []
+                  });
+                  
+                if (createProfileError) {
+                  console.error('Error creating profile for existing auth user:', createProfileError);
+                }
               }
             }
           } else {
@@ -404,56 +471,81 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           // If authentication fails with the stored password, create a new one and update it
           const newPassword = `Montaz${Date.now()}`;
           
-          // Try to reset password via admin functions
-          console.log("Attempting to update password for Montaz user");
-          const { data: authUserData, error: authError } = await supabase.auth.admin.updateUserById(
-            existingProfile.id,
-            { password: newPassword }
-          );
-          
-          if (authError) {
-            console.error("Failed to update user password:", authError);
-            throw new Error("Failed to authenticate. Please contact an administrator.");
-          }
-          
-          // Try signing in with the new password
-          const { data: newSignInData, error: newSignInError } = await supabase.auth.signInWithPassword({
-            email: montazData.user.email,
-            password: newPassword
-          });
-          
-          if (newSignInError) {
-            console.error("Still failed to sign in after password update:", newSignInError);
-            throw new Error("Authentication failed. Please contact an administrator.");
-          }
-          
-          authUser = newSignInData.user;
-          
-          // Update the stored password in profiles
-          const { error: updatePassError } = await supabase
-            .from('profiles')
-            .update({
-              montaz_password: newPassword,
-              last_montaz_login: new Date().toISOString()
-            })
-            .eq('id', existingProfile.id);
+          try {
+            // Try to update password using auth.admin functions or RPC
+            // First get the user ID if we don't have it
+            let userId = existingProfile.id;
+            console.log("Attempting to update password for user ID:", userId);
             
-          if (updatePassError) {
-            console.error("Failed to update password in profile:", updatePassError);
+            // Try to update user password with admin functions
+            const { error: adminUpdateError } = await supabase.auth.admin.updateUserById(
+              userId,
+              { password: newPassword }
+            );
+            
+            if (adminUpdateError) {
+              console.error("Failed to update user password with admin function:", adminUpdateError);
+              
+              // Try RPC fallback if available
+              try {
+                const { error: rpcError } = await supabase.rpc('admin_update_user_password', {
+                  user_id: userId,
+                  new_password: newPassword
+                });
+                
+                if (rpcError) {
+                  console.error("Failed to update password with RPC:", rpcError);
+                  throw new Error("Failed to authenticate. Please contact an administrator.");
+                }
+              } catch (rpcCatchError) {
+                console.error("RPC method failed or doesn't exist:", rpcCatchError);
+                throw new Error("Authentication failed. Please contact an administrator.");
+              }
+            }
+            
+            // Try signing in with the new password
+            const { data: newSignInData, error: newSignInError } = await supabase.auth.signInWithPassword({
+              email: montazData.user.email,
+              password: newPassword
+            });
+            
+            if (newSignInError) {
+              console.error("Still failed to sign in after password update:", newSignInError);
+              throw new Error("Authentication failed. Please contact an administrator.");
+            }
+            
+            authUser = newSignInData.user;
+            
+            // Update the stored password in profiles
+            const { error: updatePassError } = await supabase
+              .from('profiles')
+              .update({
+                montaz_password: newPassword,
+                last_montaz_login: new Date().toISOString()
+              })
+              .eq('id', existingProfile.id);
+              
+            if (updatePassError) {
+              console.error("Failed to update password in profile:", updatePassError);
+            }
+          } catch (passwordUpdateError: any) {
+            console.error("Password update flow failed:", passwordUpdateError);
+            throw passwordUpdateError;
           }
         } else {
           authUser = signInData.user;
           
-          // Update login timestamp
+          // Update montaz data and login timestamp
           const { error: updateError } = await supabase
             .from('profiles')
             .update({
+              montaz_data: montazData.user, // Update the montaz data
               last_montaz_login: new Date().toISOString()
             })
             .eq('id', authUser.id);
             
           if (updateError) {
-            console.error('Error updating login timestamp:', updateError);
+            console.error('Error updating login timestamp and Montaz data:', updateError);
           }
         }
       }
