@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -292,6 +291,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (checkError) {
         console.error('Error checking for existing profile:', checkError);
+        throw new Error(`Database error: ${checkError.message}`);
       }
 
       console.log("Existing profile check result:", existingProfile);
@@ -306,11 +306,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (!existingProfile) {
         // If profile doesn't exist, create a new user
         console.log("Creating new user for Montaz login:", montazData.user.email);
-        const randomPassword = `Montaz${Date.now()}`;
+        
+        // Use a more predictable password pattern based on their Montaz ID
+        const newPassword = `Montaz${montazData.user.id}`;
+        console.log("Generated password for new user:", newPassword);
         
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: montazData.user.email,
-          password: randomPassword,
+          password: newPassword,
           options: {
             data: {
               montaz_id: montazData.user.id,
@@ -325,12 +328,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           if (signUpError.message.includes('User already registered')) {
             console.log("User already exists but no profile found, attempting sign in");
             
-            // Try with a default Montaz password pattern
-            const defaultPassword = `Montaz${montazData.user.id}`;
-            
+            // Try to sign in with the generated password
             const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
               email: montazData.user.email,
-              password: defaultPassword
+              password: newPassword
             });
             
             if (signInError) {
@@ -338,10 +339,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               
               // Try sign in with reset password
               const resetPassword = `Montaz${Date.now()}`;
+              console.log("Generated reset password:", resetPassword);
               
               try {
                 // Try to get the user ID from auth.users
-                const { data: userData, error: userIdError } = await supabase.functions.invoke<string>(
+                console.log("Invoking edge function to get user ID");
+                const { data: userData, error: userIdError } = await supabase.functions.invoke(
                   'get-user-id-by-email',
                   {
                     body: { email: montazData.user.email }
@@ -358,6 +361,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 console.log("Got user ID:", userId);
                 
                 // Update auth password and try to sign in
+                console.log("Invoking edge function to update password");
                 const { error: passwordUpdateError } = await supabase.functions.invoke(
                   'update-user-password',
                   {
@@ -373,6 +377,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                   throw new Error(`Authentication failed. Please contact an administrator.`);
                 }
                 
+                // Try signing in with the reset password
+                console.log("Attempting to sign in with reset password");
                 const { data: resetSignInData, error: resetSignInError } = await supabase.auth.signInWithPassword({
                   email: montazData.user.email,
                   password: resetPassword
@@ -386,6 +392,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 authUser = resetSignInData.user;
                 
                 // Create profile for existing auth user that's missing a profile
+                console.log("Creating profile for existing auth user");
                 const { error: createProfileError } = await supabase
                   .from('profiles')
                   .insert({
@@ -412,6 +419,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               
               // Create profile for existing auth user that's missing a profile
               if (authUser) {
+                console.log("Creating profile for existing auth user after successful sign in");
                 const { error: createProfileError } = await supabase
                   .from('profiles')
                   .insert({
@@ -419,7 +427,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     email: montazData.user.email,
                     montaz_id: montazData.user.id,
                     montaz_data: montazData.user,
-                    montaz_password: defaultPassword,
+                    montaz_password: newPassword,
                     last_montaz_login: new Date().toISOString(),
                     profile_completed: false,
                     assigned_stores: []
@@ -438,12 +446,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           authUser = signUpData.user;
           
           if (authUser) {
+            console.log("Updating profile for new auth user");
             const { error: updateError } = await supabase
               .from('profiles')
               .update({
                 montaz_id: montazData.user.id,
                 montaz_data: montazData.user,
-                montaz_password: randomPassword,
+                montaz_password: newPassword,
                 last_montaz_login: new Date().toISOString(),
                 profile_completed: false,
                 assigned_stores: []
@@ -467,7 +476,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         // If profile exists, sign in with existing credentials
         console.log("Existing user found for Montaz login:", montazData.user.email);
+        // Try the stored password first, if not available use a default pattern
         const password = existingProfile.montaz_password || `Montaz${montazData.user.id}`;
+        console.log("Using stored or generated password:", password ? "password exists" : "no password");
         
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email: montazData.user.email,
@@ -478,14 +489,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           console.error('Error signing in existing Montaz user:', signInError);
           // If authentication fails with the stored password, create a new one and update it
           const newPassword = `Montaz${Date.now()}`;
+          console.log("Generated new password after sign in failure:", newPassword);
           
           try {
-            // Try to update password using edge functions
             // First get the user ID if we don't have it
             let userId = existingProfile.id;
             console.log("Attempting to update password for user ID:", userId);
             
-            // Try to update user password with admin functions
+            // Update password using edge function
+            console.log("Invoking edge function to update password");
             const { error: passwordUpdateError } = await supabase.functions.invoke(
               'update-user-password',
               {
@@ -502,6 +514,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
             
             // Try signing in with the new password
+            console.log("Attempting to sign in with new password");
             const { data: newSignInData, error: newSignInError } = await supabase.auth.signInWithPassword({
               email: montazData.user.email,
               password: newPassword
@@ -515,6 +528,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             authUser = newSignInData.user;
             
             // Update the stored password in profiles
+            console.log("Updating stored password in profile");
             const { error: updatePassError } = await supabase
               .from('profiles')
               .update({
@@ -534,6 +548,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           authUser = signInData.user;
           
           // Update montaz data and login timestamp
+          console.log("Updating Montaz data and login timestamp");
           const { error: updateError } = await supabase
             .from('profiles')
             .update({
@@ -558,9 +573,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error('Montaz login error in AuthContext:', error);
       toast({
         title: "Error signing in with Montaz",
-        description: error.message,
+        description: error.message || "Failed to login. Please try again.",
         variant: "destructive",
       });
+      throw error; // Re-throw to let the Auth component handle it
     } finally {
       setLoading(false);
     }

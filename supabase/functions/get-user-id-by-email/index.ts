@@ -1,95 +1,66 @@
 
-import { serve } from "https://deno.land/std@0.131.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
+// Follow this setup guide to integrate the Deno language server with your editor:
+// https://deno.land/manual/getting_started/setup_your_environment
+// This enables autocomplete, go to definition, etc.
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.23.0'
+
+console.log("Hello from get-user-id-by-email function!")
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Create a Supabase client with the Admin key
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Get the request body
     const { email } = await req.json();
+    
+    console.log(`Looking up user ID for email: ${email}`);
 
     if (!email) {
       return new Response(
-        JSON.stringify({ error: "Email is required" }),
-        { 
-          status: 400, 
-          headers: { 
-            ...corsHeaders,
-            "Content-Type": "application/json" 
-          } 
-        }
+        JSON.stringify({ error: 'Email is required' }),
+        { headers: { 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
-    console.log(`Looking up user ID for email: ${email}`);
-
-    // Use the service role to query auth.users directly
+    // Query the auth.users table directly using the service role
     const { data, error } = await supabase
-      .from("users")
-      .select("id")
-      .eq("email", email)
+      .from('auth.users')
+      .select('id')
+      .eq('email', email)
       .single();
 
     if (error) {
-      console.error("Error fetching user ID:", error);
+      console.error('Error fetching user ID:', error);
       return new Response(
-        JSON.stringify({ error: "Failed to fetch user ID" }),
-        { 
-          status: 500, 
-          headers: { 
-            ...corsHeaders,
-            "Content-Type": "application/json" 
-          } 
-        }
+        JSON.stringify({ error: `Failed to get user ID: ${error.message}` }),
+        { headers: { 'Content-Type': 'application/json' }, status: 500 }
       );
     }
 
     if (!data) {
       return new Response(
-        JSON.stringify({ error: "User not found" }),
-        { 
-          status: 404, 
-          headers: { 
-            ...corsHeaders,
-            "Content-Type": "application/json" 
-          } 
-        }
+        JSON.stringify({ error: 'User not found' }),
+        { headers: { 'Content-Type': 'application/json' }, status: 404 }
       );
     }
 
+    console.log(`Found user ID: ${data.id}`);
+    
+    // Return the user ID
     return new Response(
       JSON.stringify(data.id),
-      { 
-        status: 200, 
-        headers: { 
-          ...corsHeaders,
-          "Content-Type": "application/json" 
-        } 
-      }
+      { headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error("Unexpected error:", error);
+    console.error('Unexpected error:', error);
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { 
-        status: 500, 
-        headers: { 
-          ...corsHeaders,
-          "Content-Type": "application/json" 
-        } 
-      }
+      JSON.stringify({ error: `Unexpected error: ${error.message}` }),
+      { headers: { 'Content-Type': 'application/json' }, status: 500 }
     );
   }
-});
+})

@@ -1,80 +1,58 @@
 
-import { serve } from "https://deno.land/std@0.131.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
+// Follow this setup guide to integrate the Deno language server with your editor:
+// https://deno.land/manual/getting_started/setup_your_environment
+// This enables autocomplete, go to definition, etc.
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.23.0'
+
+console.log("Hello from update-user-password function!")
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Create a Supabase client with the Admin key
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Get the request body
     const { userId, password } = await req.json();
+    
+    console.log(`Updating password for user ID: ${userId}`);
 
     if (!userId || !password) {
       return new Response(
-        JSON.stringify({ error: "User ID and password are required" }),
-        { 
-          status: 400, 
-          headers: { 
-            ...corsHeaders,
-            "Content-Type": "application/json" 
-          } 
-        }
+        JSON.stringify({ error: 'User ID and password are required' }),
+        { headers: { 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
-    console.log(`Updating password for user ID: ${userId}`);
-
-    // Use the admin API to update the user's password
-    const { error } = await supabase.auth.admin.updateUserById(userId, {
-      password: password,
+    // Use the admin_update_user_password function to update the password
+    const { data, error } = await supabase.rpc('admin_update_user_password', {
+      user_id: userId,
+      new_password: password
     });
 
     if (error) {
-      console.error("Error updating password:", error);
+      console.error('Error updating user password:', error);
       return new Response(
-        JSON.stringify({ error: "Failed to update password" }),
-        { 
-          status: 500, 
-          headers: { 
-            ...corsHeaders,
-            "Content-Type": "application/json" 
-          } 
-        }
+        JSON.stringify({ error: `Failed to update password: ${error.message}` }),
+        { headers: { 'Content-Type': 'application/json' }, status: 500 }
       );
     }
 
+    console.log(`Password updated successfully for user ID: ${userId}`);
+    
+    // Return success
     return new Response(
       JSON.stringify({ success: true }),
-      { 
-        status: 200, 
-        headers: { 
-          ...corsHeaders,
-          "Content-Type": "application/json" 
-        } 
-      }
+      { headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error("Unexpected error:", error);
+    console.error('Unexpected error:', error);
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { 
-        status: 500, 
-        headers: { 
-          ...corsHeaders,
-          "Content-Type": "application/json" 
-        } 
-      }
+      JSON.stringify({ error: `Unexpected error: ${error.message}` }),
+      { headers: { 'Content-Type': 'application/json' }, status: 500 }
     );
   }
-});
+})

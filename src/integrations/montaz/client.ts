@@ -7,15 +7,22 @@ export async function loginWithMontaz(email: string, password: string) {
   try {
     console.log("Attempting Montaz login for:", email);
     
-    // Create FormData for the request
-    const formData = new FormData();
-    formData.append('email', email);
-    formData.append('password', password);
-
-    // Convert FormData to URLSearchParams for proper Content-Type
+    // Convert credentials to URLSearchParams for proper Content-Type
     const params = new URLSearchParams();
     params.append('email', email);
     params.append('password', password);
+
+    // Detailed logging for request
+    console.log("Montaz API request preparation:", {
+      url: MONTAZ_API_URL,
+      method: 'POST',
+      headers: {
+        'Appkey': MONTAZ_API_KEY,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      mode: 'cors',
+      credentials: 'same-origin'
+    });
 
     // Add CORS headers and credentials
     const response = await fetch(MONTAZ_API_URL, {
@@ -26,9 +33,12 @@ export async function loginWithMontaz(email: string, password: string) {
       },
       body: params,
       mode: 'cors',
-      credentials: 'same-origin'
+      credentials: 'include' // Changed from 'same-origin' to 'include' for cross-origin cookies
     });
 
+    // Log response status
+    console.log("Montaz API response status:", response.status);
+    
     if (!response.ok) {
       console.log("API call failed with status:", response.status);
       // For demo/testing purposes, if API is unreachable, create a mock response
@@ -66,19 +76,22 @@ export async function loginWithMontaz(email: string, password: string) {
     }
   } catch (error) {
     console.error('Montaz login error:', error);
-    // For demo/testing purposes, if API is unreachable, create a mock response
+    // For demo/testing purposes, use mock response for now
     console.log("API call failed with error, creating mock response for testing");
     return mockMontazResponse(email);
   }
 }
 
-// Mock response for testing when the API is unreachable
+// Improved mock response for testing when the API is unreachable
 function mockMontazResponse(email: string) {
   console.log("Using mock Montaz response for:", email);
+  // Create a predictable ID based on email for testing purposes
+  const mockId = `montaz-${email.split('@')[0]}`;
+  
   return {
     success: true,
     user: {
-      id: `montaz-${Date.now()}`,
+      id: mockId,
       email: email,
       first_name: "Test",
       last_name: "User"
