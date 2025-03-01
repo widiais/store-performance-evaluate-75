@@ -1,7 +1,7 @@
-
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { loginWithMontaz } from '@/integrations/montaz/client';
 import type { User, Role, RolePermission } from '@/types/auth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -14,6 +14,7 @@ interface AuthContextType {
   changePassword: (newPassword: string) => Promise<void>;
   hasPermission: (resource: string, action: 'create' | 'read' | 'update' | 'delete') => boolean;
   isSuperAdmin: () => boolean;
+  signInWithMontaz: (username: string, password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -203,6 +204,78 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const signInWithMontaz = async (username: string, password: string) => {
+    try {
+      setLoading(true);
+      const montazData = await loginWithMontaz(username, password);
+      
+      if (!montazData || !montazData.user) {
+        throw new Error('Invalid response from Montaz API');
+      }
+      
+      const { data: existingUser, error: checkError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('email', montazData.user.email)
+        .single();
+      
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw new Error('Error checking for existing user');
+      }
+      
+      let authUser;
+      
+      if (!existingUser) {
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: montazData.user.email,
+          password: `Montaz${Date.now()}`,
+          options: {
+            data: {
+              montaz_id: montazData.user.id,
+              first_name: montazData.user.first_name || '',
+              last_name: montazData.user.last_name || '',
+            }
+          }
+        });
+        
+        if (signUpError) throw signUpError;
+        authUser = signUpData.user;
+      } else {
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: montazData.user.email,
+          password: existingUser.montaz_password || `Montaz${Date.now()}`
+        });
+        
+        if (signInError) throw signInError;
+        authUser = signInData.user;
+        
+        await supabase
+          .from('profiles')
+          .update({
+            montaz_id: montazData.user.id,
+            montaz_data: montazData.user,
+            last_montaz_login: new Date().toISOString()
+          })
+          .eq('id', authUser.id);
+      }
+      
+      toast({
+        title: "Success",
+        description: "Logged in with Montaz successfully",
+      });
+      
+      navigate('/');
+    } catch (error: any) {
+      toast({
+        title: "Error signing in with Montaz",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -212,7 +285,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       signOut,
       changePassword,
       hasPermission,
-      isSuperAdmin 
+      isSuperAdmin,
+      signInWithMontaz
     }}>
       {children}
     </AuthContext.Provider>
