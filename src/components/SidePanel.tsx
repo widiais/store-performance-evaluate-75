@@ -15,7 +15,7 @@ interface SidePanelProps {
 }
 
 const SidePanel = ({ onTabChange }: SidePanelProps) => {
-  const { signOut, needsProfileCompletion } = useAuth();
+  const { signOut, needsProfileCompletion, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -64,6 +64,7 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
   };
 
   const isProfileIncomplete = needsProfileCompletion();
+  const userIsSuperAdmin = isSuperAdmin();
 
   return (
     <>
@@ -111,8 +112,8 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
             )}
             
             {menuSections.map((section, index) => {
-              // If profile is incomplete, only show Company Policy section
-              if (isProfileIncomplete && section.title !== "Company Policy") {
+              // If profile is incomplete and not super admin, only show Company Policy section
+              if (isProfileIncomplete && !userIsSuperAdmin && section.title !== "Company Policy") {
                 return null;
               }
               

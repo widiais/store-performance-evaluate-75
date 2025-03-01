@@ -18,14 +18,15 @@ export const MenuSection = ({
   onToggle, 
   onItemClick 
 }: MenuSectionProps) => {
-  const { canAccessMenu } = useMenuAccess();
+  const { canAccessMenu, isSuperAdmin } = useMenuAccess();
   const navigate = useNavigate();
 
-  const accessibleItems = section.items.filter(item => 
-    !item.resource || canAccessMenu(item.resource)
-  );
+  // If super admin, show all items, otherwise filter by permission
+  const sectionItems = isSuperAdmin() 
+    ? section.items 
+    : section.items.filter(item => !item.resource || canAccessMenu(item.resource));
 
-  if (accessibleItems.length === 0) return null;
+  if (sectionItems.length === 0) return null;
 
   return (
     <div className="mb-4">
@@ -43,7 +44,7 @@ export const MenuSection = ({
       
       {isExpanded && (
         <div className="mt-1 space-y-1">
-          {accessibleItems.map((item, index) => {
+          {sectionItems.map((item, index) => {
             const Icon = item.icon;
             return (
               <Button

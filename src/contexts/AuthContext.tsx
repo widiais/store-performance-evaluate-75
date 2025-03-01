@@ -33,6 +33,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const needsProfileCompletion = () => {
     if (!user) return false;
+    if (isSuperAdmin()) return false; // Super admin never needs profile completion
     
     // Check if user is from Montaz and profile is not completed
     return !!user.profile?.montaz_id && !user.profile.profile_completed;
@@ -292,7 +293,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               montaz_data: montazData.user,
               montaz_password: randomPassword,
               last_montaz_login: new Date().toISOString(),
-              profile_completed: false
+              profile_completed: false,
+              assigned_stores: []
             })
             .eq('id', authUser.id);
         }

@@ -1,28 +1,19 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -34,279 +25,293 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { User, UsersRound, Store, CheckCircle, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { MontazUser, Role } from "@/types/auth";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Check, X } from "lucide-react";
+import type { MontazUser, Role } from "@/types/auth";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const MontazUserManagement = () => {
-  const [montazUsers, setMontazUsers] = useState<MontazUser[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [stores, setStores] = useState<any[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<MontazUser | null>(null);
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [availableStores, setAvailableStores] = useState<any[]>([]);
   const [selectedStores, setSelectedStores] = useState<string[]>([]);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<string>("");
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    fetchMontazUsers();
-    fetchRoles();
-    fetchStores();
-  }, []);
-
-  const fetchMontazUsers = async () => {
-    try {
-      setLoading(true);
+  // Fetch Montaz users
+  const { data: montazUsers, isLoading: loadingUsers } = useQuery({
+    queryKey: ['montaz-users'],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .not('montaz_id', 'is', null);
-
+      
       if (error) throw error;
-      setMontazUsers(data || []);
-    } catch (error: any) {
-      console.error('Error fetching Montaz users:', error.message);
-      toast({
-        title: "Error",
-        description: "Failed to fetch Montaz users",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+      
+      // Transform to MontazUser[] type
+      return data.map((profile: any) => ({
+        id: profile.id,
+        email: profile.email,
+        montaz_id: profile.montaz_id,
+        montaz_data: profile.montaz_data,
+        role_id: profile.role_id,
+        assigned_stores: profile.assigned_stores || [],
+        profile_completed: profile.profile_completed || false,
+        created_at: profile.created_at,
+        updated_at: profile.updated_at
+      })) as MontazUser[];
     }
-  };
+  });
 
-  const fetchRoles = async () => {
-    try {
+  // Fetch roles
+  const { data: roles } = useQuery({
+    queryKey: ['roles'],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('roles')
         .select('*');
-
+      
       if (error) throw error;
-      setRoles(data || []);
-    } catch (error: any) {
-      console.error('Error fetching roles:', error.message);
+      return data as Role[];
     }
-  };
+  });
 
-  const fetchStores = async () => {
-    try {
+  // Fetch stores
+  const { data: stores } = useQuery({
+    queryKey: ['stores'],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('stores')
-        .select('*');
-
+        .select('id, name, city');
+      
       if (error) throw error;
-      setStores(data || []);
-    } catch (error: any) {
-      console.error('Error fetching stores:', error.message);
+      return data;
     }
-  };
+  });
 
-  const handleEditUser = (user: MontazUser) => {
-    setSelectedUser(user);
-    setSelectedRole(user.role_id || null);
-    setSelectedStores(user.assigned_stores || []);
-    setIsDialogOpen(true);
-  };
-
-  const handleSaveUser = async () => {
-    if (!selectedUser) return;
-    
-    try {
+  // Update user mutation
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ userId, roleId, assignedStores }: { userId: string, roleId: string, assignedStores: string[] }) => {
       const { error } = await supabase
         .from('profiles')
         .update({
-          role_id: selectedRole,
-          assigned_stores: selectedStores,
+          role_id: roleId,
+          assigned_stores: assignedStores,
           profile_completed: true
         })
-        .eq('id', selectedUser.id);
-
+        .eq('id', userId);
+      
       if (error) throw error;
-
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['montaz-users'] });
       toast({
         title: "Success",
-        description: "Montaz user updated successfully",
+        description: "User updated successfully",
+        variant: "default",
       });
-
-      setIsDialogOpen(false);
-      fetchMontazUsers();
-    } catch (error: any) {
-      console.error('Error updating Montaz user:', error.message);
+      setIsOpen(false);
+    },
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: `Failed to update Montaz user: ${error.message}`,
+        description: error.message,
         variant: "destructive",
       });
     }
+  });
+
+  useEffect(() => {
+    if (stores) {
+      setAvailableStores(stores);
+    }
+  }, [stores]);
+
+  useEffect(() => {
+    if (selectedUser) {
+      setSelectedRole(selectedUser.role_id || "");
+      setSelectedStores(selectedUser.assigned_stores || []);
+    } else {
+      setSelectedRole("");
+      setSelectedStores([]);
+    }
+  }, [selectedUser]);
+
+  const handleOpenDialog = (user: MontazUser) => {
+    setSelectedUser(user);
+    setIsOpen(true);
   };
 
-  const handleStoreChange = (storeId: string) => {
-    setSelectedStores(prev => {
-      if (prev.includes(storeId)) {
-        return prev.filter(id => id !== storeId);
-      } else {
-        return [...prev, storeId];
-      }
+  const handleUpdateUser = async () => {
+    if (!selectedUser || !selectedRole) {
+      toast({
+        title: "Error",
+        description: "Role selection is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    await updateUserMutation.mutateAsync({
+      userId: selectedUser.id,
+      roleId: selectedRole,
+      assignedStores: selectedStores
     });
+  };
+
+  const toggleStoreSelection = (storeId: string) => {
+    setSelectedStores(prev => 
+      prev.includes(storeId)
+        ? prev.filter(id => id !== storeId)
+        : [...prev, storeId]
+    );
   };
 
   return (
     <div className="container mx-auto py-10">
-      <Card>
-        <CardHeader>
-          <CardTitle>Montaz Users Management</CardTitle>
-          <CardDescription>
-            Manage users who signed in via Montaz integration
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex justify-center p-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500" />
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold">Montaz Users Management</h1>
+          <Badge variant="outline" className="ml-2">
+            <UsersRound className="h-4 w-4 mr-1" />
+            {montazUsers?.length || 0} Users
+          </Badge>
+        </div>
+      </div>
+
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Complete User Profile</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" value={selectedUser?.email || ""} readOnly className="bg-gray-50" />
             </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Montaz ID</TableHead>
-                  <TableHead>Profile Completed</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Assigned Stores</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {montazUsers.map((user) => (
+            <div>
+              <Label htmlFor="role">Role</Label>
+              <Select value={selectedRole} onValueChange={setSelectedRole}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles?.map((role) => (
+                    <SelectItem key={role.id} value={role.id}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="mb-2 block">Assigned Stores</Label>
+              <ScrollArea className="h-48 border rounded-md p-2">
+                {availableStores.map(store => (
+                  <div key={store.id} className="flex items-center space-x-2 py-1">
+                    <Checkbox 
+                      id={`store-${store.id}`}
+                      checked={selectedStores.includes(store.id.toString())}
+                      onCheckedChange={() => toggleStoreSelection(store.id.toString())}
+                    />
+                    <label 
+                      htmlFor={`store-${store.id}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      {store.name} ({store.city})
+                    </label>
+                  </div>
+                ))}
+              </ScrollArea>
+            </div>
+            <Button 
+              onClick={handleUpdateUser} 
+              className="w-full"
+            >
+              Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {loadingUsers ? (
+        <div className="flex justify-center my-8">
+          <p>Loading users...</p>
+        </div>
+      ) : (
+        <Table>
+          <TableCaption>List of Montaz users in the system</TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Email</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Assigned Stores</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {montazUsers && montazUsers.length > 0 ? (
+              montazUsers.map((user) => {
+                // Find role name
+                const userRole = roles?.find(role => role.id === user.role_id);
+                
+                return (
                   <TableRow key={user.id}>
                     <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.montaz_id}</TableCell>
+                    <TableCell>{userRole?.name || 'Not assigned'}</TableCell>
                     <TableCell>
-                      {user.profile_completed ? (
-                        <Badge variant="success" className="bg-green-500">
-                          <Check className="h-4 w-4 mr-1" /> Completed
+                      {user.assigned_stores && user.assigned_stores.length > 0 ? (
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                          <Store className="h-3 w-3 mr-1" />
+                          {user.assigned_stores.length} stores
                         </Badge>
                       ) : (
-                        <Badge variant="destructive">
-                          <X className="h-4 w-4 mr-1" /> Incomplete
+                        <span className="text-gray-500 text-sm">No stores assigned</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {user.profile_completed ? (
+                        <Badge variant="outline" className="bg-green-50 text-green-700">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Complete
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700">
+                          <XCircle className="h-3 w-3 mr-1" />
+                          Incomplete
                         </Badge>
                       )}
                     </TableCell>
                     <TableCell>
-                      {roles.find(r => r.id === user.role_id)?.name || "Not Assigned"}
-                    </TableCell>
-                    <TableCell>
-                      {user.assigned_stores?.length || 0} stores
-                    </TableCell>
-                    <TableCell>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
-                        onClick={() => handleEditUser(user)}
+                        onClick={() => handleOpenDialog(user)}
                       >
-                        Edit
+                        {user.profile_completed ? 'Edit' : 'Complete Profile'}
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
-                {montazUsers.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-4">
-                      No Montaz users found
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Edit Montaz User</DialogTitle>
-            <DialogDescription>
-              Update role and store access for this Montaz user
-            </DialogDescription>
-          </DialogHeader>
-          {selectedUser && (
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="email" className="text-right">
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  value={selectedUser.email}
-                  className="col-span-3"
-                  disabled
-                />
-              </div>
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="role" className="text-right">
-                  Role
-                </Label>
-                <Select
-                  value={selectedRole || ""}
-                  onValueChange={setSelectedRole}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select a role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {roles.map((role) => (
-                      <SelectItem key={role.id} value={role.id}>
-                        {role.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="grid grid-cols-4 items-start gap-4">
-                <Label className="text-right pt-2">
-                  Assigned Stores
-                </Label>
-                <div className="col-span-3 space-y-2 max-h-[200px] overflow-y-auto border rounded p-2">
-                  {stores.map((store) => (
-                    <div key={store.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`store-${store.id}`}
-                        checked={selectedStores.includes(store.id.toString())}
-                        onCheckedChange={() => handleStoreChange(store.id.toString())}
-                      />
-                      <Label htmlFor={`store-${store.id}`}>
-                        {store.name} ({store.city})
-                      </Label>
-                    </div>
-                  ))}
-                  {stores.length === 0 && (
-                    <p className="text-sm text-gray-500">No stores available</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSaveUser}>
-              Save Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                );
+              })
+            ) : (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-8">
+                  No Montaz users found
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      )}
     </div>
   );
 };
