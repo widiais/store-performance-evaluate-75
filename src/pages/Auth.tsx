@@ -11,7 +11,7 @@ const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [montazUsername, setMontazUsername] = useState("");
+  const [montazEmail, setMontazEmail] = useState("");
   const [montazPassword, setMontazPassword] = useState("");
   const [activeTab, setActiveTab] = useState("standard");
   const { signIn, signUp, signInWithMontaz } = useAuth();
@@ -27,7 +27,7 @@ const Auth = () => {
 
   const handleMontazSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await signInWithMontaz(montazUsername, montazPassword);
+    await signInWithMontaz(montazEmail, montazPassword);
   };
 
   return (
@@ -96,14 +96,14 @@ const Auth = () => {
             <form onSubmit={handleMontazSubmit}>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="montazUsername">Montaz Username</Label>
+                  <Label htmlFor="montazEmail">Montaz Email</Label>
                   <Input
-                    id="montazUsername"
-                    type="text"
-                    value={montazUsername}
-                    onChange={(e) => setMontazUsername(e.target.value)}
+                    id="montazEmail"
+                    type="email"
+                    value={montazEmail}
+                    onChange={(e) => setMontazEmail(e.target.value)}
                     required
-                    placeholder="Enter your Montaz username"
+                    placeholder="Enter your Montaz email"
                   />
                 </div>
                 <div className="space-y-2">

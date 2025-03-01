@@ -1,29 +1,54 @@
 
 // Montaz API Integration
-const MONTAZ_API_URL = "https://crs.montaz.id/api/login";
+const MONTAZ_API_URL = "https://crs.montaz.id/api/login/";
 const MONTAZ_API_KEY = "CRSMonT4z4pp$2o24";
 
-export async function loginWithMontaz(username: string, password: string) {
+export async function loginWithMontaz(email: string, password: string) {
   try {
+    // Create FormData for the request
+    const formData = new FormData();
+    formData.append('email', email);
+    formData.append('password', password);
+
     const response = await fetch(MONTAZ_API_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${MONTAZ_API_KEY}`
+        'Appkey': MONTAZ_API_KEY
       },
-      body: JSON.stringify({
-        username,
-        password
-      })
+      body: formData
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to login with Montaz');
+      throw new Error('Network response was not ok');
     }
 
     const data = await response.json();
-    return data;
+    
+    // Handle different response codes from the API
+    if (data.code === "00") {
+      // Success case
+      return {
+        success: true,
+        user: {
+          id: data.message.key,
+          email: data.message.email,
+          first_name: data.message.first_name,
+          last_name: data.message.last_name
+        }
+      };
+    } else if (data.code === "400") {
+      // Authentication failed
+      throw new Error('Authentication failed!');
+    } else if (data.code === "420") {
+      // No account found
+      throw new Error('Sorry, no account found with this email.');
+    } else if (data.code === "430") {
+      // Employee resigned
+      throw new Error('The employee has resigned.');
+    } else {
+      // Generic error
+      throw new Error(data.message || 'Failed to login with Montaz');
+    }
   } catch (error) {
     console.error('Montaz login error:', error);
     throw error;

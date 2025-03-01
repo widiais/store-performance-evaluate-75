@@ -18,6 +18,10 @@ export interface Profile {
   is_active?: boolean;
   created_at?: string;
   updated_at?: string;
+  montaz_id?: string;
+  montaz_data?: any;
+  montaz_password?: string;
+  last_montaz_login?: string;
 }
 
 export interface User {

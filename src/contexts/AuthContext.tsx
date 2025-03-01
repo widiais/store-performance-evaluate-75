@@ -14,7 +14,7 @@ interface AuthContextType {
   changePassword: (newPassword: string) => Promise<void>;
   hasPermission: (resource: string, action: 'create' | 'read' | 'update' | 'delete') => boolean;
   isSuperAdmin: () => boolean;
-  signInWithMontaz: (username: string, password: string) => Promise<void>;
+  signInWithMontaz: (email: string, password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -57,7 +57,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .select(`
           id,
           email,
-          role_id
+          role_id,
+          montaz_id,
+          montaz_data,
+          last_montaz_login
         `)
         .eq('id', userId)
         .single();
@@ -93,7 +96,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           id: profileData.id,
           email: profileData.email,
           role_id: profileData.role_id,
-          roles: roleData
+          roles: roleData,
+          montaz_id: profileData.montaz_id,
+          montaz_data: profileData.montaz_data,
+          last_montaz_login: profileData.last_montaz_login
         },
         role: roleData,
         permissions: permissionsData
@@ -204,31 +210,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const signInWithMontaz = async (username: string, password: string) => {
+  const signInWithMontaz = async (email: string, password: string) => {
     try {
       setLoading(true);
-      const montazData = await loginWithMontaz(username, password);
+      const montazData = await loginWithMontaz(email, password);
       
       if (!montazData || !montazData.user) {
         throw new Error('Invalid response from Montaz API');
       }
       
-      const { data: existingUser, error: checkError } = await supabase
+      const { data: existingProfile, error: checkError } = await supabase
         .from('profiles')
         .select('*')
         .eq('email', montazData.user.email)
         .single();
       
-      if (checkError && checkError.code !== 'PGRST116') {
-        throw new Error('Error checking for existing user');
-      }
-      
       let authUser;
       
-      if (!existingUser) {
+      if (checkError && checkError.code === 'PGRST116') {
+        const randomPassword = `Montaz${Date.now()}`;
+        
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: montazData.user.email,
-          password: `Montaz${Date.now()}`,
+          password: randomPassword,
           options: {
             data: {
               montaz_id: montazData.user.id,
@@ -240,23 +244,37 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         if (signUpError) throw signUpError;
         authUser = signUpData.user;
+        
+        if (authUser) {
+          await supabase
+            .from('profiles')
+            .update({
+              montaz_id: montazData.user.id,
+              montaz_data: montazData.user,
+              montaz_password: randomPassword,
+              last_montaz_login: new Date().toISOString()
+            })
+            .eq('id', authUser.id);
+        }
       } else {
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email: montazData.user.email,
-          password: existingUser.montaz_password || `Montaz${Date.now()}`
+          password: existingProfile?.montaz_password || `Montaz${Date.now()}`
         });
         
         if (signInError) throw signInError;
         authUser = signInData.user;
         
-        await supabase
-          .from('profiles')
-          .update({
-            montaz_id: montazData.user.id,
-            montaz_data: montazData.user,
-            last_montaz_login: new Date().toISOString()
-          })
-          .eq('id', authUser.id);
+        if (authUser) {
+          await supabase
+            .from('profiles')
+            .update({
+              montaz_id: montazData.user.id,
+              montaz_data: montazData.user,
+              last_montaz_login: new Date().toISOString()
+            })
+            .eq('id', authUser.id);
+        }
       }
       
       toast({
