@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,20 +53,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchUserData = async (userId: string) => {
     try {
+      // Check if the profiles table exists and has the necessary columns
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select(`
           id,
           email,
           role_id,
+          is_active,
           montaz_id,
           montaz_data,
+          montaz_password,
           last_montaz_login
         `)
         .eq('id', userId)
         .single();
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Profile fetch error:', profileError);
+        // Even if there's an error, continue with default values
+        setUser({
+          id: userId,
+          profile: {
+            id: userId,
+            email: '',
+            is_active: true
+          }
+        });
+        setLoading(false);
+        return;
+      }
 
       let roleData: Role | null = null;
       let permissionsData: RolePermission[] = [];
@@ -77,16 +94,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           .eq('id', profileData.role_id)
           .single();
 
-        if (roleError) throw roleError;
-        roleData = role;
+        if (roleError) {
+          console.error('Role fetch error:', roleError);
+        } else {
+          roleData = role;
 
-        const { data: permissions, error: permissionsError } = await supabase
-          .from('role_permissions')
-          .select('*')
-          .eq('role_id', profileData.role_id);
+          const { data: permissions, error: permissionsError } = await supabase
+            .from('role_permissions')
+            .select('*')
+            .eq('role_id', profileData.role_id);
 
-        if (permissionsError) throw permissionsError;
-        permissionsData = permissions;
+          if (permissionsError) {
+            console.error('Permissions fetch error:', permissionsError);
+          } else {
+            permissionsData = permissions;
+          }
+        }
       }
 
       setUser({
@@ -97,9 +120,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           email: profileData.email,
           role_id: profileData.role_id,
           roles: roleData,
+          is_active: profileData.is_active,
           montaz_id: profileData.montaz_id,
           montaz_data: profileData.montaz_data,
-          last_montaz_login: profileData.last_montaz_login
+          last_montaz_login: profileData.last_montaz_login,
+          montaz_password: profileData.montaz_password
         },
         role: roleData,
         permissions: permissionsData
@@ -219,15 +244,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         throw new Error('Invalid response from Montaz API');
       }
       
+      // First check if there's a profile with this email
       const { data: existingProfile, error: checkError } = await supabase
         .from('profiles')
         .select('*')
         .eq('email', montazData.user.email)
-        .single();
-      
+        .maybeSingle();
+
       let authUser;
       
-      if (checkError && checkError.code === 'PGRST116') {
+      if (!existingProfile) {
+        // If profile doesn't exist, create a new user
         const randomPassword = `Montaz${Date.now()}`;
         
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
@@ -257,9 +284,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             .eq('id', authUser.id);
         }
       } else {
+        // If profile exists, sign in with existing credentials
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email: montazData.user.email,
-          password: existingProfile?.montaz_password || `Montaz${Date.now()}`
+          password: existingProfile.montaz_password || `Montaz${Date.now()}`
         });
         
         if (signInError) throw signInError;
