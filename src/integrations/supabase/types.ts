@@ -738,6 +738,10 @@ export type Database = {
           email: string | null
           id: string
           is_active: boolean | null
+          last_montaz_login: string | null
+          montaz_data: Json | null
+          montaz_id: string | null
+          montaz_password: string | null
           role_id: string | null
           updated_at: string
         }
@@ -746,6 +750,10 @@ export type Database = {
           email?: string | null
           id: string
           is_active?: boolean | null
+          last_montaz_login?: string | null
+          montaz_data?: Json | null
+          montaz_id?: string | null
+          montaz_password?: string | null
           role_id?: string | null
           updated_at?: string
         }
@@ -754,6 +762,10 @@ export type Database = {
           email?: string | null
           id?: string
           is_active?: boolean | null
+          last_montaz_login?: string | null
+          montaz_data?: Json | null
+          montaz_id?: string | null
+          montaz_password?: string | null
           role_id?: string | null
           updated_at?: string
         }
