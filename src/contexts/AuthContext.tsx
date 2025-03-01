@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -126,9 +125,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       }
 
-      // Ensure assigned_stores is always an array
-      const assignedStores = Array.isArray(profileData?.assigned_stores) 
-        ? profileData.assigned_stores 
+      // Ensure assigned_stores is always an array of strings
+      const assignedStores = profileData?.assigned_stores 
+        ? Array.isArray(profileData.assigned_stores) 
+          ? profileData.assigned_stores.map(store => String(store)) 
+          : []
         : [];
 
       setUser({
