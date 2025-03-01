@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -60,10 +59,13 @@ const MontazUserManagement = () => {
     queryKey: ['montaz-users'],
     queryFn: async () => {
       console.log('Fetching Montaz users...');
+      
+      // Improved query to properly detect montaz_id entries
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .not('montaz_id', 'is', null);
+        .not('montaz_id', 'is', null)
+        .not('montaz_id', 'eq', '');  // This ensures we only get records with valid montaz_id values
       
       if (error) {
         console.error('Error fetching Montaz users:', error);
@@ -236,9 +238,21 @@ const MontazUserManagement = () => {
 
   // Log current data for debugging
   useEffect(() => {
-    console.log('Current montaz users:', montazUsers);
+    console.log('Current montaz users loaded:', montazUsers);
     console.log('Current user:', currentUser);
     console.log('Is current user viewing:', isCurrentUserViewing());
+    
+    // Check the database directly to see if there are any records with montaz_id
+    const checkMontazUsers = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, email, montaz_id')
+        .not('montaz_id', 'is', null);
+      
+      console.log('Direct DB check for montaz users:', data, error);
+    };
+    
+    checkMontazUsers();
   }, [montazUsers, currentUser]);
 
   const handleOpenDialog = (user: MontazUser) => {

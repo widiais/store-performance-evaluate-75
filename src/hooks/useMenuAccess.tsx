@@ -6,7 +6,17 @@ export const useMenuAccess = () => {
   const { user, hasPermission } = useAuth();
 
   const isSuperAdmin = (): boolean => {
-    return user?.profile?.email === SUPER_ADMIN_EMAIL;
+    // Make sure we correctly compare with the super admin email, with more logging
+    const userEmail = user?.profile?.email?.toLowerCase();
+    const superAdminEmail = SUPER_ADMIN_EMAIL.toLowerCase();
+    
+    console.log('Checking super admin:', {
+      userEmail,
+      superAdminEmail,
+      isMatch: userEmail === superAdminEmail
+    });
+    
+    return userEmail === superAdminEmail;
   };
 
   const canAccessMenu = (resourceKey: string) => {
