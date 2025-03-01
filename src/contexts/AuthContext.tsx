@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -273,10 +274,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .eq('email', montazData.user.email)
         .maybeSingle();
 
+      if (checkError) {
+        console.error('Error checking for existing profile:', checkError);
+      }
+
       let authUser;
       
       if (!existingProfile) {
         // If profile doesn't exist, create a new user
+        console.log("Creating new user for Montaz login:", montazData.user.email);
         const randomPassword = `Montaz${Date.now()}`;
         
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
@@ -291,11 +297,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         });
         
-        if (signUpError) throw signUpError;
+        if (signUpError) {
+          console.error('Error signing up new Montaz user:', signUpError);
+          throw signUpError;
+        }
+        
         authUser = signUpData.user;
         
         if (authUser) {
-          await supabase
+          const { error: updateError } = await supabase
             .from('profiles')
             .update({
               montaz_id: montazData.user.id,
@@ -306,19 +316,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               assigned_stores: []
             })
             .eq('id', authUser.id);
+            
+          if (updateError) {
+            console.error('Error updating new profile:', updateError);
+          }
         }
       } else {
         // If profile exists, sign in with existing credentials
+        console.log("Existing user found for Montaz login:", montazData.user.email);
+        const password = existingProfile.montaz_password || `Montaz${Date.now()}`;
+        
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email: montazData.user.email,
-          password: existingProfile.montaz_password || `Montaz${Date.now()}`
+          password: password
         });
         
-        if (signInError) throw signInError;
+        if (signInError) {
+          console.error('Error signing in existing Montaz user:', signInError);
+          throw signInError;
+        }
+        
         authUser = signInData.user;
         
         if (authUser) {
-          await supabase
+          const { error: updateError } = await supabase
             .from('profiles')
             .update({
               montaz_id: montazData.user.id,
@@ -326,6 +347,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               last_montaz_login: new Date().toISOString()
             })
             .eq('id', authUser.id);
+            
+          if (updateError) {
+            console.error('Error updating existing profile:', updateError);
+          }
         }
       }
       
@@ -336,6 +361,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       navigate('/');
     } catch (error: any) {
+      console.error('Montaz login error in AuthContext:', error);
       toast({
         title: "Error signing in with Montaz",
         description: error.message,
