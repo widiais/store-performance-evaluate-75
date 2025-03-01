@@ -734,6 +734,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          assigned_stores: Json | null
           created_at: string
           email: string | null
           id: string
@@ -742,10 +743,12 @@ export type Database = {
           montaz_data: Json | null
           montaz_id: string | null
           montaz_password: string | null
+          profile_completed: boolean | null
           role_id: string | null
           updated_at: string
         }
         Insert: {
+          assigned_stores?: Json | null
           created_at?: string
           email?: string | null
           id: string
@@ -754,10 +757,12 @@ export type Database = {
           montaz_data?: Json | null
           montaz_id?: string | null
           montaz_password?: string | null
+          profile_completed?: boolean | null
           role_id?: string | null
           updated_at?: string
         }
         Update: {
+          assigned_stores?: Json | null
           created_at?: string
           email?: string | null
           id?: string
@@ -766,6 +771,7 @@ export type Database = {
           montaz_data?: Json | null
           montaz_id?: string | null
           montaz_password?: string | null
+          profile_completed?: boolean | null
           role_id?: string | null
           updated_at?: string
         }

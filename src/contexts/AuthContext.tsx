@@ -83,8 +83,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (profileError) {
         console.error('Profile fetch error:', profileError);
         
-        // Handle the case where the columns don't exist yet
-        // Use a more defensive approach to set default values
+        // Handle the case where the columns don't exist yet or other errors
         setUser({
           id: userId,
           profile: {
@@ -127,8 +126,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       }
 
-      // Process assigned_stores to ensure it's an array
-      const assignedStores = profileData?.assigned_stores || [];
+      // Ensure assigned_stores is always an array
+      const assignedStores = Array.isArray(profileData?.assigned_stores) 
+        ? profileData.assigned_stores 
+        : [];
 
       setUser({
         id: userId,
