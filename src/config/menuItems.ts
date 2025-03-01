@@ -16,7 +16,8 @@ import {
   DollarSign,
   AlertTriangle,
   Lock,
-  UserCheck
+  UserCheck,
+  Building
 } from "lucide-react";
 import type { MenuSection } from "@/types/menu";
 
@@ -63,6 +64,13 @@ export const menuSections: MenuSection[] = [
         value: "role-management",
         route: "/roles",
         resource: "role-management"
+      },
+      {
+        icon: Building,
+        label: "Montaz Users",
+        value: "montaz-users",
+        route: "/montaz-users",
+        resource: "montaz-users"
       },
       {
         icon: Lock,

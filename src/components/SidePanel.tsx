@@ -4,17 +4,18 @@ import { Link, useNavigate } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogOut } from "lucide-react";
+import { LogOut, AlertTriangle } from "lucide-react";
 import { menuSections } from "@/config/menuItems";
 import { MenuSection } from "./sidebar/MenuSection";
 import { MobileToggle } from "./sidebar/MobileToggle";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface SidePanelProps {
   onTabChange: (tab: string) => void;
 }
 
 const SidePanel = ({ onTabChange }: SidePanelProps) => {
-  const { signOut } = useAuth();
+  const { signOut, needsProfileCompletion } = useAuth();
   const navigate = useNavigate();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -62,6 +63,8 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
     }));
   };
 
+  const isProfileIncomplete = needsProfileCompletion();
+
   return (
     <>
       <MobileToggle 
@@ -97,15 +100,32 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
               </h2>
             </div>
             
-            {menuSections.map((section, index) => (
-              <MenuSection
-                key={index}
-                section={section}
-                isExpanded={expandedSections[section.title.toLowerCase()]}
-                onToggle={() => toggleSection(section.title.toLowerCase())}
-                onItemClick={handleTabChange}
-              />
-            ))}
+            {isProfileIncomplete && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Profile Incomplete</AlertTitle>
+                <AlertDescription>
+                  Your profile needs to be completed by an administrator before you can access the system.
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {menuSections.map((section, index) => {
+              // If profile is incomplete, only show Company Policy section
+              if (isProfileIncomplete && section.title !== "Company Policy") {
+                return null;
+              }
+              
+              return (
+                <MenuSection
+                  key={index}
+                  section={section}
+                  isExpanded={expandedSections[section.title.toLowerCase()]}
+                  onToggle={() => toggleSection(section.title.toLowerCase())}
+                  onItemClick={handleTabChange}
+                />
+              );
+            })}
 
             <div className="mt-auto pt-4 px-2">
               <Button

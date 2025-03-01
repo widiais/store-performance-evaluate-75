@@ -14,6 +14,7 @@ import Index from "./pages/Index";
 import UserManagement from "@/pages/users/UserManagement";
 import UserRegister from "@/pages/users/UserRegister";
 import RoleManagement from "@/pages/roles/RoleManagement";
+import MontazUserManagement from "@/pages/montaz/MontazUserManagement";
 import ChangeMyPassword from "@/pages/users/ChangeMyPassword";
 import SetupChamps from "@/components/SetupChamps";
 import SetupService from "@/components/SetupService";
@@ -60,14 +61,23 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children, requiredPermission }: ProtectedRouteProps) => {
-  const { user, loading, hasPermission } = useAuth();
+  const { user, loading, hasPermission, needsProfileCompletion } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
+    if (!loading) {
+      if (!user) {
+        navigate('/auth');
+      } else if (needsProfileCompletion()) {
+        // Redirect Montaz users with incomplete profiles to the Montaz Users page
+        // Only allow them to access the montaz-users page or logout
+        const path = window.location.pathname;
+        if (path !== '/montaz-users' && path !== '/auth') {
+          navigate('/montaz-users');
+        }
+      }
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, needsProfileCompletion]);
 
   if (loading) {
     return (
@@ -79,6 +89,11 @@ const ProtectedRoute = ({ children, requiredPermission }: ProtectedRouteProps) =
 
   if (!user) {
     return null;
+  }
+
+  // For Montaz users with incomplete profiles, only allow access to the Montaz Users page
+  if (needsProfileCompletion() && requiredPermission?.resource !== 'montaz-users') {
+    return <Navigate to="/montaz-users" />;
   }
 
   if (requiredPermission && !hasPermission(requiredPermission.resource, requiredPermission.action)) {
@@ -100,7 +115,7 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState("dashboard");
-  const { user } = useAuth();
+  const { user, needsProfileCompletion } = useAuth();
 
   return (
     <ThemeProvider>
@@ -141,48 +156,186 @@ function AppContent() {
                 </ProtectedRoute>
               } />
 
+              <Route path="/montaz-users" element={
+                <ProtectedRoute requiredPermission={{ resource: 'montaz-users', action: 'read' }}>
+                  <MontazUserManagement />
+                </ProtectedRoute>
+              } />
+
               <Route path="/change-password" element={
                 <ProtectedRoute>
                   <ChangeMyPassword />
                 </ProtectedRoute>
               } />
               
-              <Route path="/store-performance" element={<StorePerformance />} />
+              <Route path="/store-performance" element={
+                <ProtectedRoute>
+                  <StorePerformance />
+                </ProtectedRoute>
+              } />
               
-              <Route path="/setup-store" element={<SetupStore />} />
-              <Route path="/setup-champs" element={<SetupChamps />} />
-              <Route path="/setup-cleanliness" element={<SetupCleanliness />} />
-              <Route path="/setup-product-quality" element={<SetupProductQuality />} />
-              <Route path="/setup-service" element={<SetupService />} />
-              <Route path="/setup-complain" element={<SetupComplain />} />
+              <Route path="/setup-store" element={
+                <ProtectedRoute>
+                  <SetupStore />
+                </ProtectedRoute>
+              } />
+              <Route path="/setup-champs" element={
+                <ProtectedRoute>
+                  <SetupChamps />
+                </ProtectedRoute>
+              } />
+              <Route path="/setup-cleanliness" element={
+                <ProtectedRoute>
+                  <SetupCleanliness />
+                </ProtectedRoute>
+              } />
+              <Route path="/setup-product-quality" element={
+                <ProtectedRoute>
+                  <SetupProductQuality />
+                </ProtectedRoute>
+              } />
+              <Route path="/setup-service" element={
+                <ProtectedRoute>
+                  <SetupService />
+                </ProtectedRoute>
+              } />
+              <Route path="/setup-complain" element={
+                <ProtectedRoute>
+                  <SetupComplain />
+                </ProtectedRoute>
+              } />
               
-              <Route path="/champs-form" element={<ChampsForm />} />
-              <Route path="/cleanliness-form" element={<CleanlinessForm />} />
-              <Route path="/service-form" element={<ServiceForm />} />
-              <Route path="/product-quality-form" element={<ProductQualityForm />} />
-              <Route path="/esp-form" element={<EspForm />} />
-              <Route path="/finance-form" element={<FinanceDataForm />} />
-              <Route path="/complaint-form" element={<ComplaintForm />} />
-              <Route path="/employee-sanction-form" element={<EmployeeSanctionForm />} />
+              <Route path="/champs-form" element={
+                <ProtectedRoute>
+                  <ChampsForm />
+                </ProtectedRoute>
+              } />
+              <Route path="/cleanliness-form" element={
+                <ProtectedRoute>
+                  <CleanlinessForm />
+                </ProtectedRoute>
+              } />
+              <Route path="/service-form" element={
+                <ProtectedRoute>
+                  <ServiceForm />
+                </ProtectedRoute>
+              } />
+              <Route path="/product-quality-form" element={
+                <ProtectedRoute>
+                  <ProductQualityForm />
+                </ProtectedRoute>
+              } />
+              <Route path="/esp-form" element={
+                <ProtectedRoute>
+                  <EspForm />
+                </ProtectedRoute>
+              } />
+              <Route path="/finance-form" element={
+                <ProtectedRoute>
+                  <FinanceDataForm />
+                </ProtectedRoute>
+              } />
+              <Route path="/complaint-form" element={
+                <ProtectedRoute>
+                  <ComplaintForm />
+                </ProtectedRoute>
+              } />
+              <Route path="/employee-sanction-form" element={
+                <ProtectedRoute>
+                  <EmployeeSanctionForm />
+                </ProtectedRoute>
+              } />
               
-              <Route path="/report" element={<ChampReport />} />
-              <Route path="/report/:id" element={<ChampReportDetail />} />
-              <Route path="/cleanliness-report" element={<CleanlinessReport />} />
-              <Route path="/cleanliness-report/:id" element={<CleanlinessReportDetail />} />
-              <Route path="/service-report" element={<ServiceReport />} />
-              <Route path="/service-report/:id" element={<ServiceReportDetail />} />
-              <Route path="/product-quality-report" element={<ProductQualityReport />} />
-              <Route path="/product-quality-report/:id" element={<ProductQualityReportDetail />} />
-              <Route path="/esp-report" element={<EspReport />} />
-              <Route path="/esp-report/:id" element={<EspReportDetail />} />
-              <Route path="/finance-report" element={<FinanceReport />} />
-              <Route path="/finance-report/:id" element={<FinanceReportDetail />} />
-              <Route path="/complaint-report" element={<ComplaintReport />} />  
-              <Route path="/complaint-report/:id" element={<ComplaintReportDetail />} />
-              <Route path="/sanction-report" element={<SanctionReport />} />
-              <Route path="/sanction-report/:id" element={<SanctionReportDetail />} />
-              <Route path="/workplace-report" element={<WorkplaceReport />} />
-              <Route path="/workplace-report/:id" element={<WorkplaceReportDetail />} />
+              <Route path="/report" element={
+                <ProtectedRoute>
+                  <ChampReport />
+                </ProtectedRoute>
+              } />
+              <Route path="/report/:id" element={
+                <ProtectedRoute>
+                  <ChampReportDetail />
+                </ProtectedRoute>
+              } />
+              <Route path="/cleanliness-report" element={
+                <ProtectedRoute>
+                  <CleanlinessReport />
+                </ProtectedRoute>
+              } />
+              <Route path="/cleanliness-report/:id" element={
+                <ProtectedRoute>
+                  <CleanlinessReportDetail />
+                </ProtectedRoute>
+              } />
+              <Route path="/service-report" element={
+                <ProtectedRoute>
+                  <ServiceReport />
+                </ProtectedRoute>
+              } />
+              <Route path="/service-report/:id" element={
+                <ProtectedRoute>
+                  <ServiceReportDetail />
+                </ProtectedRoute>
+              } />
+              <Route path="/product-quality-report" element={
+                <ProtectedRoute>
+                  <ProductQualityReport />
+                </ProtectedRoute>
+              } />
+              <Route path="/product-quality-report/:id" element={
+                <ProtectedRoute>
+                  <ProductQualityReportDetail />
+                </ProtectedRoute>
+              } />
+              <Route path="/esp-report" element={
+                <ProtectedRoute>
+                  <EspReport />
+                </ProtectedRoute>
+              } />
+              <Route path="/esp-report/:id" element={
+                <ProtectedRoute>
+                  <EspReportDetail />
+                </ProtectedRoute>
+              } />
+              <Route path="/finance-report" element={
+                <ProtectedRoute>
+                  <FinanceReport />
+                </ProtectedRoute>
+              } />
+              <Route path="/finance-report/:id" element={
+                <ProtectedRoute>
+                  <FinanceReportDetail />
+                </ProtectedRoute>
+              } />
+              <Route path="/complaint-report" element={
+                <ProtectedRoute>
+                  <ComplaintReport />
+                </ProtectedRoute>
+              } />  
+              <Route path="/complaint-report/:id" element={
+                <ProtectedRoute>
+                  <ComplaintReportDetail />
+                </ProtectedRoute>
+              } />
+              <Route path="/sanction-report" element={
+                <ProtectedRoute>
+                  <SanctionReport />
+                </ProtectedRoute>
+              } />
+              <Route path="/sanction-report/:id" element={
+                <ProtectedRoute>
+                  <SanctionReportDetail />
+                </ProtectedRoute>
+              } />
+              <Route path="/workplace-report" element={
+                <ProtectedRoute>
+                  <WorkplaceReport />
+                </ProtectedRoute>
+              } />
+              <Route path="/workplace-report/:id" element={
+                <ProtectedRoute>
+                  <WorkplaceReportDetail />
+                </ProtectedRoute>
+              } />
             </Routes>
           </div>
         </div>

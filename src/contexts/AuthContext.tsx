@@ -16,6 +16,7 @@ interface AuthContextType {
   hasPermission: (resource: string, action: 'create' | 'read' | 'update' | 'delete') => boolean;
   isSuperAdmin: () => boolean;
   signInWithMontaz: (email: string, password: string) => Promise<void>;
+  needsProfileCompletion: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,6 +29,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const isSuperAdmin = () => {
     return user?.profile?.email === 'widi@admin.com';
+  };
+
+  const needsProfileCompletion = () => {
+    if (!user) return false;
+    
+    // Check if user is from Montaz and profile is not completed
+    return !!user.profile?.montaz_id && !user.profile.profile_completed;
   };
 
   useEffect(() => {
@@ -64,10 +72,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           montaz_id,
           montaz_data,
           montaz_password,
-          last_montaz_login
+          last_montaz_login,
+          assigned_stores,
+          profile_completed
         `)
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (profileError) {
         console.error('Profile fetch error:', profileError);
@@ -87,7 +97,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       let roleData: Role | null = null;
       let permissionsData: RolePermission[] = [];
 
-      if (profileData.role_id) {
+      if (profileData?.role_id) {
         const { data: role, error: roleError } = await supabase
           .from('roles')
           .select('*')
@@ -114,17 +124,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       setUser({
         id: userId,
-        email: profileData.email,
+        email: profileData?.email || '',
         profile: {
-          id: profileData.id,
-          email: profileData.email,
-          role_id: profileData.role_id,
+          id: profileData?.id || userId,
+          email: profileData?.email || '',
+          role_id: profileData?.role_id,
           roles: roleData,
-          is_active: profileData.is_active,
-          montaz_id: profileData.montaz_id,
-          montaz_data: profileData.montaz_data,
-          last_montaz_login: profileData.last_montaz_login,
-          montaz_password: profileData.montaz_password
+          is_active: profileData?.is_active,
+          montaz_id: profileData?.montaz_id,
+          montaz_data: profileData?.montaz_data,
+          last_montaz_login: profileData?.last_montaz_login,
+          montaz_password: profileData?.montaz_password,
+          assigned_stores: profileData?.assigned_stores,
+          profile_completed: profileData?.profile_completed
         },
         role: roleData,
         permissions: permissionsData
@@ -279,7 +291,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               montaz_id: montazData.user.id,
               montaz_data: montazData.user,
               montaz_password: randomPassword,
-              last_montaz_login: new Date().toISOString()
+              last_montaz_login: new Date().toISOString(),
+              profile_completed: false
             })
             .eq('id', authUser.id);
         }
@@ -332,7 +345,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       changePassword,
       hasPermission,
       isSuperAdmin,
-      signInWithMontaz
+      signInWithMontaz,
+      needsProfileCompletion
     }}>
       {children}
     </AuthContext.Provider>
