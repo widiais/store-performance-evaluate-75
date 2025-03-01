@@ -1204,6 +1204,13 @@ export type Database = {
       }
     }
     Functions: {
+      admin_update_user_password: {
+        Args: {
+          user_id: string
+          new_password: string
+        }
+        Returns: undefined
+      }
       filter_evaluation_by_month_year: {
         Args: {
           target_month: number
@@ -1214,6 +1221,12 @@ export type Database = {
           month: number
           year: number
         }[]
+      }
+      get_user_id_by_email: {
+        Args: {
+          email_param: string
+        }
+        Returns: string
       }
     }
     Enums: {

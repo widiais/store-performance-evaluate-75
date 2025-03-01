@@ -341,27 +341,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               
               try {
                 // Try to get the user ID from auth.users
-                const { data: adminAuthData, error: adminAuthError } = await supabase.rpc('get_user_id_by_email', {
-                  email_param: montazData.user.email
-                });
+                const { data: userData, error: userIdError } = await supabase.functions.invoke<string>(
+                  'get-user-id-by-email',
+                  {
+                    body: { email: montazData.user.email }
+                  }
+                );
                 
-                if (adminAuthError || !adminAuthData) {
-                  console.error('Failed to get user ID:', adminAuthError);
+                if (userIdError || !userData) {
+                  console.error('Failed to get user ID:', userIdError);
                   throw new Error(`This Montaz account exists but we couldn't log you in automatically. Please contact an administrator.`);
                 }
                 
                 // Try to update password using admin functions
-                const userId = adminAuthData;
+                const userId = userData;
                 console.log("Got user ID:", userId);
                 
                 // Update auth password and try to sign in
-                const { data: updateUserData, error: updateUserError } = await supabase.auth.admin.updateUserById(
-                  userId,
-                  { password: resetPassword }
+                const { error: passwordUpdateError } = await supabase.functions.invoke(
+                  'update-user-password',
+                  {
+                    body: { 
+                      userId: userId,
+                      password: resetPassword
+                    }
+                  }
                 );
                 
-                if (updateUserError) {
-                  console.error('Failed to update password:', updateUserError);
+                if (passwordUpdateError) {
+                  console.error('Failed to update password:', passwordUpdateError);
                   throw new Error(`Authentication failed. Please contact an administrator.`);
                 }
                 
@@ -472,35 +480,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           const newPassword = `Montaz${Date.now()}`;
           
           try {
-            // Try to update password using auth.admin functions or RPC
+            // Try to update password using edge functions
             // First get the user ID if we don't have it
             let userId = existingProfile.id;
             console.log("Attempting to update password for user ID:", userId);
             
             // Try to update user password with admin functions
-            const { error: adminUpdateError } = await supabase.auth.admin.updateUserById(
-              userId,
-              { password: newPassword }
+            const { error: passwordUpdateError } = await supabase.functions.invoke(
+              'update-user-password',
+              {
+                body: { 
+                  userId: userId,
+                  password: newPassword
+                }
+              }
             );
             
-            if (adminUpdateError) {
-              console.error("Failed to update user password with admin function:", adminUpdateError);
-              
-              // Try RPC fallback if available
-              try {
-                const { error: rpcError } = await supabase.rpc('admin_update_user_password', {
-                  user_id: userId,
-                  new_password: newPassword
-                });
-                
-                if (rpcError) {
-                  console.error("Failed to update password with RPC:", rpcError);
-                  throw new Error("Failed to authenticate. Please contact an administrator.");
-                }
-              } catch (rpcCatchError) {
-                console.error("RPC method failed or doesn't exist:", rpcCatchError);
-                throw new Error("Authentication failed. Please contact an administrator.");
-              }
+            if (passwordUpdateError) {
+              console.error("Failed to update user password with edge function:", passwordUpdateError);
+              throw new Error("Failed to authenticate. Please contact an administrator.");
             }
             
             // Try signing in with the new password
