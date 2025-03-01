@@ -82,13 +82,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (profileError) {
         console.error('Profile fetch error:', profileError);
-        // Even if there's an error, continue with default values
+        
+        // Handle the case where the columns don't exist yet
+        // Use a more defensive approach to set default values
         setUser({
           id: userId,
           profile: {
             id: userId,
             email: '',
-            is_active: true
+            is_active: true,
+            assigned_stores: [],
+            profile_completed: false
           }
         });
         setLoading(false);
@@ -123,6 +127,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       }
 
+      // Process assigned_stores to ensure it's an array
+      const assignedStores = profileData?.assigned_stores || [];
+
       setUser({
         id: userId,
         email: profileData?.email || '',
@@ -136,8 +143,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           montaz_data: profileData?.montaz_data,
           last_montaz_login: profileData?.last_montaz_login,
           montaz_password: profileData?.montaz_password,
-          assigned_stores: profileData?.assigned_stores,
-          profile_completed: profileData?.profile_completed
+          assigned_stores: assignedStores,
+          profile_completed: profileData?.profile_completed || false
         },
         role: roleData,
         permissions: permissionsData

@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -66,21 +67,23 @@ const ChampReport = () => {
       <SortDesc className="w-4 h-4 ml-1" />;
   };
 
-  // Menggunakan lodash untuk filter dan sort
+  // Updated filter function to safely handle different types
   const filteredAndSortedEvaluations = _.chain(evaluations)
-    .filter(evaluation => 
-      _.some([
-        evaluation.store_name.toLowerCase(),
-        evaluation.store_city.toLowerCase(),
-        evaluation.pic.toLowerCase()
-      ], field => field.includes(searchQuery.toLowerCase()))
-    )
+    .filter(evaluation => {
+      const searchLower = searchQuery.toLowerCase();
+      return (
+        evaluation.store_name.toLowerCase().includes(searchLower) ||
+        evaluation.store_city.toLowerCase().includes(searchLower) ||
+        evaluation.pic.toLowerCase().includes(searchLower)
+      );
+    })
     .orderBy([
       item => {
         if (sortField === 'evaluation_date') {
           return new Date(item[sortField]).getTime();
         }
-        return _.get(item, sortField, '').toLowerCase();
+        // Convert to string before comparing when the value might be a string or number
+        return String(_.get(item, sortField, '')).toLowerCase();
       }
     ], [sortOrder])
     .value();
