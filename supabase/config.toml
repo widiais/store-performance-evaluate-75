@@ -39,9 +39,5 @@ enable_signup = true
 enable_confirmations = false
 
 [functions]
-[functions.serve]
-port = 54324
-
-[analytics]
-port = 54328
-vector_port = 54329
+# The 'serve' parameter under functions should be formatted differently
+# Removing the invalid 'port' key in functions[serve]
