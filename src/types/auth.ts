@@ -56,3 +56,6 @@ export interface MontazUser {
   created_at?: string;
   updated_at?: string;
 }
+
+// Define super admin email constant for easy reference
+export const SUPER_ADMIN_EMAIL = 'widi@admin.com';

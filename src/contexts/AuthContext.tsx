@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { loginWithMontaz } from '@/integrations/montaz/client';
-import type { User, Role, RolePermission } from '@/types/auth';
+import type { User, Role, RolePermission, SUPER_ADMIN_EMAIL } from '@/types/auth';
 import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
@@ -401,23 +401,59 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         if (signInError) {
           console.error('Error signing in existing Montaz user:', signInError);
-          throw signInError;
-        }
-        
-        authUser = signInData.user;
-        
-        if (authUser) {
+          // If authentication fails with the stored password, create a new one and update it
+          const newPassword = `Montaz${Date.now()}`;
+          
+          // Try to reset password via admin functions
+          console.log("Attempting to update password for Montaz user");
+          const { data: authUserData, error: authError } = await supabase.auth.admin.updateUserById(
+            existingProfile.id,
+            { password: newPassword }
+          );
+          
+          if (authError) {
+            console.error("Failed to update user password:", authError);
+            throw new Error("Failed to authenticate. Please contact an administrator.");
+          }
+          
+          // Try signing in with the new password
+          const { data: newSignInData, error: newSignInError } = await supabase.auth.signInWithPassword({
+            email: montazData.user.email,
+            password: newPassword
+          });
+          
+          if (newSignInError) {
+            console.error("Still failed to sign in after password update:", newSignInError);
+            throw new Error("Authentication failed. Please contact an administrator.");
+          }
+          
+          authUser = newSignInData.user;
+          
+          // Update the stored password in profiles
+          const { error: updatePassError } = await supabase
+            .from('profiles')
+            .update({
+              montaz_password: newPassword,
+              last_montaz_login: new Date().toISOString()
+            })
+            .eq('id', existingProfile.id);
+            
+          if (updatePassError) {
+            console.error("Failed to update password in profile:", updatePassError);
+          }
+        } else {
+          authUser = signInData.user;
+          
+          // Update login timestamp
           const { error: updateError } = await supabase
             .from('profiles')
             .update({
-              montaz_id: montazData.user.id,
-              montaz_data: montazData.user,
               last_montaz_login: new Date().toISOString()
             })
             .eq('id', authUser.id);
             
           if (updateError) {
-            console.error('Error updating existing profile:', updateError);
+            console.error('Error updating login timestamp:', updateError);
           }
         }
       }
