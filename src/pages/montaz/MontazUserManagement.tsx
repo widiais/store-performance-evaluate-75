@@ -35,6 +35,7 @@ import { Badge } from "@/components/ui/badge";
 import type { MontazUser, Role } from "@/types/auth";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
+import { useAuth } from "@/contexts/AuthContext";
 
 const MontazUserManagement = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -45,6 +46,13 @@ const MontazUserManagement = () => {
   const [isActive, setIsActive] = useState<boolean>(true);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user: currentUser } = useAuth();
+
+  // Check if current user is the one viewing their incomplete profile
+  const isCurrentUserViewing = () => {
+    if (!currentUser || !currentUser.profile) return false;
+    return !currentUser.profile.profile_completed;
+  };
 
   // Fetch Montaz users
   const { data: montazUsers, isLoading: loadingUsers } = useQuery({
@@ -57,14 +65,18 @@ const MontazUserManagement = () => {
       
       if (error) throw error;
       
-      // Transform to MontazUser[] type
+      // Transform to MontazUser[] type and ensure assigned_stores is always an array of strings
       return data.map((profile: any) => ({
         id: profile.id,
         email: profile.email,
         montaz_id: profile.montaz_id,
         montaz_data: profile.montaz_data,
         role_id: profile.role_id,
-        assigned_stores: profile.assigned_stores || [],
+        assigned_stores: profile.assigned_stores 
+          ? Array.isArray(profile.assigned_stores) 
+            ? profile.assigned_stores.map((store: any) => String(store))
+            : []
+          : [],
         profile_completed: profile.profile_completed || false,
         is_active: profile.is_active !== false, // Default to true if not specified
         created_at: profile.created_at,
@@ -191,6 +203,16 @@ const MontazUserManagement = () => {
     }
   }, [selectedUser]);
 
+  // Open dialog automatically if current user needs to complete profile
+  useEffect(() => {
+    if (isCurrentUserViewing() && currentUser && montazUsers) {
+      const userProfile = montazUsers.find(user => user.id === currentUser.id);
+      if (userProfile && !userProfile.profile_completed) {
+        handleOpenDialog(userProfile);
+      }
+    }
+  }, [currentUser, montazUsers]);
+
   const handleOpenDialog = (user: MontazUser) => {
     setSelectedUser(user);
     setIsOpen(true);
@@ -230,6 +252,29 @@ const MontazUserManagement = () => {
     );
   };
 
+  // Display Montaz data 
+  const renderMontazData = (user: MontazUser) => {
+    if (!user.montaz_data) return <span className="text-gray-500 text-sm">No Montaz data</span>;
+    
+    try {
+      const data = typeof user.montaz_data === 'string' 
+        ? JSON.parse(user.montaz_data) 
+        : user.montaz_data;
+        
+      return (
+        <div className="text-xs">
+          {data.first_name && data.last_name && (
+            <div>Name: {data.first_name} {data.last_name}</div>
+          )}
+          {data.position && <div>Position: {data.position}</div>}
+          {data.employee_id && <div>Employee ID: {data.employee_id}</div>}
+        </div>
+      );
+    } catch (e) {
+      return <span className="text-gray-500 text-sm">Invalid Montaz data</span>;
+    }
+  };
+
   return (
     <div className="container mx-auto py-10">
       <div className="flex justify-between items-center mb-6">
@@ -242,6 +287,14 @@ const MontazUserManagement = () => {
         </div>
       </div>
 
+      {isCurrentUserViewing() && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6">
+          <p className="text-yellow-700">
+            Your profile is incomplete. An administrator needs to assign you a role and access permissions before you can use the system.
+          </p>
+        </div>
+      )}
+
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -251,6 +304,10 @@ const MontazUserManagement = () => {
             <div>
               <Label htmlFor="email">Email</Label>
               <Input id="email" value={selectedUser?.email || ""} readOnly className="bg-gray-50" />
+            </div>
+            <div>
+              <Label htmlFor="montaz-id">Montaz ID</Label>
+              <Input id="montaz-id" value={selectedUser?.montaz_id || ""} readOnly className="bg-gray-50" />
             </div>
             <div>
               <Label htmlFor="role">Role</Label>
@@ -317,6 +374,7 @@ const MontazUserManagement = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Email</TableHead>
+              <TableHead>Montaz Info</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Assigned Stores</TableHead>
               <TableHead>Profile Status</TableHead>
@@ -333,6 +391,7 @@ const MontazUserManagement = () => {
                 return (
                   <TableRow key={user.id} className={!user.is_active ? "bg-gray-50 opacity-60" : ""}>
                     <TableCell>{user.email}</TableCell>
+                    <TableCell>{renderMontazData(user)}</TableCell>
                     <TableCell>{userRole?.name || 'Not assigned'}</TableCell>
                     <TableCell>
                       {user.assigned_stores && user.assigned_stores.length > 0 ? (
@@ -394,7 +453,7 @@ const MontazUserManagement = () => {
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
+                <TableCell colSpan={7} className="text-center py-8">
                   No Montaz users found
                 </TableCell>
               </TableRow>

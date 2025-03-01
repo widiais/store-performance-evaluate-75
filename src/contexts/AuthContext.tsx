@@ -279,10 +279,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         throw new Error('Invalid response from Montaz API');
       }
       
+      console.log("Montaz login successful, checking if user exists:", montazData.user.email);
+      
       // First check if there's a profile with this email
       const { data: existingProfile, error: checkError } = await supabase
         .from('profiles')
-        .select('*, roles(name)')
+        .select(`*, roles(name)`)
         .eq('email', montazData.user.email)
         .maybeSingle();
 
@@ -315,42 +317,82 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         });
         
         if (signUpError) {
-          console.error('Error signing up new Montaz user:', signUpError);
-          throw signUpError;
-        }
-        
-        authUser = signUpData.user;
-        
-        if (authUser) {
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .update({
-              montaz_id: montazData.user.id,
-              montaz_data: montazData.user,
-              montaz_password: randomPassword,
-              last_montaz_login: new Date().toISOString(),
-              profile_completed: false,
-              assigned_stores: []
-            })
-            .eq('id', authUser.id);
+          // If error is "User already registered", try to sign in instead
+          if (signUpError.message.includes('User already registered')) {
+            console.log("User already exists but no profile found, attempting sign in");
             
-          if (updateError) {
-            console.error('Error updating new profile:', updateError);
+            // Try with a default Montaz password pattern
+            const defaultPassword = `Montaz${montazData.user.id}`;
+            
+            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+              email: montazData.user.email,
+              password: defaultPassword
+            });
+            
+            if (signInError) {
+              console.error('Failed automatic sign in, showing error to user:', signInError);
+              throw new Error(`This Montaz account exists but we couldn't log you in automatically. Please contact an administrator.`);
+            }
+            
+            authUser = signInData.user;
+            
+            // Create profile for existing auth user that's missing a profile
+            if (authUser) {
+              const { error: createProfileError } = await supabase
+                .from('profiles')
+                .insert({
+                  id: authUser.id,
+                  email: montazData.user.email,
+                  montaz_id: montazData.user.id,
+                  montaz_data: montazData.user,
+                  montaz_password: defaultPassword,
+                  last_montaz_login: new Date().toISOString(),
+                  profile_completed: false,
+                  assigned_stores: []
+                });
+                
+              if (createProfileError) {
+                console.error('Error creating profile for existing auth user:', createProfileError);
+              }
+            }
+          } else {
+            console.error('Error signing up new Montaz user:', signUpError);
+            throw signUpError;
           }
+        } else {
+          authUser = signUpData.user;
           
-          // Automatically navigate to Montaz user management for new users
-          toast({
-            title: "New Montaz User",
-            description: "Your account has been created. An admin will set up your access rights.",
-          });
-          
-          navigate('/montaz-users');
-          return;
+          if (authUser) {
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({
+                montaz_id: montazData.user.id,
+                montaz_data: montazData.user,
+                montaz_password: randomPassword,
+                last_montaz_login: new Date().toISOString(),
+                profile_completed: false,
+                assigned_stores: []
+              })
+              .eq('id', authUser.id);
+              
+            if (updateError) {
+              console.error('Error updating new profile:', updateError);
+            }
+          }
         }
+        
+        // Automatically navigate to Montaz user management for new users
+        toast({
+          title: "New Montaz User",
+          description: "Your account has been created. An admin will set up your access rights.",
+        });
+        
+        navigate('/montaz-users');
+        return;
       } else {
         // If profile exists, sign in with existing credentials
         console.log("Existing user found for Montaz login:", montazData.user.email);
-        const password = existingProfile.montaz_password || `Montaz${Date.now()}`;
+        const password = existingProfile.montaz_password || `Montaz${montazData.user.id}`;
         
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email: montazData.user.email,

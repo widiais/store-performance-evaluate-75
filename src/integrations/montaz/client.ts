@@ -5,10 +5,17 @@ const MONTAZ_API_KEY = "CRSMonT4z4pp$2o24";
 
 export async function loginWithMontaz(email: string, password: string) {
   try {
+    console.log("Attempting Montaz login for:", email);
+    
     // Create FormData for the request
     const formData = new FormData();
     formData.append('email', email);
     formData.append('password', password);
+
+    // Convert FormData to URLSearchParams for proper Content-Type
+    const params = new URLSearchParams();
+    params.append('email', email);
+    params.append('password', password);
 
     // Add CORS headers and credentials
     const response = await fetch(MONTAZ_API_URL, {
@@ -17,18 +24,20 @@ export async function loginWithMontaz(email: string, password: string) {
         'Appkey': MONTAZ_API_KEY,
         'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: formData,
+      body: params,
       mode: 'cors',
       credentials: 'same-origin'
     });
 
     if (!response.ok) {
+      console.log("API call failed with status:", response.status);
       // For demo/testing purposes, if API is unreachable, create a mock response
-      console.log("API call failed, creating mock response for testing");
+      console.log("Creating mock response for testing");
       return mockMontazResponse(email);
     }
 
     const data = await response.json();
+    console.log("Montaz API response:", data);
     
     // Handle different response codes from the API
     if (data.code === "00") {
