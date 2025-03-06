@@ -29,13 +29,17 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Pencil, Trash2 } from "lucide-react";
+import { UserPlus, Pencil, Trash2, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useAuth } from "@/contexts/AuthContext";
 
 const UserManagement = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { isSuperAdmin } = useAuth();
 
   const { data: users, refetch } = useQuery({
     queryKey: ['users'],
@@ -44,16 +48,27 @@ const UserManagement = () => {
         .from('profiles')
         .select('*');
       
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+        throw profilesError;
+      }
+
+      console.log("Fetched profiles:", profiles);
 
       const profilesWithRoles = await Promise.all(
         profiles.map(async (profile) => {
           if (profile.role_id) {
-            const { data: role } = await supabase
+            const { data: role, error: roleError } = await supabase
               .from('roles')
               .select('*')
               .eq('id', profile.role_id)
               .single();
+              
+            if (roleError) {
+              console.error("Error fetching role for profile:", profile.id, roleError);
+              return { ...profile, roles: null };
+            }
+            
             return { ...profile, roles: role };
           }
           return { ...profile, roles: null };
@@ -70,32 +85,61 @@ const UserManagement = () => {
       const { data, error } = await supabase
         .from('roles')
         .select('*');
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching roles:", error);
+        throw error;
+      }
       return data;
     }
   });
 
   const handleCreateUser = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(null);
+    
     const formData = new FormData(e.currentTarget);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
     const roleId = formData.get('role') as string;
 
+    // Validate form
+    if (!email || !password) {
+      setError("Email and password are required");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+
     try {
+      console.log("Creating new user with email:", email);
+      
+      // Step 1: Create the user in auth
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
       });
-      if (error) throw error;
+      
+      if (error) {
+        console.error("Error creating user:", error);
+        throw error;
+      }
 
+      // Step 2: Update the user's profile with the selected role
       if (data.user) {
+        console.log("User created, updating profile with role:", roleId);
+        
         const { error: profileError } = await supabase
           .from('profiles')
           .update({ role_id: roleId })
           .eq('id', data.user.id);
         
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error("Error updating profile:", profileError);
+          throw profileError;
+        }
       }
 
       toast({
@@ -105,6 +149,8 @@ const UserManagement = () => {
       setIsOpen(false);
       refetch();
     } catch (error: any) {
+      console.error("Full error:", error);
+      setError(error.message || "Failed to create user");
       toast({
         title: "Error",
         description: error.message,
@@ -115,16 +161,25 @@ const UserManagement = () => {
 
   const handleUpdateUser = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(null);
+    
     const formData = new FormData(e.currentTarget);
     const roleId = formData.get('role') as string;
 
+    if (!selectedUser) return;
+
     try {
+      console.log("Updating user:", selectedUser.id, "with role:", roleId);
+      
       const { error } = await supabase
         .from('profiles')
         .update({ role_id: roleId })
         .eq('id', selectedUser.id);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error updating user role:", error);
+        throw error;
+      }
 
       toast({
         title: "Success",
@@ -133,6 +188,8 @@ const UserManagement = () => {
       setIsOpen(false);
       refetch();
     } catch (error: any) {
+      console.error("Full error:", error);
+      setError(error.message || "Failed to update user");
       toast({
         title: "Error",
         description: error.message,
@@ -142,16 +199,30 @@ const UserManagement = () => {
   };
 
   const handleDeleteUser = async (userId: string) => {
-    try {
-      const { error } = await supabase.auth.admin.deleteUser(userId);
-      if (error) throw error;
-
+    if (!isSuperAdmin()) {
       toast({
-        title: "Success",
-        description: "User deleted successfully",
+        title: "Permission Denied",
+        description: "Only super admins can delete users",
+        variant: "destructive",
       });
+      return;
+    }
+    
+    try {
+      // Note: This needs admin privileges
+      // For proper implementation, this should be done via a Supabase Edge Function with admin rights
+      toast({
+        title: "Info",
+        description: "User deletion requires admin API. Please contact system administrator.",
+      });
+      
+      // In a real implementation, you would call a secure Edge Function:
+      // const { data, error } = await supabase.functions.invoke('delete-user', { userId });
+      
+      // Refresh the user list to see changes
       refetch();
     } catch (error: any) {
+      console.error("Error deleting user:", error);
       toast({
         title: "Error",
         description: error.message,
@@ -169,6 +240,7 @@ const UserManagement = () => {
             <Button onClick={() => {
               setIsEditMode(false);
               setSelectedUser(null);
+              setError(null);
             }}>
               <UserPlus className="mr-2 h-4 w-4" />
               Add User
@@ -178,6 +250,12 @@ const UserManagement = () => {
             <DialogHeader>
               <DialogTitle>{isEditMode ? 'Edit User' : 'Create New User'}</DialogTitle>
             </DialogHeader>
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
             <form onSubmit={isEditMode ? handleUpdateUser : handleCreateUser} className="space-y-4">
               {!isEditMode && (
                 <>
@@ -187,7 +265,8 @@ const UserManagement = () => {
                   </div>
                   <div>
                     <Label htmlFor="password">Password</Label>
-                    <Input id="password" name="password" type="password" required />
+                    <Input id="password" name="password" type="password" required 
+                           minLength={6} />
                   </div>
                 </>
               )}
@@ -235,6 +314,7 @@ const UserManagement = () => {
                   onClick={() => {
                     setIsEditMode(true);
                     setSelectedUser(user);
+                    setError(null);
                     setIsOpen(true);
                   }}
                 >

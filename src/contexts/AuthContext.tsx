@@ -24,7 +24,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { toast } = useToast();
 
   const isSuperAdmin = () => {
-    return user?.profile?.email === 'widi@admin.com';
+    return user?.profile?.email === 'widi@admin.com' || 
+           (user?.role?.role_level === 'admin' && user?.role?.name === 'Super Admin');
   };
 
   useEffect(() => {
@@ -50,6 +51,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchUserData = async (userId: string) => {
     try {
+      console.log("Fetching user data for:", userId);
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select(`
@@ -60,8 +62,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .eq('id', userId)
         .single();
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error("Profile error:", profileError);
+        throw profileError;
+      }
 
+      console.log("Profile data:", profileData);
+      
       let roleData: Role | null = null;
       let permissionsData: RolePermission[] = [];
 
@@ -72,7 +79,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           .eq('id', profileData.role_id)
           .single();
 
-        if (roleError) throw roleError;
+        if (roleError) {
+          console.error("Role error:", roleError);
+          throw roleError;
+        }
+        
+        console.log("Role data:", role);
         roleData = role;
 
         const { data: permissions, error: permissionsError } = await supabase
@@ -80,7 +92,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           .select('*')
           .eq('role_id', profileData.role_id);
 
-        if (permissionsError) throw permissionsError;
+        if (permissionsError) {
+          console.error("Permissions error:", permissionsError);
+          throw permissionsError;
+        }
+
+        console.log("Permissions data:", permissions);
         permissionsData = permissions;
       }
 
@@ -115,8 +132,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         password,
       });
       if (error) throw error;
+      toast({
+        title: "Success",
+        description: "Signed in successfully",
+      });
       navigate('/');
     } catch (error: any) {
+      console.error('Sign in error:', error);
       toast({
         title: "Error signing in",
         description: error.message,
@@ -138,6 +160,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
       navigate('/auth');
     } catch (error: any) {
+      console.error('Sign up error:', error);
       toast({
         title: "Error signing up",
         description: error.message,
@@ -150,8 +173,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      toast({
+        title: "Signed out",
+        description: "You have been signed out successfully",
+      });
       navigate('/auth');
     } catch (error: any) {
+      console.error('Sign out error:', error);
       toast({
         title: "Error signing out",
         description: error.message,
@@ -169,13 +197,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     
     switch (action) {
       case 'create':
-        return permission.can_create;
+        return permission.can_create || false;
       case 'read':
-        return permission.can_read;
+        return permission.can_read || false;
       case 'update':
-        return permission.can_update;
+        return permission.can_update || false;
       case 'delete':
-        return permission.can_delete;
+        return permission.can_delete || false;
       default:
         return false;
     }

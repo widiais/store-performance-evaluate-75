@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,8 +45,8 @@ const RESOURCES = {
   'store-performance': 'Store Performance',
   
   // Company Policy
-  'user-management': 'User Management',
-  'role-management': 'Role Management',
+  'users': 'User Management',
+  'roles': 'Role Management',
   
   // Setup menus
   'setup-store': 'Store Setup',
@@ -96,7 +95,7 @@ const RoleManagement = () => {
   const [selectedRole, setSelectedRole] = useState<RoleWithPermissions | null>(null);
   const { toast } = useToast();
 
-  const { data: roles = [], isLoading, isError } = useQuery({
+  const { data: roles = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['roles'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -184,7 +183,9 @@ const RoleManagement = () => {
         description: "Role created successfully",
       });
       setIsOpen(false);
+      refetch();
     } catch (error: any) {
+      console.error("Error creating role:", error);
       toast({
         title: "Error",
         description: error.message,
@@ -214,7 +215,9 @@ const RoleManagement = () => {
         description: "Role updated successfully",
       });
       setIsOpen(false);
+      refetch();
     } catch (error: any) {
+      console.error("Error updating role:", error);
       toast({
         title: "Error",
         description: error.message,
