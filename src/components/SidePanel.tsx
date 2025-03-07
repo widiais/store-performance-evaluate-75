@@ -2,9 +2,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
-import { LogOut } from "lucide-react";
 import { menuSections } from "@/config/menuItems";
 import { MenuSection } from "./sidebar/MenuSection";
 import { MobileToggle } from "./sidebar/MobileToggle";
@@ -14,7 +11,6 @@ interface SidePanelProps {
 }
 
 const SidePanel = ({ onTabChange }: SidePanelProps) => {
-  const { signOut } = useAuth();
   const navigate = useNavigate();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -106,17 +102,6 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
                 onItemClick={handleTabChange}
               />
             ))}
-
-            <div className="mt-auto pt-4 px-2">
-              <Button
-                variant="ghost"
-                className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50"
-                onClick={signOut}
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Logout
-              </Button>
-            </div>
           </div>
         </ScrollArea>
       </aside>
