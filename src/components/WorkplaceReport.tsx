@@ -1,9 +1,10 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar } from "@/components/ui/calendar"
+import { Calendar } from "@/components/ui/calendar";
 import { Store } from "@/components/store-performance/types";
 import { SanctionList } from "@/components/SanctionList";
 import { mapToActiveSanctions } from "@/utils/typeUtils";
@@ -12,7 +13,7 @@ interface WorkplaceReportProps {
   selectedStores: Store[];
 }
 
-export const WorkplaceReport = ({ selectedStores }: WorkplaceReportProps) => {
+export function WorkplaceReport({ selectedStores }: WorkplaceReportProps) {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const selectedMonth = date ? date.getMonth() + 1 : new Date().getMonth() + 1;
   const selectedYear = date ? date.getFullYear() : new Date().getFullYear();
@@ -20,16 +21,35 @@ export const WorkplaceReport = ({ selectedStores }: WorkplaceReportProps) => {
   const firstDayOfMonth = date ? format(startOfMonth(date), 'yyyy-MM-dd') : format(startOfMonth(new Date()), 'yyyy-MM-dd');
   const firstDayOfNextMonth = date ? format(endOfMonth(date), 'yyyy-MM-dd') : format(endOfMonth(new Date()), 'yyyy-MM-dd');
 
-  const { data: sanctionsData } = useQuery({
+  const { data: sanctionsData = [] } = useQuery({
     queryKey: ["sanctions", selectedMonth, selectedYear],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("employee_sanctions_report")
-        .select("*")
+        .from("employee_sanctions")
+        .select(`
+          id,
+          input_date,
+          pic,
+          peringatan_count,
+          sp1_count,
+          sp2_count,
+          status,
+          employee_name,
+          sanction_type,
+          duration_months,
+          violation_details,
+          submitted_by,
+          is_active,
+          stores:store_id (
+            name,
+            city
+          )
+        `)
         .gte("input_date", firstDayOfMonth)
         .lt("input_date", firstDayOfNextMonth);
 
       if (error) throw error;
+      
       return mapToActiveSanctions(data || []);
     },
   });
@@ -72,4 +92,6 @@ export const WorkplaceReport = ({ selectedStores }: WorkplaceReportProps) => {
       </div>
     </div>
   );
-};
+}
+
+export default WorkplaceReport;

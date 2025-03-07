@@ -1,23 +1,26 @@
 
 import { useContext } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { MenuItem } from '@/types/menu';
-import { menuItems } from '@/config/menuItems'; // Ensure this import is correct
 
-export function useMenuAccess() {
-  const { user, hasPermission } = useAuth();
-  
-  const getAccessibleMenus = (): MenuItem[] => {
-    if (!user) return [];
+export const useMenuAccess = () => {
+  const { user, permissions } = useAuth();
+
+  const getMenuAccess = (resource: string) => {
+    // If no user, no access
+    if (!user) return false;
     
-    // Filter menu items based on permissions
-    return menuItems.filter(menuItem => {
-      // Check if user has read access to the menu resource
-      return hasPermission(menuItem.resource, 'read');
-    });
+    // If no permissions array, no access
+    if (!permissions || !Array.isArray(permissions)) return false;
+    
+    // Find the permission for the specified resource
+    const permission = permissions.find(p => p.resource === resource);
+    
+    // If no permission found, no access
+    if (!permission) return false;
+    
+    // User has access if they can at least read the resource
+    return permission.can_read;
   };
 
-  return {
-    getAccessibleMenus,
-  };
-}
+  return { getMenuAccess };
+};

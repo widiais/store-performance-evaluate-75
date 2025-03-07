@@ -15,7 +15,7 @@ export function asType<T>(data: unknown): T {
  */
 export function mapToActiveSanctions(records: any[]): ActiveSanction[] {
   return records.map(record => ({
-    id: record.id,
+    id: record.id || 0,
     employee_name: record.employee_name || '',
     sanction_date: record.input_date || record.sanction_date || '',
     sanction_type: record.sanction_type || (
@@ -27,10 +27,11 @@ export function mapToActiveSanctions(records: any[]): ActiveSanction[] {
     violation_details: record.violation_details || '',
     pic: record.pic || '',
     submitted_by: record.submitted_by || '',
-    store_name: record.store_name || '',
-    store_city: record.store_city || '',
+    store_name: record.stores?.name || record.store_name || '',
+    store_city: record.stores?.city || record.store_city || '',
     is_active: record.is_active !== undefined ? record.is_active : 
-               (record.status === 'active')
+               (record.status === 'active'),
+    expiry_date: record.expiry_date || ''
   }));
 }
 
@@ -70,8 +71,8 @@ export function mapToEmployeeSanctionRecord(record: any): EmployeeSanctionRecord
     submitted_by: record.submitted_by || '',
     is_active: record.is_active || false,
     pic: record.pic || '',
-    store_name: record.store_name || '',
-    store_city: record.store_city || '',
+    store_name: record.stores?.name || record.store_name || '',
+    store_city: record.stores?.city || record.store_city || '',
     created_at: record.created_at || '',
     updated_at: record.updated_at || '',
     input_date: record.input_date || record.sanction_date || '',
@@ -95,7 +96,7 @@ export function mapToProfile(record: any): Profile {
   return {
     id: record.id || '',
     email: record.email || '',
-    role_id: record.role_id || undefined,
+    role_id: record.role_id || null,
     created_at: record.created_at || '',
     updated_at: record.updated_at || ''
   };

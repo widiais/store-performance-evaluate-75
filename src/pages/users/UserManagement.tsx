@@ -32,8 +32,15 @@ import { Label } from "@/components/ui/label";
 import { UserPlus, Pencil, Trash2, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
-import { Profile, Role } from "@/integrations/supabase/client-types";
+import { Profile } from "@/integrations/supabase/client-types";
 import { mapToProfile, mapToRole } from "@/utils/typeUtils";
+
+interface Role {
+  id: string;
+  name: string;
+  description?: string;
+  role_level: string;
+}
 
 interface ProfileWithRole extends Profile {
   roles?: Role | null;
@@ -47,47 +54,58 @@ const UserManagement = () => {
   const { toast } = useToast();
   const { isSuperAdmin } = useAuth();
 
-  const { data: users, refetch } = useQuery({
+  const { data: users = [], refetch } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*');
-      
-      if (profilesError) {
-        console.error("Error fetching profiles:", profilesError);
-        throw profilesError;
-      }
-
-      console.log("Fetched profiles:", profiles);
-
-      const mappedProfiles: Profile[] = profiles.map(profile => mapToProfile(profile));
-
-      const profilesWithRoles: ProfileWithRole[] = await Promise.all(
-        mappedProfiles.map(async (profile) => {
-          if (profile.role_id) {
-            const { data: role, error: roleError } = await supabase
-              .from('roles')
-              .select('*')
-              .eq('id', profile.role_id)
-              .single();
-              
-            if (roleError) {
-              console.error("Error fetching role for profile:", profile.id, roleError);
-              return { ...profile, roles: null };
+      try {
+        // Fetch profiles
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*');
+        
+        if (profilesError) {
+          console.error("Error fetching profiles:", profilesError);
+          throw profilesError;
+        }
+        
+        // Map profiles to the correct type
+        const mappedProfiles: Profile[] = profiles.map(profile => mapToProfile(profile));
+        
+        // For each profile, fetch associated role
+        const profilesWithRoles: ProfileWithRole[] = await Promise.all(
+          mappedProfiles.map(async (profile) => {
+            if (profile.role_id) {
+              try {
+                const { data: role, error: roleError } = await supabase
+                  .from('roles')
+                  .select('*')
+                  .eq('id', profile.role_id)
+                  .single();
+                  
+                if (roleError) {
+                  console.error("Error fetching role for profile:", profile.id, roleError);
+                  return { ...profile, roles: null };
+                }
+                
+                return { ...profile, roles: mapToRole(role) };
+              } catch (error) {
+                console.error("Error processing role:", error);
+                return { ...profile, roles: null };
+              }
             }
-            
-            return { ...profile, roles: mapToRole(role) };
-          }
-          return { ...profile, roles: null };
-        })
-      );
-
-      return profilesWithRoles;
+            return { ...profile, roles: null };
+          })
+        );
+        
+        return profilesWithRoles;
+      } catch (error) {
+        console.error("Error in users query:", error);
+        throw error;
+      }
     }
   });
 
-  const { data: roles } = useQuery({
+  const { data: roles = [] } = useQuery({
     queryKey: ['roles'],
     queryFn: async () => {
       const { data, error } = await supabase

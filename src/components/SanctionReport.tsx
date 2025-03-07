@@ -56,7 +56,6 @@ const SanctionReport = () => {
 
       if (error) throw error;
       
-      // Transform the data to include store_name and store_city directly
       return data.map(sanction => ({
         ...sanction,
         store_name: sanction.stores?.name || '',
@@ -92,9 +91,9 @@ const SanctionReport = () => {
 
   const filteredSanctions = sanctions
     .filter(sanction => 
-      (sanction.store_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (sanction.stores?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
        sanction.employee_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       sanction.store_city?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+       sanction.stores?.city?.toLowerCase().includes(searchTerm.toLowerCase())) &&
       (activeTab === 'active' ? sanction.is_active : !sanction.is_active)
     );
 

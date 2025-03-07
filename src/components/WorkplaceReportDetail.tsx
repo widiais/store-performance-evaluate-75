@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -14,13 +15,47 @@ const WorkplaceReportDetail = () => {
   const { data: sanctions, isLoading } = useQuery<EmployeeSanctionRecord[]>({
     queryKey: ["workplace-sanctions", storeId],
     queryFn: async () => {
+      if (!storeId) {
+        return [];
+      }
+      
+      // Convert storeId to number for the query
+      const storeIdNumber = parseInt(storeId, 10);
+      
       const { data, error } = await supabase
         .from("employee_sanctions")
-        .select("*")
-        .eq("store_id", storeId);
+        .select(`
+          id,
+          store_id,
+          employee_name,
+          sanction_type,
+          input_date,
+          duration_months,
+          expiry_date,
+          violation_details,
+          submitted_by,
+          is_active,
+          pic,
+          created_at,
+          updated_at,
+          stores:store_id (
+            name,
+            city
+          )
+        `)
+        .eq("store_id", storeIdNumber);
 
       if (error) throw error;
-      return mapToEmployeeSanctionRecords(data || []);
+      
+      // Transform data to include store properties directly
+      const transformedData = data.map(sanction => ({
+        ...sanction,
+        store_name: sanction.stores?.name || '',
+        store_city: sanction.stores?.city || '',
+        sanction_date: sanction.input_date
+      }));
+      
+      return mapToEmployeeSanctionRecords(transformedData || []);
     },
   });
 

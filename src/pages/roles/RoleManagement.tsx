@@ -36,10 +36,23 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { Role, RolePermission } from "@/types/auth";
+import { RolePermission } from "@/integrations/supabase/client-types";
 import { mapToRole, mapToRolePermission } from "@/utils/typeUtils";
 
 type UserRole = 'admin' | 'manager' | 'supervisor' | 'staff';
+
+interface Role {
+  id: string;
+  name: string;
+  description?: string;
+  role_level: UserRole;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface RoleWithPermissions extends Role {
+  role_permissions: RolePermission[];
+}
 
 const RESOURCES = {
   // Main menus
@@ -87,27 +100,22 @@ const ROLE_LEVELS: { value: UserRole; label: string }[] = [
   { value: 'staff', label: 'Staff' }
 ];
 
-interface RoleWithPermissions extends Role {
-  role_permissions: RolePermission[] | null;
-}
-
 const RoleManagement = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedRole, setSelectedRole] = useState<RoleWithPermissions | null>(null);
   const { toast } = useToast();
 
-  const { data: roles = [], isLoading, isError, refetch } = useQuery({
+  const { data: roles = [], isLoading, isError, refetch } = useQuery<RoleWithPermissions[]>({
     queryKey: ['roles'],
     queryFn: async () => {
-      // First fetch roles
+      // Fetch roles
       const { data: rolesData, error: roleError } = await supabase
         .from('roles')
         .select('*');
       
       if (roleError) throw roleError;
       
-      // Map to proper Role type
       const mappedRoles: Role[] = rolesData.map(role => mapToRole(role));
       
       // For each role, fetch permissions
@@ -120,7 +128,7 @@ const RoleManagement = () => {
             
           if (permError) {
             console.error("Error fetching permissions:", permError);
-            return { ...role, role_permissions: null };
+            return { ...role, role_permissions: [] };
           }
           
           const mappedPermissions = permissions.map(perm => mapToRolePermission(perm));
@@ -203,7 +211,6 @@ const RoleManagement = () => {
 
         if (permError) {
           console.error("Error inserting permission:", permError);
-          // Continue with other permissions even if one fails
         }
       }
 

@@ -1,4 +1,3 @@
-
 export interface Store {
   id: number;
   name: string;
@@ -103,4 +102,6 @@ export interface ActiveSanction {
   submitted_by: string;
   store_name: string;
   store_city: string;
+  is_active?: boolean;
+  expiry_date?: string;
 }

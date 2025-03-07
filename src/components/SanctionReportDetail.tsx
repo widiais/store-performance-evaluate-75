@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,20 +22,64 @@ const SanctionReportDetail = () => {
   const { data: sanctionData, isLoading } = useQuery<EmployeeSanctionRecord>({
     queryKey: ["sanction", id],
     queryFn: async () => {
+      if (!id) {
+        throw new Error("Sanction ID is required");
+      }
+      
       const { data, error } = await supabase
-        .rpc("get_employee_sanction_report", { sanction_id_param: parseInt(id || '0') });
+        .from("employee_sanctions")
+        .select(`
+          id,
+          store_id,
+          employee_name,
+          sanction_type,
+          input_date,
+          duration_months,
+          expiry_date,
+          violation_details,
+          submitted_by,
+          is_active,
+          pic,
+          created_at,
+          updated_at,
+          stores:store_id (
+            name,
+            city,
+            total_crew,
+            area,
+            regional
+          )
+        `)
+        .eq("id", parseInt(id, 10))
+        .single();
 
       if (error) throw error;
-      return mapToEmployeeSanctionRecord(data);
+      
+      // Transform data to include store properties
+      const transformedData = {
+        ...data,
+        store_name: data.stores?.name || '',
+        store_city: data.stores?.city || '',
+        total_crew: data.stores?.total_crew || 0,
+        area: data.stores?.area || 0,
+        regional: data.stores?.regional || 0,
+        sanction_date: data.input_date
+      };
+      
+      return mapToEmployeeSanctionRecord(transformedData);
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
+      if (!id) {
+        throw new Error("Sanction ID is required");
+      }
+      
       const { error } = await supabase
         .from('employee_sanctions')
         .delete()
-        .eq('id', parseInt(id || '0'));
+        .eq('id', parseInt(id, 10));
       
       if (error) throw error;
     },
