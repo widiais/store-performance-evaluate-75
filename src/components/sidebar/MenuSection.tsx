@@ -2,7 +2,6 @@
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import type { MenuSection as MenuSectionType } from "@/types/menu";
-import { useMenuAccess } from "@/hooks/useMenuAccess";
 import { useNavigate } from "react-router-dom";
 
 interface MenuSectionProps {
@@ -18,14 +17,10 @@ export const MenuSection = ({
   onToggle, 
   onItemClick 
 }: MenuSectionProps) => {
-  const { canAccessMenu } = useMenuAccess();
   const navigate = useNavigate();
 
-  const accessibleItems = section.items.filter(item => 
-    !item.resource || canAccessMenu(item.resource)
-  );
-
-  if (accessibleItems.length === 0) return null;
+  // Show all items without filtering based on permissions
+  const accessibleItems = section.items;
 
   return (
     <div className="mb-4">

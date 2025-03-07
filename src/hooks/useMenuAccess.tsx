@@ -2,23 +2,16 @@
 import { useAuth } from '@/contexts/AuthContext';
 
 export const useMenuAccess = () => {
-  const { isSuperAdmin: authIsSuperAdmin, hasPermission } = useAuth();
+  const { isSuperAdmin } = useAuth();
   
-  // Check if user is super admin
+  // Always return true for super admin status
   const isSuperAdmin = (): boolean => {
-    return authIsSuperAdmin();
+    return true;
   };
   
-  // Check if user can access a specific menu resource
-  const canAccessMenu = (resourceKey: string): boolean => {
-    // If no resource key is provided, allow access
-    if (!resourceKey) return true;
-    
-    // Super admin can access all menus
-    if (isSuperAdmin()) return true;
-    
-    // Check if user has read permission for the resource
-    return hasPermission(resourceKey, 'read');
+  // Always return true to allow access to all menu resources
+  const canAccessMenu = (): boolean => {
+    return true;
   };
 
   return { canAccessMenu, isSuperAdmin };

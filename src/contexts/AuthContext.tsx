@@ -1,6 +1,6 @@
 
 import { createContext, useContext, useState } from 'react';
-import type { User, Role, RolePermission } from '@/types/auth';
+import type { User } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AuthContextType {
@@ -16,84 +16,41 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  // In development mode, create a default super admin user
+  // In development mode, create a default user
   const [user] = useState<User | null>({
     id: '1',
     email: 'admin@example.com',
     profile: {
       id: '1',
-      email: 'admin@example.com',
-      role_id: '1',
-      roles: {
-        id: '1',
-        name: 'Super Admin',
-        description: 'Has access to all system features',
-        role_level: 'admin',
-      }
+      email: 'admin@example.com'
     },
     role: {
       id: '1',
-      name: 'Super Admin',
-      description: 'Has access to all system features',
-      role_level: 'admin',
+      name: 'User',
+      description: 'Regular user',
+      role_level: 'staff',
     },
-    permissions: [
-      { id: '1', role_id: '1', resource: '*', action: 'create' },
-      { id: '2', role_id: '1', resource: '*', action: 'read' },
-      { id: '3', role_id: '1', resource: '*', action: 'update' },
-      { id: '4', role_id: '1', resource: '*', action: 'delete' }
-    ]
+    permissions: []
   });
   const [loading] = useState(false);
 
-  // Check if user has Super Admin role
-  const isSuperAdmin = () => {
-    if (!user) return false;
-    return user.role.role_level === 'admin';
-  };
+  // Always return true for admin status to allow all access
+  const isSuperAdmin = () => true;
 
-  // These functions are placeholders since authentication is bypassed in development
   const signIn = async (_email: string, _password: string) => {
-    // In a production environment, this would be implemented with Supabase Auth
-    // const { data, error } = await supabase.auth.signInWithPassword({
-    //   email: _email,
-    //   password: _password,
-    // });
-    // if (error) throw error;
     console.log("Sign in attempted with:", _email);
   };
 
   const signUp = async (_email: string, _password: string) => {
-    // In a production environment, this would be implemented with Supabase Auth
-    // const { data, error } = await supabase.auth.signUp({
-    //   email: _email,
-    //   password: _password,
-    // });
-    // if (error) throw error;
     console.log("Sign up attempted with:", _email);
   };
 
   const signOut = async () => {
-    // In a production environment, this would be implemented with Supabase Auth
-    // const { error } = await supabase.auth.signOut();
-    // if (error) throw error;
     console.log("Sign out attempted");
   };
 
-  // Check if user has permission for a specific resource and action
-  const hasPermission = (resource: string, action: 'create' | 'read' | 'update' | 'delete'): boolean => {
-    if (!user) return false;
-    
-    // Super admin has all permissions
-    if (isSuperAdmin()) return true;
-    
-    // Check specific permissions
-    return user.permissions.some(
-      permission => 
-        (permission.resource === resource || permission.resource === '*') && 
-        permission.action === action
-    );
-  };
+  // Always return true for permissions to allow all access
+  const hasPermission = (): boolean => true;
 
   return (
     <AuthContext.Provider value={{ 
