@@ -1,10 +1,11 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Store } from "../store-performance/types";
-import { ActiveSanction } from "../store-performance/types";
+import { Store } from "@/components/store-performance/types";
+import { ActiveSanction } from "@/components/store-performance/types";
 import { mapToActiveSanctions } from "@/utils/typeUtils";
 
 interface SanctionPerformanceProps {
@@ -22,13 +23,15 @@ export const SanctionPerformance = ({
     selectedStores.length > 0 ? selectedStores[0] : null
   );
 
-  const { data, isLoading } = useQuery<ActiveSanction[]>({
+  const { data, isLoading } = useQuery({
     queryKey: ["sanctions", selectedStore?.id],
     queryFn: async () => {
+      if (!selectedStore) return [];
+      
       const { data, error } = await supabase
-        .from("employee_sanctions_report")
+        .from("employee_sanctions")
         .select("*")
-        .eq("store_id", selectedStore?.id);
+        .eq("store_id", selectedStore.id);
 
       if (error) throw error;
       return mapToActiveSanctions(data || []);

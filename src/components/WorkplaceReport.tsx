@@ -9,11 +9,11 @@ import { Store } from "@/components/store-performance/types";
 import { SanctionList } from "@/components/SanctionList";
 import { mapToActiveSanctions } from "@/utils/typeUtils";
 
-interface WorkplaceReportProps {
-  selectedStores: Store[];
+export interface WorkplaceReportProps {
+  selectedStores?: Store[];
 }
 
-export function WorkplaceReport({ selectedStores }: WorkplaceReportProps) {
+export function WorkplaceReport({ selectedStores = [] }: WorkplaceReportProps) {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const selectedMonth = date ? date.getMonth() + 1 : new Date().getMonth() + 1;
   const selectedYear = date ? date.getFullYear() : new Date().getFullYear();
@@ -87,6 +87,9 @@ export function WorkplaceReport({ selectedStores }: WorkplaceReportProps) {
                 />
               </div>
             ))}
+            {selectedStores.length === 0 && (
+              <p className="text-gray-500">Please select stores to view sanctions.</p>
+            )}
           </CardContent>
         </Card>
       </div>
