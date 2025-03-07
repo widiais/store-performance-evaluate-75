@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Store, SanctionKPI as SanctionKPIType } from "./types";
+import { EmployeeSanctionsKPI } from "@/integrations/supabase/client-types";
 
 interface SanctionKPIProps {
   selectedStores: Store[];
@@ -44,12 +45,11 @@ const StoreSanctionCard = ({
   const { data: sanctionKpiData } = useQuery<SanctionData>({
     queryKey: ["sanctionKpiData", store.id],
     queryFn: async () => {
-      // Get data from the employee_sanctions_kpi view
+      // Use a custom RPC function to get the KPI data
       const { data, error } = await supabase
-        .from("employee_sanctions_kpi")
-        .select()
-        .eq("store_id", store.id)
-        .single();
+        .rpc("get_employee_sanctions_kpi", { 
+          store_id_param: store.id 
+        });
 
       if (error) throw error;
       return data as SanctionData;

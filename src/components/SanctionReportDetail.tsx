@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import SanctionReportPDF from './SanctionReportPDF';
+import { EmployeeSanctionRecord } from '@/integrations/supabase/client-types';
 
 const SanctionReportDetail = () => {
   const { id } = useParams();
@@ -16,17 +17,16 @@ const SanctionReportDetail = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: sanction, isLoading } = useQuery({
+  const { data: sanction, isLoading } = useQuery<EmployeeSanctionRecord>({
     queryKey: ['sanctionDetail', id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('employee_sanctions_report')
-        .select('*, stores!inner(total_crew)')
-        .eq('id', parseInt(id || '0'))
-        .single();
+        .rpc('get_employee_sanction_report', { 
+          sanction_id_param: parseInt(id || '0') 
+        });
       
       if (error) throw error;
-      return data;
+      return data as EmployeeSanctionRecord;
     },
   });
 

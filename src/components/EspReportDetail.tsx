@@ -18,6 +18,7 @@ import { Card } from "@/components/ui/card";
 import { ArrowLeft, Download, FileText, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import EspReportPDF from "./EspReportPDF";
+import { EspFinding } from "@/integrations/supabase/client-types";
 
 interface Finding {
   id: number;
@@ -59,16 +60,16 @@ const EspReportDetail = () => {
     enabled: !!id,
   });
 
-  const { data: findings = [], isLoading: isLoadingFindings } = useQuery({
+  const { data: findings = [], isLoading: isLoadingFindings } = useQuery<Finding[]>({
     queryKey: ['esp-findings', id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('esp_findings')
-        .select('*')
-        .eq('evaluation_id', parseInt(id || '0'));
+        .rpc('get_esp_findings_by_evaluation_id', { 
+          evaluation_id_param: parseInt(id || '0') 
+        });
       
       if (error) throw error;
-      return data as Finding[] || [];
+      return (data as EspFinding[]) || [];
     },
     enabled: !!id,
   });

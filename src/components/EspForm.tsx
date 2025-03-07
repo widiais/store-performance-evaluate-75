@@ -25,6 +25,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { EspFinding } from "@/integrations/supabase/client-types";
 
 interface Store {
   id: number;
@@ -157,7 +158,7 @@ const EspForm = ({}: EspFormProps) => {
 
       if (evaluationError) throw evaluationError;
 
-      // 2. Insert the findings
+      // 2. Insert the findings using a custom query to bypass TypeScript checking
       if (evaluationData && findings.length > 0) {
         const findingsData = findings.map(finding => ({
           evaluation_id: evaluationData.id,
@@ -165,10 +166,11 @@ const EspForm = ({}: EspFormProps) => {
           deduction_points: finding.deduction_points
         }));
 
-        // We need to cast the insert data to any to work around the type issue
+        // We need to use `as any` to work around the TypeScript issue
         const { error: findingsError } = await supabase
-          .from('esp_findings')
-          .insert(findingsData as any);
+          .rpc('insert_esp_findings', { 
+            findings_data: findingsData as any[]
+          });
 
         if (findingsError) throw findingsError;
       }

@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EmployeeSanctionRecord } from "@/integrations/supabase/client-types";
 
 const WorkplaceReportDetail = () => {
   const { id } = useParams();
@@ -32,17 +33,16 @@ const WorkplaceReportDetail = () => {
     },
   });
 
-  const { data: sanctions = [], isLoading } = useQuery({
+  const { data: sanctions = [], isLoading } = useQuery<EmployeeSanctionRecord[]>({
     queryKey: ['store-sanctions', id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('employee_sanctions_report')
-        .select('*')
-        .eq('store_id', parseInt(id || '0'))
-        .order('sanction_date', { ascending: false });
+        .rpc('get_employee_sanctions_by_store', { 
+          store_id_param: parseInt(id || '0') 
+        });
 
       if (error) throw error;
-      return data || [];
+      return (data as EmployeeSanctionRecord[]) || [];
     },
   });
 
