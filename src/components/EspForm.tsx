@@ -3,13 +3,28 @@ import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Trash2, Plus, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
-import { Plus, Trash, Save, X, Ban } from "lucide-react";
-import filter from 'lodash/filter';
 
 interface Store {
   id: number;
@@ -23,169 +38,129 @@ interface Finding {
   deduction_points: number;
 }
 
-interface Question {
-  id: number;
-  question: string;
-  points: number;
-  status: 'cross' | 'exclude' | 'include';
-}
+interface EspFormProps {}
 
-interface ESPFormProps {
-  selectedStore: Store | null;
-  setSelectedStore: React.Dispatch<React.SetStateAction<Store | null>>;
-  stores: Store[];
-  date: string;
-  setDate: React.Dispatch<React.SetStateAction<string>>;
-  pic: string;
-  setPic: React.Dispatch<React.SetStateAction<string>>;
-  findings: Finding[];
-  setFindings: React.Dispatch<React.SetStateAction<Finding[]>>;
-  isSubmitting: boolean;
-  setIsSubmitting: React.Dispatch<React.SetStateAction<boolean>>;
-  searchValue: string;
-  setSearchValue: React.Dispatch<React.SetStateAction<string>>;
-  scores: {
-    initialTotal: number;
-    adjustedTotal: number;
-    earnedPoints: number;
-    kpiScore: number;
-  };
-  questions: Question[];
-  handleQuestionStatusChange: (id: number, status: 'cross' | 'exclude' | 'include') => void;
-}
-
-const StoreSelect = ({ selectedStore, onStoreSelect, stores }: { selectedStore: Store | null; onStoreSelect: (store: Store | null) => void; stores: Store[] }) => {
-  const [searchValue, setSearchValue] = useState("");
+const EspForm = ({}: EspFormProps) => {
+  const { toast } = useToast();
+  const [date, setDate] = useState<Date>(new Date());
+  const [pic, setPic] = useState("");
+  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [findings, setFindings] = useState<Finding[]>([
+    { finding: "", deduction_points: 0 },
+  ]);
+  const [baseScore, setBaseScore] = useState(100);
+  const [finalScore, setFinalScore] = useState(0);
 
   useEffect(() => {
-    if (selectedStore) {
-      setSearchValue(`${selectedStore.name} - ${selectedStore.city}`);
-    } else {
-      setSearchValue("");
-    }
-  }, [selectedStore]);
+    const fetchStores = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("stores")
+          .select("id, name, city")
+          .order("name", { ascending: true });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchValue(value);
+        if (error) throw error;
+        setStores(data || []);
+      } catch (error) {
+        console.error("Error fetching stores:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load stores. Please try again.",
+          variant: "destructive",
+        });
+      }
+    };
 
-    if (!value.trim()) {
-      onStoreSelect(null);
-      return;
-    }
+    fetchStores();
+  }, [toast]);
 
-    const storeMatch = stores.find(
-      store => `${store.name} - ${store.city}` === value
+  useEffect(() => {
+    const deductionTotal = findings.reduce(
+      (total, finding) => total + finding.deduction_points,
+      0
     );
+    const newFinalScore = Math.max(0, baseScore - deductionTotal);
+    setFinalScore(newFinalScore);
+  }, [findings, baseScore]);
 
-    if (storeMatch) {
-      onStoreSelect(storeMatch);
-    }
+  const handleFindingChange = (index: number, field: keyof Finding, value: string | number) => {
+    const updatedFindings = [...findings];
+    updatedFindings[index] = {
+      ...updatedFindings[index],
+      [field]: value,
+    };
+    setFindings(updatedFindings);
   };
 
-  return (
-    <div className="relative w-full">
-      <Input
-        type="text"
-        list="store-list"
-        value={searchValue}
-        onChange={handleInputChange}
-        placeholder="Select or type store name..."
-        className="w-full bg-white border-gray-200 text-gray-900 placeholder:text-gray-400"
-      />
-      <datalist id="store-list">
-        {stores.map((store) => (
-          <option key={store.id} value={`${store.name} - ${store.city}`} />
-        ))}
-      </datalist>
-    </div>
-  );
-};
-
-const ESPForm = () => {
-  const { toast } = useToast();
-  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
-  const [date, setDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
-  const [pic, setPic] = useState<string>("");
-  const [findings, setFindings] = useState<Finding[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [searchValue, setSearchValue] = useState("");
-  const [scores, setScores] = useState({
-    initialTotal: 0,
-    adjustedTotal: 0,
-    earnedPoints: 0,
-    kpiScore: 0,
-  });
-  const [questions, setQuestions] = useState<Question[]>([]);
-
-  const { data: stores = [], isLoading: isLoadingStores } = useQuery({
-    queryKey: ['stores'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('stores')
-        .select('id, name, city')
-        .order('name');
-      
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
-  const totalDeductions = findings.reduce((sum, finding) => sum + finding.deduction_points, 0);
-  const finalScore = 100 - totalDeductions;
-  const kpiScore = (finalScore / 100) * 4;
-
-  const handleAddFinding = () => {
+  const addFinding = () => {
     setFindings([...findings, { finding: "", deduction_points: 0 }]);
   };
 
-  const handleRemoveFinding = (index: number) => {
-    setFindings(findings.filter((_, i) => i !== index));
+  const removeFinding = (index: number) => {
+    const updatedFindings = [...findings];
+    updatedFindings.splice(index, 1);
+    setFindings(updatedFindings);
   };
 
-  const handleFindingChange = (index: number, field: keyof Finding, value: string | number) => {
-    const newFindings = [...findings];
-    newFindings[index] = {
-      ...newFindings[index],
-      [field]: field === 'deduction_points' ? parseFloat(value as string) || 0 : value,
-    };
-    setFindings(newFindings);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!selectedStore || !date || !pic) {
+
+    if (!selectedStore) {
       toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
+        title: "Error",
+        description: "Please select a store.",
+        variant: "destructive",
       });
       return;
     }
 
-    setIsSubmitting(true);
+    if (!pic.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a PIC name.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (findings.some(f => !f.finding.trim())) {
+      toast({
+        title: "Error",
+        description: "Please fill in all findings or remove empty ones.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      // Insert ESP evaluation
-      const { data: evalData, error: evalError } = await supabase
-        .from('esp_evaluations')
+      // Calculate KPI score based on final score
+      const kpiScore = Math.round(finalScore / 25);
+
+      // 1. Insert the evaluation record
+      const { data: evaluationData, error: evaluationError } = await supabase
+        .from("esp_evaluations")
         .insert({
           store_id: selectedStore.id,
-          evaluation_date: date,
+          evaluation_date: format(date, "yyyy-MM-dd"),
           pic: pic,
-          total_score: 100,
+          total_score: baseScore,
           final_score: finalScore,
           kpi_score: kpiScore,
-          status: 'submitted'
+          status: "completed",
         })
         .select()
         .single();
 
-      if (evalError) throw evalError;
+      if (evaluationError) throw evaluationError;
 
-      // Insert findings
-      if (findings.length > 0) {
+      // 2. Insert the findings
+      if (evaluationData && findings.length > 0) {
         const findingsData = findings.map(finding => ({
-          evaluation_id: evalData.id,
+          evaluation_id: evaluationData.id,
           finding: finding.finding,
           deduction_points: finding.deduction_points
         }));
@@ -199,158 +174,225 @@ const ESPForm = () => {
       }
 
       toast({
-        title: "ESP Form Submitted",
-        description: "Your evaluation has been saved successfully.",
+        title: "Success",
+        description: "ESP evaluation submitted successfully.",
       });
 
       // Reset form
       setSelectedStore(null);
-      setDate(format(new Date(), "yyyy-MM-dd"));
       setPic("");
-      setFindings([]);
-    } catch (error) {
-      console.error('Error submitting evaluation:', error);
+      setDate(new Date());
+      setFindings([{ finding: "", deduction_points: 0 }]);
+      setBaseScore(100);
+      setFinalScore(0);
+    } catch (error: any) {
+      console.error("Error submitting ESP evaluation:", error);
       toast({
         title: "Error",
-        description: "Failed to submit evaluation. Please try again.",
-        variant: "destructive"
+        description: error.message || "Failed to submit evaluation.",
+        variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
-  const handleQuestionStatusChange = (id: number, status: 'cross' | 'exclude' | 'include') => {
-    // Implementation of handleQuestionStatusChange
-  };
-
   return (
-    <div className="w-full max-w-5xl mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl md:text-2xl font-semibold text-gray-900">
-          ESP Evaluation Form
-        </h2>
+    <div className="container mx-auto py-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold mb-2">ESP Evaluation Form</h1>
+        <p className="text-gray-500">
+          Enter ESP evaluation details and findings
+        </p>
       </div>
-      
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid gap-4 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-          <div>
-            <label htmlFor="store" className="text-gray-700 mb-1.5 block">
-              Store
-            </label>
-            <StoreSelect
-              selectedStore={selectedStore}
-              onStoreSelect={setSelectedStore}
-              stores={stores}
-            />
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="date" className="text-gray-700 mb-1.5 block">Date</label>
-              <Input
-                id="date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="h-10 bg-white border-gray-200 text-gray-900"
-              />
-            </div>
-            <div>
-              <label htmlFor="pic" className="text-gray-700 mb-1.5 block">PIC (Person In Charge)</label>
-              <Input
-                id="pic"
-                value={pic}
-                onChange={(e) => setPic(e.target.value)}
-                placeholder="Enter PIC name"
-                className="h-10 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400"
-              />
-            </div>
-          </div>
-        </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <Card className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="store">Store</Label>
+                <Select
+                  value={selectedStore?.id.toString() || ""}
+                  onValueChange={(value) => {
+                    const store = stores.find(
+                      (s) => s.id.toString() === value
+                    );
+                    setSelectedStore(store || null);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a store" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {stores.map((store) => (
+                      <SelectItem key={store.id} value={store.id.toString()}>
+                        {store.name} - {store.city}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <div className="p-3 rounded-lg bg-white border border-gray-200 shadow-sm">
-            <p className="text-xs text-gray-600">Total Score</p>
-            <p className="text-lg font-semibold text-gray-900">100</p>
+              <div>
+                <Label htmlFor="date">Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !date && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {date ? format(date, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={(newDate) => setDate(newDate || new Date())}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div>
+                <Label htmlFor="pic">PIC</Label>
+                <Input
+                  id="pic"
+                  value={pic}
+                  onChange={(e) => setPic(e.target.value)}
+                  placeholder="Enter PIC name"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="baseScore">Base Score</Label>
+                <Input
+                  id="baseScore"
+                  type="number"
+                  value={baseScore}
+                  onChange={(e) =>
+                    setBaseScore(parseInt(e.target.value) || 0)
+                  }
+                  min="0"
+                  max="100"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="finalScore">Final Score</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="finalScore"
+                    type="number"
+                    value={finalScore}
+                    readOnly
+                    className="bg-gray-50"
+                  />
+                  <Badge
+                    className={cn(
+                      "text-sm",
+                      finalScore >= 75
+                        ? "bg-green-100 text-green-800"
+                        : finalScore >= 50
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-red-100 text-red-800"
+                    )}
+                  >
+                    {finalScore >= 75
+                      ? "Good"
+                      : finalScore >= 50
+                      ? "Average"
+                      : "Poor"}
+                  </Badge>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="p-3 rounded-lg bg-white border border-gray-200 shadow-sm">
-            <p className="text-xs text-gray-600">Final Score</p>
-            <p className="text-lg font-semibold text-green-600">{finalScore.toFixed(2)}</p>
-          </div>
-          <div className="p-3 rounded-lg bg-white border border-gray-200 shadow-sm">
-            <p className="text-xs text-gray-600">KPI Score</p>
-            <p className="text-lg font-semibold text-blue-600">{kpiScore.toFixed(2)}</p>
-          </div>
-        </div>
+        </Card>
 
         <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-gray-900">Findings</h3>
-            <Button
-              type="button"
-              onClick={handleAddFinding}
-              className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
-              size="sm"
-            >
-              <Plus className="h-4 w-4" /> Add Finding
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold">Findings & Deductions</h2>
+            <Button type="button" variant="outline" onClick={addFinding}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Finding
             </Button>
           </div>
 
-          {findings.map((finding, index) => (
-            <div key={index} className="grid grid-cols-1 md:grid-cols-[1fr,200px,auto] gap-4 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-              <div>
-                <label htmlFor={`finding-${index}`} className="text-gray-700 mb-1.5 block">
-                  Finding Description
-                </label>
-                <Input
-                  id={`finding-${index}`}
-                  value={finding.finding}
-                  onChange={(e) => handleFindingChange(index, 'finding', e.target.value)}
-                  placeholder="Enter finding description"
-                  className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400"
-                />
-              </div>
-              <div>
-                <label htmlFor={`points-${index}`} className="text-gray-700 mb-1.5 block">
-                  Deduction Points
-                </label>
-                <Input
-                  id={`points-${index}`}
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.01"
-                  value={finding.deduction_points}
-                  onChange={(e) => handleFindingChange(index, 'deduction_points', e.target.value)}
-                  className="bg-white border-gray-200 text-gray-900"
-                />
-              </div>
-              <div className="flex items-end">
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  onClick={() => handleRemoveFinding(index)}
-                  className="h-10 w-10"
-                >
-                  <Trash className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          ))}
+          <Card className="p-6">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[70%]">Finding</TableHead>
+                  <TableHead>Deduction Points</TableHead>
+                  <TableHead className="w-[80px] text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {findings.map((finding, index) => (
+                  <TableRow key={index}>
+                    <TableCell>
+                      <Input
+                        value={finding.finding}
+                        onChange={(e) =>
+                          handleFindingChange(
+                            index,
+                            "finding",
+                            e.target.value
+                          )
+                        }
+                        placeholder="Enter finding details"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={finding.deduction_points}
+                        onChange={(e) =>
+                          handleFindingChange(
+                            index,
+                            "deduction_points",
+                            parseInt(e.target.value) || 0
+                          )
+                        }
+                        min="0"
+                        max="100"
+                      />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeFinding(index)}
+                        disabled={findings.length === 1}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
         </div>
 
-        <Button
-          type="submit" 
-          disabled={isSubmitting}
-          className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          {isSubmitting ? "Submitting..." : "Submit Evaluation"}
-        </Button>
+        <div className="flex justify-end space-x-4">
+          <Button type="submit" disabled={loading}>
+            {loading ? "Submitting..." : "Submit Evaluation"}
+          </Button>
+        </div>
       </form>
     </div>
   );
 };
 
-export default ESPForm;
+export default EspForm;
