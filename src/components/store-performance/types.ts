@@ -75,3 +75,32 @@ export interface ChartDataPoint {
   date: string;
   [key: string]: number | string | null;
 }
+
+export interface EmployeeSanction {
+  id: number;
+  store_id: number;
+  employee_name: string;
+  sanction_type: string;
+  sanction_date: string;
+  duration_months: number;
+  expiry_date: string;
+  violation_details: string;
+  submitted_by: string;
+  is_active: boolean;
+  pic: string;
+  store_name: string;
+  store_city: string;
+}
+
+export interface ActiveSanction {
+  id: number;
+  employee_name: string;
+  sanction_date: string;
+  sanction_type: string;
+  duration_months: number;
+  violation_details: string;
+  pic: string;
+  submitted_by: string;
+  store_name: string;
+  store_city: string;
+}

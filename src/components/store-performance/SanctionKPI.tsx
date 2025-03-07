@@ -2,7 +2,7 @@
 import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Store } from "./types";
+import { Store, SanctionKPI as SanctionKPIType } from "./types";
 
 interface SanctionKPIProps {
   selectedStores: Store[];
@@ -41,48 +41,37 @@ const StoreSanctionCard = ({
     },
   });
 
-  const { data: sanctions = [] } = useQuery({
-    queryKey: ["sanctionData", store.id],
+  const { data: sanctionKpiData } = useQuery<SanctionData>({
+    queryKey: ["sanctionKpiData", store.id],
     queryFn: async () => {
-      // Get sanctions with basic filtering on store_id and active status
+      // Get data from the employee_sanctions_kpi view
       const { data, error } = await supabase
-        .from("employee_sanctions")
+        .from("employee_sanctions_kpi")
         .select()
         .eq("store_id", store.id)
-        .eq("is_active", true);
+        .single();
 
       if (error) throw error;
-      return data || [];
+      return data as SanctionData;
     },
   });
 
-  // Calculate active sanctions by type
-  const active_peringatan = sanctions.filter(s => s.sanction_type === 'Peringatan Tertulis').length;
-  const active_sp1 = sanctions.filter(s => s.sanction_type === 'SP1').length;
-  const active_sp2 = sanctions.filter(s => s.sanction_type === 'SP2').length;
-
+  // If we don't have sanctionKpiData, calculate some defaults
+  const active_peringatan = sanctionKpiData?.active_peringatan || 0;
+  const active_sp1 = sanctionKpiData?.active_sp1 || 0;
+  const active_sp2 = sanctionKpiData?.active_sp2 || 0;
+  const totalActiveSanctions = active_peringatan + active_sp1 + active_sp2;
+  
   // Calculate total sanction score
-  const totalSanctionScore = sanctions.reduce((total, sanction) => {
-    switch (sanction.sanction_type) {
-      case 'Peringatan Tertulis':
-        return total + 1;
-      case 'SP1':
-        return total + 2;
-      case 'SP2':
-        return total + 3;
-      default:
-        return total;
-    }
-  }, 0);
+  const totalSanctionScore = (active_peringatan * 1) + (active_sp1 * 2) + (active_sp2 * 3);
 
   // Calculate KPI score based on ratio
   const total_crew = storeData?.total_crew || 0;
   const maxViolationScore = total_crew; // Changed to use total crew
-  const kpiScore = maxViolationScore > 0 
-    ? Math.max(0, (1 - (totalSanctionScore / maxViolationScore)) * 4)
-    : 4;
-
-  const totalActiveSanctions = active_peringatan + active_sp1 + active_sp2;
+  const kpiScore = sanctionKpiData?.kpi_score || 
+    (maxViolationScore > 0 
+      ? Math.max(0, (1 - (totalSanctionScore / maxViolationScore)) * 4)
+      : 4);
 
   return (
     <Card className="p-6">
@@ -122,7 +111,7 @@ const StoreSanctionCard = ({
               kpiScore >= 2 ? 'text-yellow-600' :
               'text-red-600'
             }`}>
-              {kpiScore.toFixed(2)}
+              {typeof kpiScore === 'number' ? kpiScore.toFixed(2) : kpiScore}
             </div>
           </div>
         </div>

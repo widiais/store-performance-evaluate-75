@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PDFDownloadLink } from '@react-pdf/renderer';
@@ -63,7 +62,6 @@ const EspReportDetail = () => {
   const { data: findings = [], isLoading: isLoadingFindings } = useQuery({
     queryKey: ['esp-findings', id],
     queryFn: async () => {
-      // Cast the response data to Finding[] to work around TS errors
       const { data, error } = await supabase
         .from('esp_findings')
         .select('*')
