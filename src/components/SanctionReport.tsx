@@ -11,6 +11,7 @@ import { Search, Eye, ArrowDown, ArrowUp } from "lucide-react";
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from "date-fns";
+import { mapToActiveSanctions } from '@/utils/typeUtils';
 
 type SortConfig = {
   key: string;
@@ -27,12 +28,40 @@ const SanctionReport = () => {
     queryKey: ['sanctionReports'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('employee_sanctions_report')
-        .select('*')
-        .order('sanction_date', { ascending: false });
+        .from('employee_sanctions')
+        .select(`
+          id,
+          store_id,
+          input_date,
+          pic,
+          peringatan_count,
+          sp1_count,
+          sp2_count,
+          status,
+          employee_name,
+          sanction_type,
+          duration_months,
+          expiry_date,
+          violation_details,
+          submitted_by,
+          is_active,
+          created_at,
+          updated_at,
+          stores:store_id (
+            name,
+            city
+          )
+        `)
+        .order('input_date', { ascending: false });
 
       if (error) throw error;
-      return data;
+      
+      // Transform the data to include store_name and store_city directly
+      return data.map(sanction => ({
+        ...sanction,
+        store_name: sanction.stores?.name || '',
+        store_city: sanction.stores?.city || ''
+      }));
     }
   });
 
@@ -45,9 +74,9 @@ const SanctionReport = () => {
 
   const getSortedData = (data: any[]) => {
     return [...data].sort((a, b) => {
-      if (sortConfig.key === 'sanction_date') {
-        const dateA = new Date(a[sortConfig.key]).getTime();
-        const dateB = new Date(b[sortConfig.key]).getTime();
+      if (sortConfig.key === 'sanction_date' || sortConfig.key === 'input_date') {
+        const dateA = new Date(a[sortConfig.key] || a.input_date).getTime();
+        const dateB = new Date(b[sortConfig.key] || b.input_date).getTime();
         return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
       }
       
@@ -63,13 +92,14 @@ const SanctionReport = () => {
 
   const filteredSanctions = sanctions
     .filter(sanction => 
-      (sanction.store_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       sanction.employee_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       sanction.store_city.toLowerCase().includes(searchTerm.toLowerCase())) &&
+      (sanction.store_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       sanction.employee_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       sanction.store_city?.toLowerCase().includes(searchTerm.toLowerCase())) &&
       (activeTab === 'active' ? sanction.is_active : !sanction.is_active)
     );
 
   const sortedSanctions = getSortedData(filteredSanctions);
+  const activeSanctions = mapToActiveSanctions(sortedSanctions);
 
   const getSanctionColor = (type: string) => {
     switch (type) {
@@ -161,10 +191,10 @@ const SanctionReport = () => {
                 </TableHead>
                 <TableHead 
                   className="cursor-pointer"
-                  onClick={() => handleSort('sanction_date')}
+                  onClick={() => handleSort('input_date')}
                 >
                   Date
-                  <SortIcon columnKey="sanction_date" />
+                  <SortIcon columnKey="input_date" />
                 </TableHead>
                 <TableHead 
                   className="cursor-pointer"
@@ -177,7 +207,7 @@ const SanctionReport = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedSanctions.map((sanction) => (
+              {activeSanctions.map((sanction) => (
                 <TableRow key={sanction.id}>
                   <TableCell>
                     {sanction.store_name}
@@ -192,7 +222,11 @@ const SanctionReport = () => {
                   </TableCell>
                   <TableCell>{sanction.duration_months} months</TableCell>
                   <TableCell>{format(new Date(sanction.sanction_date), 'dd/MM/yyyy')}</TableCell>
-                  <TableCell>{format(new Date(sanction.expiry_date), 'dd/MM/yyyy')}</TableCell>
+                  <TableCell>{
+                    sanction.expiry_date 
+                      ? format(new Date(sanction.expiry_date), 'dd/MM/yyyy') 
+                      : 'N/A'
+                  }</TableCell>
                   <TableCell className="text-right">
                     <Button
                       variant="outline"

@@ -1,35 +1,29 @@
 
-import { useContext } from 'react';
-import { AuthContext } from '@/contexts/AuthContext';
-import { menuItems } from '@/config/menuItems';
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import * as menuItemsConfig from "@/config/menuItems";
 
 export const useMenuAccess = () => {
-  const { user } = useContext(AuthContext);
+  const { user, userRole } = useAuth();
+  const [accessibleMenus, setAccessibleMenus] = useState<string[]>([]);
   
-  const isSuperAdmin = !!user?.email?.includes('@admin');
-
-  const hasAccess = (routePath: string) => {
-    if (!user) return false;
-    if (isSuperAdmin) return true;
+  useEffect(() => {
+    if (!user || !userRole) {
+      setAccessibleMenus([]);
+      return;
+    }
     
-    // Find menu item with matching path
-    const flatMenuItems = menuItems.flatMap(item => 
-      item.submenu ? [item, ...item.submenu] : [item]
-    );
-    
-    const menuItem = flatMenuItems.find(item => item.path === routePath);
-    
-    // If menu item not found or no role restrictions, allow access
-    if (!menuItem || !menuItem.roles || menuItem.roles.length === 0) return true;
-    
-    // Check if user's role matches any of the permitted roles
-    return menuItem.roles.includes(user.role || '');
+    // For now, all menus are accessible
+    // In future, this can be based on user role and permissions
+    const allMenus = Object.keys(menuItemsConfig.default || {});
+    setAccessibleMenus(allMenus);
+  }, [user, userRole]);
+  
+  const hasAccess = (menuId: string) => {
+    return accessibleMenus.includes(menuId);
   };
-
-  return {
-    hasAccess,
-    isSuperAdmin
-  };
+  
+  return { hasAccess, accessibleMenus };
 };
 
 export default useMenuAccess;

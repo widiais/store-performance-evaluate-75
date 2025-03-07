@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Store } from "../store-performance/types";
 import { EmployeeSanctionsKPI } from "@/integrations/supabase/client-types";
+import { mapToSanctionKPI } from "@/utils/typeUtils";
 
 interface SanctionKPIProps {
   selectedStores: Store[];
@@ -42,25 +43,25 @@ const StoreSanctionCard = ({
     },
   });
 
-  // Get sanction KPI data for this store using the view directly
+  // Get sanction KPI data for this store using the RPC function
   const { data: sanctionKpiData } = useQuery<SanctionData | null>({
     queryKey: ["sanctionKpiData", store.id],
     queryFn: async () => {
       try {
         const { data, error } = await supabase
-          .from("employee_sanctions_kpi")
-          .select("*")
-          .eq("store_id", store.id)
-          .single();
+          .rpc("get_employee_sanctions_kpi", { store_id_param: store.id });
         
         if (error) {
-          if (error.code === 'PGRST116') { // Resource not found
-            return null;
-          }
-          throw error;
+          console.error("Error fetching sanctions KPI:", error);
+          return null;
         }
         
-        return data as SanctionData;
+        // Process the data to match the SanctionData interface
+        if (data && data.length > 0) {
+          return mapToSanctionKPI(data[0]);
+        }
+        
+        return null;
       } catch (error) {
         console.error("Error fetching sanctions KPI:", error);
         return null;

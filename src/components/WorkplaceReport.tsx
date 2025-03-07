@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { asType } from "@/utils/typeUtils";
 
 interface Store {
   store_id: number;
@@ -34,65 +35,24 @@ const WorkplaceReport = () => {
   const { data: stores = [], isLoading } = useQuery<Store[]>({
     queryKey: ['workplace-stores'],
     queryFn: async () => {
-      // First get all stores with their total crew
-      const { data: storesData, error: storesError } = await supabase
-        .from('stores')
-        .select(`
-          id,
-          name,
-          city,
-          total_crew
-        `);
-
-      if (storesError) throw storesError;
-
-      // Then get sanctions data
+      // Fetch employee sanctions KPI data for all stores
       const { data: sanctionsData, error: sanctionsError } = await supabase
-        .from('employee_sanctions_report')
-        .select('*')
-        .eq('is_active', true);
+        .from('employee_sanctions_kpi')
+        .select('*');
 
       if (sanctionsError) throw sanctionsError;
 
-      // Calculate KPI for each store
-      const storesWithKPI = storesData.map(store => {
-        const storeSanctions = sanctionsData.filter(s => s.store_id === store.id);
-        
-        // Calculate total sanction score
-        const totalSanctionScore = storeSanctions.reduce((total, sanction) => {
-          switch (sanction.sanction_type) {
-            case 'Peringatan Tertulis': return total + 1;
-            case 'SP1': return total + 2;
-            case 'SP2': return total + 3;
-            default: return total;
-          }
-        }, 0);
-
-        // Count active sanctions by type
-        const active_peringatan = storeSanctions.filter(s => s.sanction_type === 'Peringatan Tertulis').length;
-        const active_sp1 = storeSanctions.filter(s => s.sanction_type === 'SP1').length;
-        const active_sp2 = storeSanctions.filter(s => s.sanction_type === 'SP2').length;
-
-        // Calculate KPI score based on ratio
-        const maxViolationScore = store.total_crew || 0;
-        const kpi_score = maxViolationScore > 0 
-          ? Math.max(0, (1 - (totalSanctionScore / maxViolationScore)) * 4)
-          : 4;
-
-        return {
-          store_id: store.id,
-          store_name: store.name,
-          store_city: store.city,
-          total_employees: store.total_crew,
-          active_peringatan,
-          active_sp1,
-          active_sp2,
-          kpi_score: storeSanctions.length === 0 ? 4 : kpi_score // Full score if no sanctions
-        };
-      });
-
-      // Return all stores, no longer filtering by active sanctions
-      return storesWithKPI;
+      // Map the data to the Store interface
+      return sanctionsData.map(store => ({
+        store_id: store.store_id,
+        store_name: store.store_name,
+        store_city: store.store_city,
+        total_employees: store.total_employees || 0,
+        active_peringatan: store.active_peringatan || 0,
+        active_sp1: store.active_sp1 || 0,
+        active_sp2: store.active_sp2 || 0,
+        kpi_score: store.kpi_score || 4
+      }));
     },
   });
 

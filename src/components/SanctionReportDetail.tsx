@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import SanctionReportPDF from './SanctionReportPDF';
 import { EmployeeSanctionRecord } from '@/integrations/supabase/client-types';
+import { mapToEmployeeSanctionRecord } from '@/utils/typeUtils';
 
 const SanctionReportDetail = () => {
   const { id } = useParams();
@@ -17,16 +19,19 @@ const SanctionReportDetail = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: sanction, isLoading } = useQuery<EmployeeSanctionRecord>({
+  const { data: sanction, isLoading } = useQuery({
     queryKey: ['sanctionDetail', id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .rpc('get_employee_sanction_report', { 
+        .rpc("get_employee_sanction_report", { 
           sanction_id_param: parseInt(id || '0') 
         });
       
       if (error) throw error;
-      return data as EmployeeSanctionRecord;
+      
+      // If the data is an array, take the first item
+      const sanctionData = Array.isArray(data) ? data[0] : data;
+      return mapToEmployeeSanctionRecord(sanctionData);
     },
   });
 
@@ -113,7 +118,7 @@ const SanctionReportDetail = () => {
     }
   };
 
-  const totalCrew = sanction.stores?.total_crew || 0;
+  const totalCrew = sanction.total_crew || 0;
   const sanctionWeight = getSanctionWeight(sanction.sanction_type);
   const violationRatio = totalCrew > 0 ? sanctionWeight / totalCrew : 0;
   const maxViolationRatio = 0.5; // 50% of total crew

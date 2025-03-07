@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +15,7 @@ import { Card } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmployeeSanctionRecord } from "@/integrations/supabase/client-types";
+import { mapToActiveSanctions } from "@/utils/typeUtils";
 
 const WorkplaceReportDetail = () => {
   const { id } = useParams();
@@ -33,7 +35,7 @@ const WorkplaceReportDetail = () => {
     },
   });
 
-  const { data: sanctions = [], isLoading } = useQuery<EmployeeSanctionRecord[]>({
+  const { data: sanctionsData = [], isLoading } = useQuery({
     queryKey: ['store-sanctions', id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -42,9 +44,14 @@ const WorkplaceReportDetail = () => {
         });
 
       if (error) throw error;
-      return (data as EmployeeSanctionRecord[]) || [];
+      
+      // Transform the data with proper typing
+      return data || [];
     },
   });
+
+  // Map to proper format with all required fields
+  const sanctions = mapToActiveSanctions(sanctionsData);
 
   if (isLoading) {
     return (
@@ -54,8 +61,12 @@ const WorkplaceReportDetail = () => {
     );
   }
 
-  const activeSanctions = sanctions.filter(sanction => sanction.is_active);
-  const inactiveSanctions = sanctions.filter(sanction => !sanction.is_active);
+  const activeSanctions = sanctions.filter(sanction => 
+    'is_active' in (sanction as any) ? (sanction as any).is_active : true
+  );
+  const inactiveSanctions = sanctions.filter(sanction => 
+    'is_active' in (sanction as any) ? !(sanction as any).is_active : false
+  );
 
   const totalSanctionScore = activeSanctions.reduce((total, sanction) => {
     switch (sanction.sanction_type) {
@@ -159,7 +170,7 @@ const WorkplaceReportDetail = () => {
                       </TableCell>
                       <TableCell>{sanction.duration_months} months</TableCell>
                       <TableCell>
-                        {new Date(sanction.expiry_date).toLocaleDateString()}
+                        {sanction.expiry_date && new Date(sanction.expiry_date).toLocaleDateString()}
                       </TableCell>
                       <TableCell>{sanction.violation_details}</TableCell>
                       <TableCell>{sanction.pic}</TableCell>
@@ -200,7 +211,7 @@ const WorkplaceReportDetail = () => {
                       </TableCell>
                       <TableCell>{sanction.duration_months} months</TableCell>
                       <TableCell>
-                        {new Date(sanction.expiry_date).toLocaleDateString()}
+                        {sanction.expiry_date && new Date(sanction.expiry_date).toLocaleDateString()}
                       </TableCell>
                       <TableCell>{sanction.violation_details}</TableCell>
                       <TableCell>{sanction.pic}</TableCell>
