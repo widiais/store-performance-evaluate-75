@@ -44,3 +44,37 @@ export interface EmployeeSanctionRecord {
   regional?: number;
   total_crew?: number;
 }
+
+// Define profiles table type which is missing from auto-generated types
+export interface Profile {
+  id: string;
+  email: string;
+  role_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Define roles table type which is missing from auto-generated types
+export interface Role {
+  id: string;
+  name: string;
+  description?: string;
+  role_level: 'admin' | 'manager' | 'supervisor' | 'staff';
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface RolePermission {
+  id: number;
+  role_id: string;
+  resource: string;
+  can_create: boolean;
+  can_read: boolean;
+  can_update: boolean;
+  can_delete: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Function response types
+export type FunctionResponse<T> = T | null;

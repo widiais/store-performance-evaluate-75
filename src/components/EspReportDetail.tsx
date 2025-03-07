@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PDFDownloadLink } from '@react-pdf/renderer';
@@ -63,13 +64,14 @@ const EspReportDetail = () => {
   const { data: findings = [], isLoading: isLoadingFindings } = useQuery<Finding[]>({
     queryKey: ['esp-findings', id],
     queryFn: async () => {
+      // Direct query instead of RPC function
       const { data, error } = await supabase
-        .rpc('get_esp_findings_by_evaluation_id', { 
-          evaluation_id_param: parseInt(id || '0') 
-        });
+        .from('esp_findings')
+        .select('*')
+        .eq('evaluation_id', parseInt(id || '0'));
       
       if (error) throw error;
-      return (data as EspFinding[]) || [];
+      return (data as Finding[]) || [];
     },
     enabled: !!id,
   });
