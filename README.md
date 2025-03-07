@@ -19,6 +19,15 @@ The application contains the following components:
 - ChampReportDetail: Shows detailed information about a CHAMP evaluation
 - OperationalKPI: Displays operational KPI metrics for selected stores
 
+## Database Tables and Views
+
+This application relies on several key database tables and views:
+
+- `employee_sanctions` - Stores employee sanction records
+- `employee_sanctions_kpi` - View for calculating KPI scores based on sanctions
+- `esp_findings` - Stores findings for ESP evaluations
+- `champs_evaluation_report` - View for CHAMPS evaluation reports
+
 ## Other Files
 
 - store-performance/types.ts: Contains TypeScript types for the application
@@ -29,3 +38,5 @@ The application contains the following components:
 If you encounter database-related errors, please ensure:
 1. All views in the SQL file have been created
 2. The required table schemas match what the application expects
+3. The `esp_findings` table exists and has the correct structure
+4. The `employee_sanctions` table has all required columns

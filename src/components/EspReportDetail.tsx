@@ -1,14 +1,15 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import * as XLSX from 'xlsx';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
 } from "@/components/ui/table";
 import { useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
@@ -23,13 +24,25 @@ interface Finding {
   deduction_points: number;
 }
 
+interface Evaluation {
+  id: number;
+  store_name: string;
+  store_city: string;
+  evaluation_date: string;
+  pic: string;
+  total_score: number;
+  final_score: number;
+  kpi_score: number;
+  status: string;
+}
+
 const EspReportDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: evaluation, isLoading } = useQuery({
+  const { data: evaluation, isLoading } = useQuery<Evaluation>({
     queryKey: ['esp-evaluation', id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -39,7 +52,7 @@ const EspReportDetail = () => {
         .single();
       
       if (error) throw error;
-      return data;
+      return data as Evaluation;
     },
     enabled: !!id,
   });
@@ -47,6 +60,7 @@ const EspReportDetail = () => {
   const { data: findings = [], isLoading: isLoadingFindings } = useQuery({
     queryKey: ['esp-findings', id],
     queryFn: async () => {
+      // Cast the response data to Finding[] to work around TS errors
       const { data, error } = await supabase
         .from('esp_findings')
         .select('*')

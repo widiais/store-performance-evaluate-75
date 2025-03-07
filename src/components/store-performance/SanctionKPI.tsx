@@ -10,6 +10,17 @@ interface SanctionKPIProps {
   selectedYear: number;
 }
 
+interface SanctionData {
+  store_id: number;
+  store_name: string;
+  store_city: string;
+  total_employees: number;
+  active_peringatan: number;
+  active_sp1: number;
+  active_sp2: number;
+  kpi_score: number;
+}
+
 const StoreSanctionCard = ({ 
   store 
 }: { 
@@ -33,8 +44,9 @@ const StoreSanctionCard = ({
   const { data: sanctions = [] } = useQuery({
     queryKey: ["sanctionData", store.id],
     queryFn: async () => {
+      // Get sanctions with basic filtering on store_id and active status
       const { data, error } = await supabase
-        .from("employee_sanctions_report")
+        .from("employee_sanctions")
         .select()
         .eq("store_id", store.id)
         .eq("is_active", true);

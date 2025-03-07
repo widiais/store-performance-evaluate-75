@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -189,9 +190,10 @@ const ESPForm = () => {
           deduction_points: finding.deduction_points
         }));
 
+        // We need to cast the insert data to any to work around the type issue
         const { error: findingsError } = await supabase
           .from('esp_findings')
-          .insert(findingsData);
+          .insert(findingsData as any);
 
         if (findingsError) throw findingsError;
       }
