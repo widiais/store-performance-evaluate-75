@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,6 +37,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { Role, RolePermission } from "@/types/auth";
+import { mapToRole, mapToRolePermission } from "@/utils/typeUtils";
 
 type UserRole = 'admin' | 'manager' | 'supervisor' | 'staff';
 
@@ -98,16 +100,35 @@ const RoleManagement = () => {
   const { data: roles = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['roles'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First fetch roles
+      const { data: rolesData, error: roleError } = await supabase
         .from('roles')
-        .select(`
-          *,
-          role_permissions (*)
-        `)
-        .order('role_level');
+        .select('*');
       
-      if (error) throw error;
-      return (data || []) as RoleWithPermissions[];
+      if (roleError) throw roleError;
+      
+      // Map to proper Role type
+      const mappedRoles: Role[] = rolesData.map(role => mapToRole(role));
+      
+      // For each role, fetch permissions
+      const rolesWithPermissions: RoleWithPermissions[] = await Promise.all(
+        mappedRoles.map(async (role) => {
+          const { data: permissions, error: permError } = await supabase
+            .from('role_permissions')
+            .select('*')
+            .eq('role_id', role.id);
+            
+          if (permError) {
+            console.error("Error fetching permissions:", permError);
+            return { ...role, role_permissions: null };
+          }
+          
+          const mappedPermissions = permissions.map(perm => mapToRolePermission(perm));
+          return { ...role, role_permissions: mappedPermissions };
+        })
+      );
+
+      return rolesWithPermissions;
     }
   });
 
@@ -147,7 +168,8 @@ const RoleManagement = () => {
     const roleLevel = formData.get('roleLevel') as UserRole;
 
     try {
-      const { data: role, error: roleError } = await supabase
+      // Insert the role
+      const { data: newRole, error: roleError } = await supabase
         .from('roles')
         .insert({ 
           name, 
@@ -159,8 +181,9 @@ const RoleManagement = () => {
 
       if (roleError) throw roleError;
 
+      // Prepare permissions to insert
       const permissionsToInsert = Object.keys(RESOURCES).map(resource => ({
-        role_id: role.id,
+        role_id: newRole.id,
         resource,
         can_create: roleLevel === 'admin' || 
                    (roleLevel === 'manager' && ['setup-store', 'setup-champs', 'setup-cleanliness'].includes(resource)),
@@ -172,11 +195,17 @@ const RoleManagement = () => {
                    (roleLevel === 'manager' && ['setup-store', 'setup-champs'].includes(resource))
       }));
 
-      const { error: permError } = await supabase
-        .from('role_permissions')
-        .insert(permissionsToInsert);
+      // Insert permissions
+      for (const permission of permissionsToInsert) {
+        const { error: permError } = await supabase
+          .from('role_permissions')
+          .insert(permission);
 
-      if (permError) throw permError;
+        if (permError) {
+          console.error("Error inserting permission:", permError);
+          // Continue with other permissions even if one fails
+        }
+      }
 
       toast({
         title: "Success",
@@ -203,6 +232,7 @@ const RoleManagement = () => {
     if (!selectedRole) return;
 
     try {
+      // Update the role
       const { error: roleError } = await supabase
         .from('roles')
         .update({ name, description })

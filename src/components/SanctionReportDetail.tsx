@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,19 +18,14 @@ const SanctionReportDetail = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: sanction, isLoading } = useQuery({
-    queryKey: ['sanctionDetail', id],
+  const { data: sanctionData, isLoading } = useQuery<EmployeeSanctionRecord>({
+    queryKey: ["sanction", id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .rpc("get_employee_sanction_report", { 
-          sanction_id_param: parseInt(id || '0') 
-        });
-      
+        .rpc("get_employee_sanction_report", { sanction_id_param: parseInt(id || '0') });
+
       if (error) throw error;
-      
-      // If the data is an array, take the first item
-      const sanctionData = Array.isArray(data) ? data[0] : data;
-      return mapToEmployeeSanctionRecord(sanctionData);
+      return mapToEmployeeSanctionRecord(data);
     },
   });
 
@@ -74,7 +68,7 @@ const SanctionReportDetail = () => {
     );
   }
 
-  if (!sanction) {
+  if (!sanctionData) {
     return (
       <div className="p-6">
         <div className="text-center py-8">
@@ -118,8 +112,8 @@ const SanctionReportDetail = () => {
     }
   };
 
-  const totalCrew = sanction.total_crew || 0;
-  const sanctionWeight = getSanctionWeight(sanction.sanction_type);
+  const totalCrew = sanctionData.total_crew || 0;
+  const sanctionWeight = getSanctionWeight(sanctionData.sanction_type);
   const violationRatio = totalCrew > 0 ? sanctionWeight / totalCrew : 0;
   const maxViolationRatio = 0.5; // 50% of total crew
   const kpiScore = Math.max(0, (1 - (violationRatio / maxViolationRatio)) * 4);
@@ -138,8 +132,8 @@ const SanctionReportDetail = () => {
             </Button>
             
             <PDFDownloadLink
-              document={<SanctionReportPDF data={sanction} />}
-              fileName={`sanction-${sanction.employee_name}-${format(new Date(sanction.sanction_date), 'yyyy-MM-dd')}.pdf`}
+              document={<SanctionReportPDF data={sanctionData} />}
+              fileName={`sanction-${sanctionData.employee_name}-${format(new Date(sanctionData.sanction_date), 'yyyy-MM-dd')}.pdf`}
             >
               {({ loading }) => (
                 <Button variant="secondary" disabled={loading}>
@@ -164,18 +158,18 @@ const SanctionReportDetail = () => {
           <div className="mb-6">
             <h2 className="text-2xl font-semibold text-gray-900">Sanction Details</h2>
             <p className="text-gray-500">
-              {sanction.store_name} - {sanction.store_city}
+              {sanctionData.store_name} - {sanctionData.store_city}
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
               <p className="text-sm text-gray-500">Date</p>
-              <p className="text-gray-900">{format(new Date(sanction.sanction_date), 'dd MMMM yyyy')}</p>
+              <p className="text-gray-900">{format(new Date(sanctionData.sanction_date), 'dd MMMM yyyy')}</p>
             </div>
             <div>
               <p className="text-sm text-gray-500">PIC</p>
-              <p className="text-gray-900">{sanction.pic}</p>
+              <p className="text-gray-900">{sanctionData.pic}</p>
             </div>
           </div>
 
@@ -183,30 +177,30 @@ const SanctionReportDetail = () => {
             <div className="grid gap-4">
               <div>
                 <p className="text-sm text-gray-500">Employee Name</p>
-                <p className="text-gray-900 font-medium">{sanction.employee_name}</p>
+                <p className="text-gray-900 font-medium">{sanctionData.employee_name}</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-500">Sanction Type</p>
-                  <Badge className={getSanctionColor(sanction.sanction_type)}>
-                    {sanction.sanction_type}
+                  <Badge className={getSanctionColor(sanctionData.sanction_type)}>
+                    {sanctionData.sanction_type}
                   </Badge>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Duration</p>
-                  <p className="text-gray-900">{sanction.duration_months} months</p>
+                  <p className="text-gray-900">{sanctionData.duration_months} months</p>
                 </div>
               </div>
 
               <div>
                 <p className="text-sm text-gray-500">Violation Details</p>
-                <p className="text-gray-900 whitespace-pre-wrap">{sanction.violation_details}</p>
+                <p className="text-gray-900 whitespace-pre-wrap">{sanctionData.violation_details}</p>
               </div>
 
               <div>
                 <p className="text-sm text-gray-500">Submitted By</p>
-                <p className="text-gray-900">{sanction.submitted_by}</p>
+                <p className="text-gray-900">{sanctionData.submitted_by}</p>
               </div>
 
               <div className="mt-6 p-4 bg-blue-50 rounded-lg">

@@ -32,11 +32,17 @@ import { Label } from "@/components/ui/label";
 import { UserPlus, Pencil, Trash2, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
+import { Profile, Role } from "@/integrations/supabase/client-types";
+import { mapToProfile, mapToRole } from "@/utils/typeUtils";
+
+interface ProfileWithRole extends Profile {
+  roles?: Role | null;
+}
 
 const UserManagement = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<ProfileWithRole | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const { isSuperAdmin } = useAuth();
@@ -55,8 +61,10 @@ const UserManagement = () => {
 
       console.log("Fetched profiles:", profiles);
 
-      const profilesWithRoles = await Promise.all(
-        profiles.map(async (profile) => {
+      const mappedProfiles: Profile[] = profiles.map(profile => mapToProfile(profile));
+
+      const profilesWithRoles: ProfileWithRole[] = await Promise.all(
+        mappedProfiles.map(async (profile) => {
           if (profile.role_id) {
             const { data: role, error: roleError } = await supabase
               .from('roles')
@@ -69,7 +77,7 @@ const UserManagement = () => {
               return { ...profile, roles: null };
             }
             
-            return { ...profile, roles: role };
+            return { ...profile, roles: mapToRole(role) };
           }
           return { ...profile, roles: null };
         })
@@ -89,7 +97,7 @@ const UserManagement = () => {
         console.error("Error fetching roles:", error);
         throw error;
       }
-      return data;
+      return data.map(role => mapToRole(role));
     }
   });
 

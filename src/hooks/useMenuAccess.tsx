@@ -1,29 +1,23 @@
 
-import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import * as menuItemsConfig from "@/config/menuItems";
+import { useContext } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { MenuItem } from '@/types/menu';
+import { menuItems } from '@/config/menuItems'; // Ensure this import is correct
 
-export const useMenuAccess = () => {
-  const { user, userRole } = useAuth();
-  const [accessibleMenus, setAccessibleMenus] = useState<string[]>([]);
+export function useMenuAccess() {
+  const { user, hasPermission } = useAuth();
   
-  useEffect(() => {
-    if (!user || !userRole) {
-      setAccessibleMenus([]);
-      return;
-    }
+  const getAccessibleMenus = (): MenuItem[] => {
+    if (!user) return [];
     
-    // For now, all menus are accessible
-    // In future, this can be based on user role and permissions
-    const allMenus = Object.keys(menuItemsConfig.default || {});
-    setAccessibleMenus(allMenus);
-  }, [user, userRole]);
-  
-  const hasAccess = (menuId: string) => {
-    return accessibleMenus.includes(menuId);
+    // Filter menu items based on permissions
+    return menuItems.filter(menuItem => {
+      // Check if user has read access to the menu resource
+      return hasPermission(menuItem.resource, 'read');
+    });
   };
-  
-  return { hasAccess, accessibleMenus };
-};
 
-export default useMenuAccess;
+  return {
+    getAccessibleMenus,
+  };
+}
