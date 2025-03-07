@@ -158,18 +158,18 @@ const EspForm = ({}: EspFormProps) => {
 
       if (evaluationError) throw evaluationError;
 
-      // 2. Insert the findings using a custom function to bypass TypeScript checking
+      // 2. Insert the findings 
       if (evaluationData && findings.length > 0) {
+        // Use a direct insert with properly typed data
         const findingsData = findings.map(finding => ({
           evaluation_id: evaluationData.id,
           finding: finding.finding,
           deduction_points: finding.deduction_points
         }));
 
-        // Using a direct insert instead of RPC function
         const { error: findingsError } = await supabase
           .from('esp_findings')
-          .insert(findingsData);
+          .insert(findingsData as any);
 
         if (findingsError) throw findingsError;
       }

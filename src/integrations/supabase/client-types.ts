@@ -76,5 +76,9 @@ export interface RolePermission {
   updated_at?: string;
 }
 
+export interface RoleWithPermissions extends Role {
+  permissions?: RolePermission[];
+}
+
 // Function response types
 export type FunctionResponse<T> = T | null;

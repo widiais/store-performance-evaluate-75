@@ -1,46 +1,41 @@
 
-import { useAuth } from "@/contexts/AuthContext";
-import menuItems from "@/config/menuItems";
-import { useState, useEffect } from "react";
+import { useContext } from 'react';
+import { AuthContext } from '@/contexts/AuthContext';
+import { menuItems } from '@/config/menuItems';
 
 export const useMenuAccess = () => {
-  const { user, isSuperAdmin: checkSuperAdmin } = useAuth();
-  const [visibleMenus, setVisibleMenus] = useState<string[]>([]);
+  const { user, userRole } = useContext(AuthContext);
+  
+  const isSuperAdmin = userRole === 'admin';
 
-  useEffect(() => {
-    if (user) {
-      // If super admin, show all menus
-      if (checkSuperAdmin()) {
-        setVisibleMenus(menuItems.map(item => item.id));
-        return;
-      }
-
-      // Filter based on permissions
-      // This is a placeholder - replace with actual permission logic
-      const allowedMenus = menuItems
-        .filter(item => {
-          // Basic filtering logic based on role - expand as needed
-          if (item.adminOnly) {
-            return false;
-          }
-          return true;
-        })
-        .map(item => item.id);
-
-      setVisibleMenus(allowedMenus);
-    } else {
-      // If not logged in, only show public menus
-      setVisibleMenus(
-        menuItems.filter(item => item.public).map(item => item.id)
-      );
-    }
-  }, [user, checkSuperAdmin]);
-
-  const hasAccess = (menuId: string) => {
-    return visibleMenus.includes(menuId);
+  // Check if a user has access to a specific menu item
+  const hasAccess = (menuPath: string) => {
+    if (!user) return false;
+    
+    if (isSuperAdmin) return true;
+    
+    // Find the menu item by path
+    const menuItem = findMenuItemByPath(menuPath, menuItems);
+    
+    // If menu item not found or doesn't have roles defined, deny access
+    if (!menuItem || !menuItem.roles) return false;
+    
+    // Check if user's role is included in the menu item's allowed roles
+    return menuItem.roles.includes(userRole || '');
   };
-
-  return { visibleMenus, hasAccess };
+  
+  // Helper function to find a menu item by its path
+  const findMenuItemByPath = (path: string, items: any[]): any => {
+    for (const item of items) {
+      if (item.path === path) return item;
+      
+      if (item.children) {
+        const found = findMenuItemByPath(path, item.children);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+  
+  return { hasAccess, isSuperAdmin };
 };
-
-export default useMenuAccess;

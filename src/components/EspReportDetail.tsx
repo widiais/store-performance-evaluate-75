@@ -64,13 +64,14 @@ const EspReportDetail = () => {
   const { data: findings = [], isLoading: isLoadingFindings } = useQuery<Finding[]>({
     queryKey: ['esp-findings', id],
     queryFn: async () => {
-      // Direct query instead of RPC function
+      // Using the standard query to get findings data
       const { data, error } = await supabase
         .from('esp_findings')
         .select('*')
         .eq('evaluation_id', parseInt(id || '0'));
       
       if (error) throw error;
+      // Cast to Finding[] to ensure TypeScript doesn't complain
       return (data as Finding[]) || [];
     },
     enabled: !!id,
