@@ -93,6 +93,13 @@ export type Database = {
             foreignKeyName: "champs_evaluations_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
+            referencedRelation: "employee_sanctions_kpi"
+            referencedColumns: ["store_id"]
+          },
+          {
+            foreignKeyName: "champs_evaluations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
@@ -213,6 +220,13 @@ export type Database = {
             foreignKeyName: "cleanliness_evaluations_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
+            referencedRelation: "employee_sanctions_kpi"
+            referencedColumns: ["store_id"]
+          },
+          {
+            foreignKeyName: "cleanliness_evaluations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
@@ -287,6 +301,13 @@ export type Database = {
             foreignKeyName: "complaint_records_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
+            referencedRelation: "employee_sanctions_kpi"
+            referencedColumns: ["store_id"]
+          },
+          {
+            foreignKeyName: "complaint_records_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
@@ -319,41 +340,69 @@ export type Database = {
       employee_sanctions: {
         Row: {
           created_at: string | null
+          duration_months: number | null
+          employee_name: string | null
+          expiry_date: string | null
           id: number
           input_date: string
+          is_active: boolean | null
           peringatan_count: number | null
           pic: string
+          sanction_type: string | null
           sp1_count: number | null
           sp2_count: number | null
           status: string | null
           store_id: number | null
+          submitted_by: string | null
           updated_at: string | null
+          violation_details: string | null
         }
         Insert: {
           created_at?: string | null
+          duration_months?: number | null
+          employee_name?: string | null
+          expiry_date?: string | null
           id?: number
           input_date: string
+          is_active?: boolean | null
           peringatan_count?: number | null
           pic: string
+          sanction_type?: string | null
           sp1_count?: number | null
           sp2_count?: number | null
           status?: string | null
           store_id?: number | null
+          submitted_by?: string | null
           updated_at?: string | null
+          violation_details?: string | null
         }
         Update: {
           created_at?: string | null
+          duration_months?: number | null
+          employee_name?: string | null
+          expiry_date?: string | null
           id?: number
           input_date?: string
+          is_active?: boolean | null
           peringatan_count?: number | null
           pic?: string
+          sanction_type?: string | null
           sp1_count?: number | null
           sp2_count?: number | null
           status?: string | null
           store_id?: number | null
+          submitted_by?: string | null
           updated_at?: string | null
+          violation_details?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "employee_sanctions_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "employee_sanctions_kpi"
+            referencedColumns: ["store_id"]
+          },
           {
             foreignKeyName: "employee_sanctions_store_id_fkey"
             columns: ["store_id"]
@@ -405,7 +454,56 @@ export type Database = {
             foreignKeyName: "esp_evaluations_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
+            referencedRelation: "employee_sanctions_kpi"
+            referencedColumns: ["store_id"]
+          },
+          {
+            foreignKeyName: "esp_evaluations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
             referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      esp_findings: {
+        Row: {
+          created_at: string | null
+          deduction_points: number
+          evaluation_id: number
+          finding: string
+          id: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          deduction_points?: number
+          evaluation_id: number
+          finding: string
+          id?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          deduction_points?: number
+          evaluation_id?: number
+          finding?: string
+          id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "esp_findings_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "esp_evaluation_report"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "esp_findings_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "esp_evaluations"
             referencedColumns: ["id"]
           },
         ]
@@ -448,6 +546,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "financial_records_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "employee_sanctions_kpi"
+            referencedColumns: ["store_id"]
+          },
           {
             foreignKeyName: "financial_records_store_id_fkey"
             columns: ["store_id"]
@@ -544,6 +649,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "product_quality_evaluations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "employee_sanctions_kpi"
+            referencedColumns: ["store_id"]
+          },
           {
             foreignKeyName: "product_quality_evaluations_store_id_fkey"
             columns: ["store_id"]
@@ -668,6 +780,13 @@ export type Database = {
             foreignKeyName: "service_evaluations_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
+            referencedRelation: "employee_sanctions_kpi"
+            referencedColumns: ["store_id"]
+          },
+          {
+            foreignKeyName: "service_evaluations_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
@@ -775,6 +894,19 @@ export type Database = {
           store_name: string | null
           total_weighted_complaints: number | null
           whatsapp_count: number | null
+        }
+        Relationships: []
+      }
+      employee_sanctions_kpi: {
+        Row: {
+          active_peringatan: number | null
+          active_sp1: number | null
+          active_sp2: number | null
+          kpi_score: number | null
+          store_city: string | null
+          store_id: number | null
+          store_name: string | null
+          total_employees: number | null
         }
         Relationships: []
       }
@@ -887,6 +1019,84 @@ export type Database = {
           evaluation_date: string
           month: number
           year: number
+        }[]
+      }
+      get_employee_sanction_report: {
+        Args: {
+          sanction_id_param: number
+        }
+        Returns: {
+          id: number
+          store_id: number
+          employee_name: string
+          sanction_type: string
+          sanction_date: string
+          duration_months: number
+          expiry_date: string
+          violation_details: string
+          submitted_by: string
+          is_active: boolean
+          pic: string
+          store_name: string
+          store_city: string
+          created_at: string
+          updated_at: string
+          input_date: string
+          area: number
+          regional: number
+          total_crew: number
+        }[]
+      }
+      get_employee_sanctions_by_store: {
+        Args: {
+          store_id_param: number
+        }
+        Returns: {
+          created_at: string | null
+          duration_months: number | null
+          employee_name: string | null
+          expiry_date: string | null
+          id: number
+          input_date: string
+          is_active: boolean | null
+          peringatan_count: number | null
+          pic: string
+          sanction_type: string | null
+          sp1_count: number | null
+          sp2_count: number | null
+          status: string | null
+          store_id: number | null
+          submitted_by: string | null
+          updated_at: string | null
+          violation_details: string | null
+        }[]
+      }
+      get_employee_sanctions_kpi: {
+        Args: {
+          store_id_param: number
+        }
+        Returns: {
+          store_id: number
+          store_name: string
+          store_city: string
+          total_employees: number
+          active_peringatan: number
+          active_sp1: number
+          active_sp2: number
+          kpi_score: number
+        }[]
+      }
+      get_esp_findings_by_evaluation_id: {
+        Args: {
+          evaluation_id_param: number
+        }
+        Returns: {
+          created_at: string | null
+          deduction_points: number
+          evaluation_id: number
+          finding: string
+          id: number
+          updated_at: string | null
         }[]
       }
       get_user_id_by_email: {

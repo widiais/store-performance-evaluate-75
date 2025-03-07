@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -158,18 +157,17 @@ const EspForm = ({}: EspFormProps) => {
 
       if (evaluationError) throw evaluationError;
 
-      // 2. Insert the findings 
+      // 2. Insert the findings directly to the esp_findings table
       if (evaluationData && findings.length > 0) {
-        // Use a direct insert with properly typed data
-        const findingsData = findings.map(finding => ({
+        const findingsToInsert = findings.map(finding => ({
           evaluation_id: evaluationData.id,
           finding: finding.finding,
           deduction_points: finding.deduction_points
         }));
 
         const { error: findingsError } = await supabase
-          .from('esp_findings')
-          .insert(findingsData as any);
+          .from("esp_findings")
+          .insert(findingsToInsert);
 
         if (findingsError) throw findingsError;
       }

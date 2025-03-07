@@ -4,38 +4,32 @@ import { AuthContext } from '@/contexts/AuthContext';
 import { menuItems } from '@/config/menuItems';
 
 export const useMenuAccess = () => {
-  const { user, userRole } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   
-  const isSuperAdmin = userRole === 'admin';
+  const isSuperAdmin = !!user?.email?.includes('@admin');
 
-  // Check if a user has access to a specific menu item
-  const hasAccess = (menuPath: string) => {
+  const hasAccess = (routePath: string) => {
     if (!user) return false;
-    
     if (isSuperAdmin) return true;
     
-    // Find the menu item by path
-    const menuItem = findMenuItemByPath(menuPath, menuItems);
+    // Find menu item with matching path
+    const flatMenuItems = menuItems.flatMap(item => 
+      item.submenu ? [item, ...item.submenu] : [item]
+    );
     
-    // If menu item not found or doesn't have roles defined, deny access
-    if (!menuItem || !menuItem.roles) return false;
+    const menuItem = flatMenuItems.find(item => item.path === routePath);
     
-    // Check if user's role is included in the menu item's allowed roles
-    return menuItem.roles.includes(userRole || '');
+    // If menu item not found or no role restrictions, allow access
+    if (!menuItem || !menuItem.roles || menuItem.roles.length === 0) return true;
+    
+    // Check if user's role matches any of the permitted roles
+    return menuItem.roles.includes(user.role || '');
   };
-  
-  // Helper function to find a menu item by its path
-  const findMenuItemByPath = (path: string, items: any[]): any => {
-    for (const item of items) {
-      if (item.path === path) return item;
-      
-      if (item.children) {
-        const found = findMenuItemByPath(path, item.children);
-        if (found) return found;
-      }
-    }
-    return null;
+
+  return {
+    hasAccess,
+    isSuperAdmin
   };
-  
-  return { hasAccess, isSuperAdmin };
 };
+
+export default useMenuAccess;

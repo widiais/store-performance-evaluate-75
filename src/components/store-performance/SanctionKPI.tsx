@@ -42,12 +42,11 @@ const StoreSanctionCard = ({
     },
   });
 
-  // Get sanction KPI data for this store
+  // Get sanction KPI data for this store using the view directly
   const { data: sanctionKpiData } = useQuery<SanctionData | null>({
     queryKey: ["sanctionKpiData", store.id],
     queryFn: async () => {
       try {
-        // Use a standard query to get the data from the employee_sanctions_kpi view
         const { data, error } = await supabase
           .from("employee_sanctions_kpi")
           .select("*")
