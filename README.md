@@ -1,71 +1,31 @@
-# Welcome to your GPT Engineer project
 
-## Project info
+# Store Performance Dashboard
 
-**URL**: https://run.gptengineer.app/projects/0f4f445d-e89f-447f-9848-79ddd38f590e/improve
+## Database Schema Update Required
 
-## How can I edit this code?
+Before using this application, please run the following SQL script to create the necessary views and update table schemas:
 
-There are several ways of editing your application.
-
-**Use GPT Engineer**
-
-Simply visit the GPT Engineer project at [GPT Engineer](https://gptengineer.app/projects/0f4f445d-e89f-447f-9848-79ddd38f590e/improve) and start prompting.
-
-Changes made via gptengineer.app will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in the GPT Engineer UI.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```sql
+-- Run the SQL found in src/sql/create_views.sql
 ```
 
-**Edit a file directly in GitHub**
+## Components
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+The application contains the following components:
 
-**Use GitHub Codespaces**
+- ComplaintReportDetail: Shows detailed information about complaint reports
+- EmployeeSanctionForm: Allows entry of employee sanctions
+- ChampReport: Displays a list of CHAMP evaluations
+- ChampReportDetail: Shows detailed information about a CHAMP evaluation
+- OperationalKPI: Displays operational KPI metrics for selected stores
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Other Files
 
-## What technologies are used for this project?
+- store-performance/types.ts: Contains TypeScript types for the application
+- sql/create_views.sql: Contains SQL to create necessary views and update tables
 
-This project is built with .
+## Troubleshooting
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-All GPT Engineer projects can be deployed directly via the GPT Engineer app.
-
-Simply visit your project at [GPT Engineer](https://gptengineer.app/projects/0f4f445d-e89f-447f-9848-79ddd38f590e/improve) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.gptengineer.app/tips-tricks/custom-domain/)
+If you encounter database-related errors, please ensure:
+1. All views in the SQL file have been created
+2. The required table schemas match what the application expects

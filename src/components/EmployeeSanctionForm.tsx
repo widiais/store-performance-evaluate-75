@@ -168,25 +168,36 @@ const EmployeeSanctionForm = () => {
 
     setIsSubmitting(true);
     try {
-      const sanctions = entries.map(entry => ({
-        store_id: selectedStore.id,
-        sanction_date: date,
-        pic: pic,
-        ...entry
-      }));
+      for (const entry of entries) {
+        let sanctionData = {
+          store_id: selectedStore.id,
+          input_date: date,
+          pic: pic,
+          peringatan_count: entry.sanction_type === 'Peringatan Tertulis' ? 1 : 0,
+          sp1_count: entry.sanction_type === 'SP1' ? 1 : 0,
+          sp2_count: entry.sanction_type === 'SP2' ? 1 : 0,
+          status: 'active',
+          /* 
+            Employee metadata would include:
+            - employee_name
+            - duration_months
+            - violation_details
+            - submitted_by
+          */
+        };
 
-      const { error } = await supabase
-        .from('employee_sanctions')
-        .insert(sanctions);
+        const { error } = await supabase
+          .from('employee_sanctions')
+          .insert(sanctionData);
 
-      if (error) throw error;
+        if (error) throw error;
+      }
 
       toast({
         title: "Success",
         description: "Sanctions have been recorded successfully.",
       });
 
-      // Reset form
       setSelectedStore(null);
       setDate(format(new Date(), "yyyy-MM-dd"));
       setPic("");

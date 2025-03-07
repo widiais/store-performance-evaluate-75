@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -40,13 +41,34 @@ const ChampReport = () => {
   const { data: evaluations = [], isLoading } = useQuery({
     queryKey: ['champs-evaluations'],
     queryFn: async () => {
+      // Use a join to get the data that would be in the view
       const { data, error } = await supabase
-        .from('champs_evaluation_report')
-        .select('*')
+        .from('champs_evaluations')
+        .select(`
+          id,
+          evaluation_date,
+          pic,
+          total_score,
+          stores:store_id (
+            name,
+            city
+          )
+        `)
         .order('evaluation_date', { ascending: false });
       
       if (error) throw error;
-      return (data || []) as ChampEvaluation[];
+      
+      // Transform the data to match the expected format
+      const transformedData = (data || []).map(item => ({
+        id: item.id,
+        store_name: item.stores?.name || '',
+        store_city: item.stores?.city || '',
+        evaluation_date: item.evaluation_date,
+        total_score: item.total_score || 0,
+        pic: item.pic
+      }));
+      
+      return transformedData as ChampEvaluation[];
     },
   });
 

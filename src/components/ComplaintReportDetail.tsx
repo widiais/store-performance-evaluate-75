@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,6 +15,7 @@ interface ComplaintWeight {
 interface ComplaintDetail {
   id: number;
   store_name: string;
+  store_city: string;
   regional: number;
   area: number;
   input_date: string;
@@ -44,21 +46,43 @@ const ComplaintReportDetail = () => {
     },
   });
 
-  const { data: detail, isLoading } = useQuery<ComplaintDetail>({
+  const { data: detail, isLoading } = useQuery({
     queryKey: ['complaint-detail', id],
     queryFn: async () => {
       if (!id) throw new Error('No ID provided');
       const numericId = parseInt(id);
       if (isNaN(numericId)) throw new Error('Invalid ID format');
       
+      // Fetch complaint record
       const { data, error } = await supabase
-        .from('complaint_records_report')
-        .select('*')
+        .from('complaint_records')
+        .select('*, store:store_id(*)')
         .eq('id', numericId)
         .single();
       
       if (error) throw error;
-      return data;
+      
+      // Calculate KPI score
+      const kpiPercentage = (data.total_weighted_complaints / (data.store.avg_cu_per_day * 30)) * 100;
+      const kpiScore = calculateKPIScore(kpiPercentage);
+      
+      // Transform the data to the expected format
+      return {
+        id: data.id,
+        store_name: data.store.name,
+        store_city: data.store.city,
+        regional: data.store.regional,
+        area: data.store.area,
+        input_date: data.input_date,
+        whatsapp_count: data.whatsapp_count,
+        social_media_count: data.social_media_count,
+        gmaps_count: data.gmaps_count,
+        online_order_count: data.online_order_count,
+        late_handling_count: data.late_handling_count,
+        total_weighted_complaints: data.total_weighted_complaints,
+        avg_cu_per_day: data.store.avg_cu_per_day,
+        kpi_score: kpiScore
+      } as ComplaintDetail;
     },
   });
 
@@ -132,16 +156,6 @@ const ComplaintReportDetail = () => {
 
   const kpiPercentage = (detail.total_weighted_complaints / (detail.avg_cu_per_day * 30)) * 100;
   
-  const calculateKPIScore = (percentage: number) => {
-    if (percentage <= 0.1) return 4;       // <= 0.1% = 4 (Sangat Baik)
-    if (percentage <= 0.3) return 3;       // <= 0.3% = 3 (Baik)
-    if (percentage <= 0.5) return 2;       // <= 0.5% = 2 (Cukup)
-    if (percentage <= 0.7) return 1;       // <= 0.7% = 1 (Kurang)
-    return 0;                              // > 0.7% = 0 (Sangat Kurang)
-  };
-
-  const kpiScore = calculateKPIScore(kpiPercentage);
-
   return (
     <div className="p-6">
       <div className="max-w-4xl mx-auto">
@@ -190,8 +204,8 @@ const ComplaintReportDetail = () => {
             </div>
             <div>
               <p className="text-gray-600">KPI Score</p>
-              <p className={`font-semibold ${kpiScore >= 3 ? 'text-green-600' : kpiScore >= 2 ? 'text-yellow-600' : 'text-red-600'}`}>
-                {kpiScore} ({kpiPercentage.toFixed(2)}%)
+              <p className={`font-semibold ${detail.kpi_score >= 3 ? 'text-green-600' : detail.kpi_score >= 2 ? 'text-yellow-600' : 'text-red-600'}`}>
+                {detail.kpi_score} ({kpiPercentage.toFixed(2)}%)
               </p>
             </div>
           </div>
@@ -233,8 +247,8 @@ const ComplaintReportDetail = () => {
               </div>
               <div className="flex items-center justify-between font-semibold">
                 <span>Final KPI Score</span>
-                <span className={kpiScore >= 3 ? 'text-green-600' : kpiScore >= 2 ? 'text-yellow-600' : 'text-red-600'}>
-                  {kpiScore}
+                <span className={detail.kpi_score >= 3 ? 'text-green-600' : detail.kpi_score >= 2 ? 'text-yellow-600' : 'text-red-600'}>
+                  {detail.kpi_score}
                 </span>
               </div>
               <div className="mt-4 p-4 bg-gray-50 rounded-lg text-sm">
@@ -253,6 +267,15 @@ const ComplaintReportDetail = () => {
       </div>
     </div>
   );
+};
+
+// Helper function to calculate KPI score
+const calculateKPIScore = (percentage: number) => {
+  if (percentage <= 0.1) return 4;       // <= 0.1% = 4 (Sangat Baik)
+  if (percentage <= 0.3) return 3;       // <= 0.3% = 3 (Baik)
+  if (percentage <= 0.5) return 2;       // <= 0.5% = 2 (Cukup)
+  if (percentage <= 0.7) return 1;       // <= 0.7% = 1 (Kurang)
+  return 0;                              // > 0.7% = 0 (Sangat Kurang)
 };
 
 export default ComplaintReportDetail;

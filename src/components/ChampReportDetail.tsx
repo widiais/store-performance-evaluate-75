@@ -1,5 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import * as XLSX from 'xlsx';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import {
@@ -10,19 +12,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Ban, X, FileSpreadsheet, FileText } from "lucide-react";
 import ChampsPDF from "./ChampReportPDF";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2 } from "lucide-react";
-import { useQueryClient, useMutation } from "@tanstack/react-query";
 
 interface DetailedQuestion {
   question: string;
   points: number;
   status: 'cross' | 'exclude' | 'none';
+  score: number;
+}
+
+interface ChampEvaluationDetail {
+  id: number;
+  store_name: string;
+  store_city: string;
+  evaluation_date: string;
+  pic: string;
+  total_score: number;
 }
 
 const ChampReportDetail = () => {
@@ -31,24 +41,45 @@ const ChampReportDetail = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch evaluasi utama
-  const { data: evaluation, isLoading } = useQuery({
+  // Fetch evaluation details
+  const { data: evaluation, isLoading } = useQuery<ChampEvaluationDetail>({
     queryKey: ['champs-evaluation', id],
     queryFn: async () => {
+      if (!id) throw new Error('No ID provided');
+      const numericId = parseInt(id);
+      if (isNaN(numericId)) throw new Error('Invalid ID format');
+      
       const { data, error } = await supabase
-        .from('champs_evaluation_report')
-        .select('*')
-        .eq('id', parseInt(id || '0'))
+        .from('champs_evaluations')
+        .select(`
+          id,
+          evaluation_date,
+          pic,
+          total_score,
+          stores:store_id (
+            name,
+            city
+          )
+        `)
+        .eq('id', numericId)
         .single();
       
       if (error) throw error;
-      return data;
+      
+      return {
+        id: data.id,
+        store_name: data.stores?.name || '',
+        store_city: data.stores?.city || '',
+        evaluation_date: data.evaluation_date,
+        pic: data.pic,
+        total_score: data.total_score || 0
+      };
     },
     enabled: !!id,
   });
 
-  // Fetch detail pertanyaan dan jawaban
-  const { data: questions = [], isLoading: isLoadingDetails } = useQuery({
+  // Fetch questions and answers
+  const { data: questions = [], isLoading: isLoadingDetails } = useQuery<DetailedQuestion[]>({
     queryKey: ['evaluation-details', id],
     queryFn: async () => {
       if (!id) return [];
@@ -75,8 +106,8 @@ const ChampReportDetail = () => {
         id: answer.champs_questions?.id,
         question: answer.champs_questions?.question || '',
         points: answer.champs_questions?.points || 0,
-        status: answer.status,
-        score: answer.score
+        status: answer.status as 'cross' | 'exclude' | 'none',
+        score: answer.score || 0
       })) || [];
     },
     enabled: !!id,
@@ -124,7 +155,7 @@ const ChampReportDetail = () => {
     }
   };
 
-  if (isLoading || isLoadingDetails) {
+  if (isLoading || isLoadingDetails || !evaluation) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500" />
@@ -132,19 +163,7 @@ const ChampReportDetail = () => {
     );
   }
 
-  if (!evaluation) {
-    return (
-      <div className="p-6">
-        <Button variant="outline" onClick={() => navigate(-1)} className="mb-6">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Reports
-        </Button>
-        <p>No evaluation found.</p>
-      </div>
-    );
-  }
-
-  // Hitung total skor
+  // Calculate total skor
   const totalPoints = questions.reduce((sum, q) => sum + q.points, 0);
   const earnedPoints = questions.reduce((sum, q) => sum + q.score, 0);
   const lostPoints = totalPoints - earnedPoints;
@@ -186,13 +205,13 @@ const ChampReportDetail = () => {
     const questionDetails = [
       ['Question', 'Points', 'Score', 'Status']
     ];
+    
     questions.forEach(q => {
       questionDetails.push([q.question, q.points.toString(), q.score.toString(), q.status]);
     });
     
     const ws2 = XLSX.utils.aoa_to_sheet(questionDetails);
     XLSX.utils.book_append_sheet(workbook, ws2, "Questions Detail");
-
 
     // Download file
     XLSX.writeFile(workbook, `CHAMPS_Report_${evaluation.store_name}_${format(new Date(evaluation.evaluation_date), 'dd-MM-yyyy')}.xlsx`);

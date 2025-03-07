@@ -170,13 +170,32 @@ export const OperationalKPI = ({ selectedStores, selectedMonth, selectedYear }: 
       if (!filteredDates?.length) return [];
       
       const { data, error } = await supabase
-        .from("champs_evaluation_report")
-        .select("*")
-        .in("store_name", selectedStores.map((store) => store.name))
+        .from("champs_evaluations")
+        .select(`
+          id,
+          evaluation_date,
+          total_score,
+          status,
+          pic,
+          stores:store_id (
+            name,
+            city
+          )
+        `)
+        .in("store_id", selectedStores.map((store) => store.id))
         .in('evaluation_date', filteredDates.map(d => d.evaluation_date));
 
       if (error) throw error;
-      return data as EvaluationRecord[];
+      
+      return (data || []).map(item => ({
+        id: item.id,
+        store_name: item.stores?.name || '',
+        store_city: item.stores?.city || '',
+        evaluation_date: item.evaluation_date,
+        total_score: item.total_score || 0,
+        pic: item.pic,
+        status: item.status
+      })) as EvaluationRecord[];
     },
     enabled: selectedStores.length > 0 && !!filteredDates?.length
   });
@@ -187,13 +206,32 @@ export const OperationalKPI = ({ selectedStores, selectedMonth, selectedYear }: 
       if (!filteredDates?.length) return [];
       
       const { data, error } = await supabase
-        .from("cleanliness_evaluation_report")
-        .select("*")
-        .in("store_name", selectedStores.map((store) => store.name))
+        .from("cleanliness_evaluations")
+        .select(`
+          id,
+          evaluation_date,
+          total_score,
+          status,
+          pic,
+          stores:store_id (
+            name,
+            city
+          )
+        `)
+        .in("store_id", selectedStores.map((store) => store.id))
         .in('evaluation_date', filteredDates.map(d => d.evaluation_date));
 
       if (error) throw error;
-      return data as EvaluationRecord[];
+      
+      return (data || []).map(item => ({
+        id: item.id,
+        store_name: item.stores?.name || '',
+        store_city: item.stores?.city || '',
+        evaluation_date: item.evaluation_date,
+        total_score: item.total_score || 0,
+        pic: item.pic,
+        status: item.status
+      })) as EvaluationRecord[];
     },
     enabled: selectedStores.length > 0 && !!filteredDates?.length
   });
@@ -204,13 +242,32 @@ export const OperationalKPI = ({ selectedStores, selectedMonth, selectedYear }: 
       if (!filteredDates?.length) return [];
       
       const { data, error } = await supabase
-        .from("service_evaluation_report")
-        .select("*")
-        .in("store_name", selectedStores.map((store) => store.name))
+        .from("service_evaluations")
+        .select(`
+          id,
+          evaluation_date,
+          total_score,
+          status,
+          pic,
+          stores:store_id (
+            name,
+            city
+          )
+        `)
+        .in("store_id", selectedStores.map((store) => store.id))
         .in('evaluation_date', filteredDates.map(d => d.evaluation_date));
 
       if (error) throw error;
-      return data as EvaluationRecord[];
+      
+      return (data || []).map(item => ({
+        id: item.id,
+        store_name: item.stores?.name || '',
+        store_city: item.stores?.city || '',
+        evaluation_date: item.evaluation_date,
+        total_score: item.total_score || 0,
+        pic: item.pic,
+        status: item.status
+      })) as EvaluationRecord[];
     },
     enabled: selectedStores.length > 0 && !!filteredDates?.length
   });
@@ -221,13 +278,32 @@ export const OperationalKPI = ({ selectedStores, selectedMonth, selectedYear }: 
       if (!filteredDates?.length) return [];
       
       const { data, error } = await supabase
-        .from("product_quality_evaluation_report")
-        .select("*")
-        .in("store_name", selectedStores.map((store) => store.name))
+        .from("product_quality_evaluations")
+        .select(`
+          id,
+          evaluation_date,
+          total_score,
+          status,
+          pic,
+          stores:store_id (
+            name,
+            city
+          )
+        `)
+        .in("store_id", selectedStores.map((store) => store.id))
         .in('evaluation_date', filteredDates.map(d => d.evaluation_date));
 
       if (error) throw error;
-      return data as EvaluationRecord[];
+      
+      return (data || []).map(item => ({
+        id: item.id,
+        store_name: item.stores?.name || '',
+        store_city: item.stores?.city || '',
+        evaluation_date: item.evaluation_date,
+        total_score: item.total_score || 0,
+        pic: item.pic,
+        status: item.status
+      })) as EvaluationRecord[];
     },
     enabled: selectedStores.length > 0 && !!filteredDates?.length
   });
