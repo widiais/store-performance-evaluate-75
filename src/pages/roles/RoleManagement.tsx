@@ -38,6 +38,8 @@ import {
 } from "@/components/ui/tooltip";
 import { RolePermission } from "@/integrations/supabase/client-types";
 import { mapToRole, mapToRolePermission } from "@/utils/typeUtils";
+import { RoleAccessTable } from "@/components/RoleAccessTable";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type UserRole = 'admin' | 'manager' | 'supervisor' | 'staff';
 
@@ -104,6 +106,7 @@ const RoleManagement = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedRole, setSelectedRole] = useState<RoleWithPermissions | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("list");
   const { toast } = useToast();
 
   const { data: roles = [], isLoading, isError, refetch } = useQuery<RoleWithPermissions[]>({
@@ -139,6 +142,12 @@ const RoleManagement = () => {
       return rolesWithPermissions;
     }
   });
+
+  // Organize permissions by role
+  const permissionsByRole = roles.reduce((acc, role) => {
+    acc[role.id] = role.role_permissions || [];
+    return acc;
+  }, {} as Record<string, RolePermission[]>);
 
   const getPermissionSummary = (role: RoleWithPermissions) => {
     const permissions = role.role_permissions;
@@ -283,113 +292,133 @@ const RoleManagement = () => {
     <div className="container mx-auto py-10">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Role Management</h1>
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => {
-              setIsEditMode(false);
-              setSelectedRole(null);
-            }}>
-              <Shield className="mr-2 h-4 w-4" />
-              Add Role
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{isEditMode ? 'Edit Role' : 'Create New Role'}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={isEditMode ? handleUpdateRole : handleCreateRole} className="space-y-4">
-              <div>
-                <Label htmlFor="name">Role Name</Label>
-                <Input 
-                  id="name" 
-                  name="name" 
-                  required 
-                  defaultValue={selectedRole?.name}
-                />
-              </div>
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Input 
-                  id="description" 
-                  name="description" 
-                  defaultValue={selectedRole?.description || ''}
-                />
-              </div>
-              {!isEditMode && (
-                <div>
-                  <Label htmlFor="roleLevel">Role Level</Label>
-                  <Select name="roleLevel" required defaultValue="staff">
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select role level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ROLE_LEVELS.map(level => (
-                        <SelectItem key={level.value} value={level.value}>
-                          {level.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              <Button type="submit" className="w-full">
-                {isEditMode ? 'Update Role' : 'Create Role'}
+        <div className="space-x-4 flex items-center">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-[400px]">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="list">Role List</TabsTrigger>
+              <TabsTrigger value="matrix">Access Matrix</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => {
+                setIsEditMode(false);
+                setSelectedRole(null);
+              }}>
+                <Shield className="mr-2 h-4 w-4" />
+                Add Role
               </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{isEditMode ? 'Edit Role' : 'Create New Role'}</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={isEditMode ? handleUpdateRole : handleCreateRole} className="space-y-4">
+                <div>
+                  <Label htmlFor="name">Role Name</Label>
+                  <Input 
+                    id="name" 
+                    name="name" 
+                    required 
+                    defaultValue={selectedRole?.name}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="description">Description</Label>
+                  <Input 
+                    id="description" 
+                    name="description" 
+                    defaultValue={selectedRole?.description || ''}
+                  />
+                </div>
+                {!isEditMode && (
+                  <div>
+                    <Label htmlFor="roleLevel">Role Level</Label>
+                    <Select name="roleLevel" required defaultValue="staff">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select role level" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ROLE_LEVELS.map(level => (
+                          <SelectItem key={level.value} value={level.value}>
+                            {level.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <Button type="submit" className="w-full">
+                  {isEditMode ? 'Update Role' : 'Create Role'}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      <Table>
-        <TableCaption>List of roles</TableCaption>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Level</TableHead>
-            <TableHead>Permissions</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {roles.map((role) => (
-            <TableRow key={role.id}>
-              <TableCell>{role.name}</TableCell>
-              <TableCell>{role.description}</TableCell>
-              <TableCell className="capitalize">{role.role_level}</TableCell>
-              <TableCell>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <Info className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <pre className="text-xs whitespace-pre-wrap">
-                        {getPermissionSummary(role)}
-                      </pre>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </TableCell>
-              <TableCell>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    setIsEditMode(true);
-                    setSelectedRole(role);
-                    setIsOpen(true);
-                  }}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-              </TableCell>
+      <TabsContent value="list" className="mt-0">
+        <Table>
+          <TableCaption>List of roles</TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead>Level</TableHead>
+              <TableHead>Permissions</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {roles.map((role) => (
+              <TableRow key={role.id}>
+                <TableCell>{role.name}</TableCell>
+                <TableCell>{role.description}</TableCell>
+                <TableCell className="capitalize">{role.role_level}</TableCell>
+                <TableCell>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <Info className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <pre className="text-xs whitespace-pre-wrap">
+                          {getPermissionSummary(role)}
+                        </pre>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </TableCell>
+                <TableCell>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      setIsEditMode(true);
+                      setSelectedRole(role);
+                      setIsOpen(true);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TabsContent>
+
+      <TabsContent value="matrix" className="mt-0">
+        <div className="rounded-md border">
+          <RoleAccessTable
+            roles={roles}
+            permissions={permissionsByRole}
+            resources={RESOURCES}
+          />
+        </div>
+      </TabsContent>
     </div>
   );
 };
