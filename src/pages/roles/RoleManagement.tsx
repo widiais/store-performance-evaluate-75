@@ -36,21 +36,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { RolePermission } from "@/integrations/supabase/client-types";
+import { RolePermission, Role } from "@/types/auth";
 import { mapToRole, mapToRolePermission } from "@/utils/typeUtils";
 import { RoleAccessTable } from "@/components/RoleAccessTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type UserRole = 'admin' | 'manager' | 'supervisor' | 'staff';
-
-interface Role {
-  id: string;
-  name: string;
-  description?: string;
-  role_level: UserRole;
-  created_at?: string;
-  updated_at?: string;
-}
 
 interface RoleWithPermissions extends Role {
   role_permissions: RolePermission[];
@@ -143,9 +134,19 @@ const RoleManagement = () => {
     }
   });
 
-  // Organize permissions by role
+  // Organize permissions by role - converting client-types RolePermission to auth.ts RolePermission
   const permissionsByRole = roles.reduce((acc, role) => {
-    acc[role.id] = role.role_permissions || [];
+    // Ensure we're creating a new array of the expected type
+    acc[role.id] = role.role_permissions.map(perm => ({
+      id: String(perm.id), // Convert number to string
+      role_id: perm.role_id,
+      resource: perm.resource,
+      action: perm.action,
+      can_create: perm.can_create,
+      can_read: perm.can_read,
+      can_update: perm.can_update,
+      can_delete: perm.can_delete
+    }));
     return acc;
   }, {} as Record<string, RolePermission[]>);
 
